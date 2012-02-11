@@ -23,20 +23,18 @@ body {
     position:absolute;
     display:none;
     left:0px;
+    top:30px;
     z-index: 10;
     width:130px;
     background-color: white;
-    opacity:0.9;
+    opacity:0.95;
     -webkit-border-radius: 0px 0px 5px 5px ; 
     -moz-border-radius: 0px 0px 5px 5px ; 
     border-radius: 0px 0px 5px 5px ; 
-    
     -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box;
-    
-
-  -webkit-box-shadow: 0px 10px 25px 0px #999; 
-     -moz-box-shadow: 0px 10px 25px 0px #999; 
-          box-shadow: 0px 10px 25px 0px #999; 
+    -webkit-box-shadow: 0px 10px 25px 0px #999; 
+    -moz-box-shadow: 0px 10px 25px 0px #999; 
+    box-shadow: 0px 10px 25px 0px #999; 
 
 }
 .wb-menu.wb-horizontal,
@@ -65,7 +63,6 @@ body {
 }
 
 .wb-menuitem:hover > .wb-submenu {
-    border:1px solid #666;
     display:block;
 }
 
@@ -74,15 +71,23 @@ body {
 .wb-topmenu {
     background-color: #d8fdfe;
     background-image: -webkit-linear-gradient(-90deg, #d8fdfe 0,#b7dcf4 100%); 
-    padding-left:40px;
     border-bottom:1px solid #47687F;
     color:black;
 }
+
+
 
 .wb-topmenu .wb-menuitem:hover > .wb-title {
     background-color: #6e8bf4;
     background-image: -webkit-linear-gradient(top, #6e8bf4, #2759f1); 
     color:white;
+}
+.wb-topmenu .wb-logo {
+    width:35px;
+    height:29px;
+    margin-left:5px;
+    padding:0;
+    cursor:auto;
 }
 
 /* header */
@@ -115,43 +120,32 @@ body {
 }
 
 /* split pane */
-.wb-splitpane.wb-vertical .wb-pane,
-    .wb-splitpane.wb-vertical .wb-splitter {
+.wb-splitpane {
+    background-image: none;
+    background-color: transparent;
+    margin:2px;
+}
+.wb-splitpane .wb-splitpane {
+    margin:0px;
+}
+.wb-splitpane.wb-vertical > .wb-pane,
+    .wb-splitpane.wb-vertical > .wb-splitter {
     float:left;
 }
-.wb-splitpane.wb-horizontal .wb-pane,
-    .wb-splitpane.wb-horizontal .wb-splitter {
+.wb-splitpane.wb-horizontal > .wb-pane,
+    .wb-splitpane.wb-horizontal > .wb-splitter {
     float:none;
 }
 
-.wb-splitpane .wb-splitter {
-    background-color: #efefef;
-    border:1px solid #999;
+.wb-splitpane > .wb-splitter {
     cursor: move;
 }
-.wb-splitter.wb-horizontal {
-    border-top-width:1px;
-    border-bottom-width:1px;
-    border-right-width:0;
-    border-left-width:0;
-    height:5px;
+.wb-splitpane.wb-horizontal > .wb-splitter {
+    height:3px;
     cursor: row-resize;
-    
-    
-    background-color: #c3c3c3;
-    background-image: -webkit-linear-gradient(-90deg, #aeaeae 0, #c3c3c3 3px,#aeaeae 100%); 
 }
 
-.wb-splitter.wb-vertical {
-    border-top-width:0;
-    border-bottom-width:0;
-    border-right-width:1px;
-    border-left-width:1px;
-    width:5px;
-    
+.wb-splitpane.wb-vertical > .wb-splitter {
+    width:3px;
     cursor: col-resize;
-    background-color: #c3c3c3;
-    
-    background-image: -webkit-linear-gradient(0deg, #aeaeae 0, #c3c3c3 3px,#aeaeae 100%); 
-    
 }

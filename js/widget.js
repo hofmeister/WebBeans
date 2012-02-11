@@ -11,13 +11,13 @@ $wb.ui.layout.Stack = function() {
     var nodes = this.children();
     for(var i in nodes) {
         nodes[i].elm().css({
-            width:width,
-            height:height,
             position:'absolute',
             top:0,
             left:0,
             zIndex:i == 0 ? 10 : 1
         });
+        nodes[i].elm().outerWidth(width);
+        nodes[i].elm().outerHeight(height);
     }
 }
 
@@ -25,9 +25,7 @@ $wb.ui.layout.Box = function() {
     var width = this.elm().width();
     var nodes = this.children();
     for(var i in nodes) {
-        nodes[i].elm().css({
-            width:width
-        });
+        nodes[i].elm().outerWidth(width);
     }
 }
 
@@ -48,18 +46,18 @@ $wb.ui.layout.GridBag = function() {
             others.push(nodes[i].elm());
         }
     }
+    
     var usedSize = $wb.utils.fullSize(others);
-    last.height(h-usedSize.height);
-    last.width(w);
+    last.outerHeight(h-usedSize.height);
+    last.outerWidth(w);
 }
 
 //Widgets
 $wb.ui.Widget = $wb.Class('Widget',{
     _elm:null,
+    _id:null,
     _layoutMethod:null,
     _tmpl:null,
-    _bind:null,
-    _bindInner:null,
     _children:[],
     _target:null,
     __extends:[$wb.core.Events,$wb.core.Utils],
@@ -70,11 +68,19 @@ $wb.ui.Widget = $wb.Class('Widget',{
         
         this._tmpl = opts.tmpl;
         this._elm = $(this._tmpl());
+        this._elm.widget(this);
+        
         if (opts.target) {
             this._target = this._elm.find(opts.target);
         } else {
             this._target = this._elm;
         }
+        this._id = opts.id;
+        
+        if (this._id) {
+            this.target().attr('id',this._id);
+        }
+        
         this._layoutMethod = opts.layout ? opts.layout : function() {};
 
         if (!opts.bindInner) {
@@ -84,8 +90,7 @@ $wb.ui.Widget = $wb.Class('Widget',{
             opts.bind = {};
         }
 
-        this._bindInner = $.extend(true,{},opts.bindInner);
-        this._bind = $.extend(true,{},opts.bind);
+        this.bind('resize',this._layout);
     },
     add:function(child) {
         this._children.push(child);
@@ -108,8 +113,10 @@ $wb.ui.Widget = $wb.Class('Widget',{
     render: function(container) {
         this._paint();
         this._place(container);
-        this._layout();
         this._renderChildren();
+        
+        this._layout();
+        
         this.trigger('render');
     },
     
@@ -128,6 +135,10 @@ $wb.ui.Widget = $wb.Class('Widget',{
         this.trigger('beforelayout');
         if (this._layoutMethod) {
             this._layoutMethod.apply(this);
+        }
+        for(var i in this._children) {
+            var child = this._children[i];
+            child._layout();
         }
         this.trigger('afterlayout');
     },
@@ -296,7 +307,7 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
     },
     _vertical:true,
     _splitPosition:.5,
-    __extends:[$wb.ui.Widget],
+    __extends:[$wb.ui.Pane],
     __construct:function(opts) {
         if (!opts) opts = {};
         var self = this;
@@ -324,23 +335,24 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
                 moving = true;
                 self.elm().css('cursor',self._vertical ?  'col-resize': 'row-resize');
             });
-            this.elm().mouseup(function(evt) {
+            $('body').mouseup(function(evt) {
                 evt.stopPropagation();
                 moving = false;
                 self.elm().css('cursor','inherit');
             });
-            this.elm().mousemove(function(evt) {
+            $('body').mousemove(function(evt) {
+                var fullSize,globalOffset,elmOffset;
                 if (!moving) return;
-                var splitterSize = $wb.utils.fullSize(self.getSplitter());
+                var splitterSize = self.getSplitter().fullSize();
+                
                 if (self._vertical) {
-                    var fullSize= self.elm().width()-splitterSize.width;
-                    var globalOffset = evt.pageX-Math.ceil(splitterSize.width/2);
-                    var elmOffset = self.elm().offset().left;
-                    
+                    fullSize= self.elm().width()-splitterSize.width;
+                    globalOffset = evt.pageX-Math.ceil(splitterSize.width/2);
+                    elmOffset = self.elm().offset().left;
                 } else {
-                    var fullSize= self.elm().height()-splitterSize.height;
-                    var globalOffset = evt.pageY-Math.ceil(splitterSize.height/2);
-                    var elmOffset = self.elm().offset().top;
+                    fullSize= self.elm().height()-splitterSize.height;
+                    globalOffset = evt.pageY-Math.ceil(splitterSize.height/2);
+                    elmOffset = self.elm().offset().top;
                     
                 }
                 var offset = (globalOffset-elmOffset)/fullSize;
@@ -370,27 +382,29 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
                 .after(this._children[1].elm());
     },
     setSplitPosition: function(splitPosition) {
+        var width,height;
+        
         if (!splitPosition)
             splitPosition = this._splitPosition;
         this._splitPosition = splitPosition;
-        var splitterSize = $wb.utils.fullSize(this.getSplitter());
-
+        var splitterSize = this.getSplitter().fullSize();
+        
         if (this._vertical) {
-            var width = this.elm().width()-splitterSize.width;
-            var height = this.elm().height();
+            width = this.elm().width()-splitterSize.width;
+            height = parseInt(this.elm().css('height'));
             this.getSplitter().height(height);
             var w1 = width*splitPosition;
             var w2 = width-w1;
-            this.get(0).elm().width(w1).height(height);
-            this.get(1).elm().width(w2).height(height);
+            this.get(0).elm().outerWidth(w1).outerHeight(height);
+            this.get(1).elm().outerWidth(w2).outerHeight(height);
         } else {
-            var height = this.elm().height()-splitterSize.height;
-            var width = this.elm().width();
+            height = this.elm().height()-splitterSize.height;
+            width = this.elm().width();
             this.getSplitter().width(width);
             var h1 = height*splitPosition;
             var h2 = height-h1;
-            this.get(0).elm().height(h1).width(width);
-            this.get(1).elm().height(h2).width(width);
+            this.get(0).elm().outerHeight(h1).outerWidth(width);
+            this.get(1).elm().outerHeight(h2).outerWidth(width);
         }
     }
 });

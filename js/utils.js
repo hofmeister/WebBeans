@@ -62,6 +62,12 @@ $wb.utils = {
 };
 //jQuery util methods
 $(function() {
+    
+    
+    jQuery.fn.widget = function(widget) {
+        return $(this).data('__widget',widget);
+    }
+    
     jQuery.fn.fullSize = function() {
         return $wb.utils.fullSize(this);
     }
@@ -85,22 +91,38 @@ $(function() {
         return parseInt(el.css('padding-left'))
                     +parseInt(el.css('padding-right'));
     }
-    
-    jQuery.fn.outerWidth = function() {
-        var el = $(this)
-        return el.width()+
-                    parseInt(el.css('padding-left'))
-                    +parseInt(el.css('padding-right'))
-                    +parseInt(el.css('border-left-width'))
-                    +parseInt(el.css('border-right-width'))
+    jQuery.fn.edgeWidth = function() {
+        var el = $(this);
+        return parseInt(el.css('padding-left'))
+                        +parseInt(el.css('padding-right'))
+                        +parseInt(el.css('margin-left'))
+                        +parseInt(el.css('margin-right'))
+                        +parseInt(el.css('border-left-width'))
+                        +parseInt(el.css('border-right-width'))
+    }
+    jQuery.fn.edgeHeight = function() {
+        var el = $(this);
+        return parseInt(el.css('padding-top'))
+                        +parseInt(el.css('padding-bottom'))
+                        +parseInt(el.css('margin-top'))
+                        +parseInt(el.css('margin-bottom'))
+                        +parseInt(el.css('border-top-width'))
+                        +parseInt(el.css('border-bottom-width'))
     }
     
-    jQuery.fn.outerHeight= function() {
+    jQuery.fn.outerWidth = function(width) {
         var el = $(this)
-        return el.height()+
-                    +parseInt(el.css('padding-top'))
-                    +parseInt(el.css('padding-bottom'))
-                    +parseInt(el.css('border-top-width'))
-                    +parseInt(el.css('border-bottom-width'))
+        if (typeof width == 'undefined')
+            return el.width()+el.edgeWidth();
+        else
+            return el.width(width-el.edgeWidth());
+    }
+    
+    jQuery.fn.outerHeight= function(height) {
+        var el = $(this)
+        if (typeof height == 'undefined')
+            return el.height()+el.edgeHeight();
+        else
+            return el.height(height-el.edgeHeight());
     }
 })

@@ -20,7 +20,7 @@ $(function() {
     
     var base = new $wb.ui.BasePane(topbar, header);
     
-        var mainSplitPane = new $wb.ui.SplitPane({vertical:true,splitPosition:.2});
+        var mainSplitPane = new $wb.ui.SplitPane({vertical:true,splitPosition:.2,id:'main'});
 
             var rightPane = new $wb.ui.SplitPane({vertical:false,splitPosition:.8});
 

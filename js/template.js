@@ -4,10 +4,7 @@ $wb.template = {
     },
     top: {
         bar:function() {
-            return '<ul class="wb-menu wb-topmenu"></ul>';
-        },
-        logo:function() {
-            return '<li class="wb-menuitem wb-logo"></li>';
+            return '<ul class="wb-menu wb-topmenu"><li class="wb-logo wb-menuitem"><img alt="WebBeans" title="WebBeans" src="images/logo.png" /></li></ul>';
         }
     },
     header:{
