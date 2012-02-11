@@ -61,7 +61,7 @@ $wb.template = {
              return '<div class="wb-pane"></div>';
         },
         split:function() {
-            return '<div class="wb-splitpane"><div class="wb-splitter"></div></div>';
+            return '<div class="wb-pane wb-splitpane"><div class="wb-splitter"></div></div>';
         }
     }
     

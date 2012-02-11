@@ -5,6 +5,7 @@ $wb.utils = {
             var h = $(window).height();
             $(elm).width(w);
             $(elm).height(h);
+            elm.trigger('resize');
         }
         if (listenForResize) {
             $(window).bind('resize',resize);

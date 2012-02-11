@@ -14,7 +14,7 @@ $(function() {
     leftPane.html('Left!');
     
     
-    var rightPane = new $wb.ui.SplitPane({vertical:true});
+    var rightPane = new $wb.ui.SplitPane({vertical:false});
     
     var topPane = new $wb.ui.Pane();
     topPane.html('Top!');
@@ -23,6 +23,16 @@ $(function() {
     
     rightPane.set(0, topPane);
     rightPane.set(1, bottomPane);
+    
+    var leftPane = new $wb.ui.SplitPane({vertical:false});
+    
+    var topPane = new $wb.ui.Pane();
+    topPane.html('Top!');
+    var bottomPane = new $wb.ui.Pane();
+    bottomPane.html('Bottom!');
+    
+    leftPane.set(0, topPane);
+    leftPane.set(1, bottomPane);
     
     mainSplitPane.set(0, leftPane);
     mainSplitPane.set(1, rightPane);

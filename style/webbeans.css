@@ -12,6 +12,7 @@ body{font:13px/1.231 arial,helvetica,clean,sans-serif;*font-size:small;*font:x-s
 body {
     font-family: "Helvetica Neue";
     background-color: #666;
+    overflow:hidden;
 }
 
 /* topmenu */
@@ -73,12 +74,10 @@ body {
     border-left:0;
     border-right:0;
     height:10px;
-    width:auto;
 }
 
 .wb-splitpane.wb-vertical .wb-splitter {
     border-top:0;
     border-bottom:0;
     width:10px;
-    height:auto;
 }

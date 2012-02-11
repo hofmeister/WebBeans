@@ -1,7 +1,7 @@
 $wb.ui = {};
 
 $wb.ui.Widget = function(opts) {
-    var _internalEventTypes = ['render'];
+    var _internalEventTypes = ['render','beforerender','resize','afterrender','paint'];
     
     this._elm = $(opts.tmpl());
     if (opts.target) {
@@ -93,33 +93,65 @@ $wb.ui.Widget = function(opts) {
         }
     }
     this._triggerRender = function() {
-        this.trigger('render');
         for(var i in this._children) {
             this._children[i].render();
         }
+        this.trigger('render');
     }
     
+    this._resize = function() {
+        this._layout.apply(this);
+        for(var i in this._children) {
+            var child = this._children[i];
+            child._resize();
+        }
+    }
     
     this.render = function(target) {
         this._paint();
-        this._applyBindings();
+        this.trigger('paint');
         this._place(target);
-        this._triggerRender();
         this._layout.apply(this);
+        this._applyBindings();
+        
+        
+        this.trigger('beforerender');
+        this._triggerRender();
+        
+        this.trigger('afterrender');
         return this._elm;
     };
 }
 
 $wb.ui.BasePane = function(topbar,header) {
     var base = new $wb.ui.Widget({
-        tmpl:$wb.template.base,
-        bind:{
-            'render':function() {
-                $wb.utils.makeFullScreen(this.elm(),true);
-            }
-        }
+        tmpl:$wb.template.base
     });
     $.extend(true,this,base);
+    
+    this._layout = function() {
+        this.makeFullScreen();
+        $wb.ui.layout.GridBag.apply(this);
+    };
+    
+    this.makeFullScreen = function() {
+        var w = $(window).width();
+        var h = $(window).height();
+        this.elm().width(w);
+        this.elm().height(h);
+    }
+    
+    var self = this;
+    var resizeTimeout = null;
+    $(window).bind('resize',function() {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function() {
+            self._resize();
+            self._resize();
+        },0);
+    });
+    
+    
     this.add(topbar);
     this.add(header);
 };
@@ -133,7 +165,7 @@ $wb.ui.TopBar = function() {
         var btn = new $wb.ui.Widget({
             tmpl:$wb.template.top.menuItem,
             bind:{
-                'render':function() {
+                'paint':function() {
                     this.elm().html(title);
                 },
                 'click':func
@@ -153,7 +185,7 @@ $wb.ui.Header = function() {
         var btn = new $wb.ui.Widget({
             tmpl:$wb.template.header.button,
             bind:{
-                'render':function() {
+                'paint':function() {
                     this.elm().html(title);
                 },
                 'click':func
@@ -164,7 +196,7 @@ $wb.ui.Header = function() {
     }
 };
 $wb.ui.layout = {};
-$wb.ui.layout.Box = function() {
+$wb.ui.layout.Stack = function() {
     this.elm().css({
         position:'relative'
     });
@@ -182,23 +214,36 @@ $wb.ui.layout.Box = function() {
         });
     }
 }
-$wb.ui.layout.GridBag = function() {
-    this.elm().css({
-        position:'relative'
-    });
+
+$wb.ui.layout.Box = function() {
     var width = this.elm().width();
-    var height = this.elm().height();
     var nodes = this.children();
     for(var i in nodes) {
         nodes[i].elm().css({
-            width:width,
-            height:height,
-            position:'absolute',
-            top:0,
-            left:0,
-            zIndex:i == 0 ? 10 : 1
+            width:width
         });
     }
+}
+$wb.ui.layout.GridBag = function() {
+    
+    var w = this.elm().width();
+    var h = this.elm().height();
+    var nodes = this.children();
+    var others = [];
+    if (nodes.length == 0)
+        return;
+    
+    for(var i in nodes) {
+        var isLast = i == (nodes.length-1);
+        if (isLast) {
+            var last = nodes[i].elm();
+        } else {
+            others.push(nodes[i].elm());
+        }
+    }
+    var usedSize = $wb.utils.fullSize(others);
+    last.height(h-usedSize.height);
+    last.width(w);
 }
 
 $wb.ui.Pane = function() {
@@ -216,7 +261,7 @@ $wb.ui.SplitPane = function(opts) {
     });
     var defaultOpts = {
         vertical:true,
-        splitPosition:.33
+        splitPosition:.5
     };
     $.extend(true,this,parent);
     
@@ -237,16 +282,17 @@ $wb.ui.SplitPane = function(opts) {
         return this._children[ix];
     }
     this.getSplitter = function() {
-        return this.find('.wb-splitter');
+        return this.elm().children('.wb-splitter');
     }
     this._paint = function() {
         this.getSplitter()
-                .before(this._children[0].render())
-                .after(this._children[1].render());
+                .before(this._children[0].elm())
+                .after(this._children[1].elm());
     }
     
     this.setSplitPosition = function(splitPosition) {
         var splitterSize = $wb.utils.fullSize(this.getSplitter());
+        
         if (opts.vertical) {
             var width = this.elm().width()-splitterSize.width;
             var height = this.elm().height();
@@ -265,8 +311,7 @@ $wb.ui.SplitPane = function(opts) {
             this.get(1).elm().height(h2).width(width);
         }
     }
-    
-    this.bind('render',function() {
+    this._layout = function() {
         this.setSplitPosition(opts.splitPosition);
-    });
+    };
 };
