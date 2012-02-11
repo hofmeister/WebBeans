@@ -4,31 +4,33 @@ $wb.template = {
     },
     top: {
         bar:function() {
-            return '<ul class="wb-topmenu"></ul>';
+            return '<ul class="wb-menu wb-topmenu"></ul>';
         },
         logo:function() {
-            return '<li class="wb-logo"></li>';
-        },
-        menuItem:function(leaf) {
-            return '<li class="wb-menuitem '+(leaf ? "wb-leaf" : "")+'"></li>';
-        },
-        subMenu:function() {
-            return '<ul class="wb-submenu"></ul>';
+            return '<li class="wb-menuitem wb-logo"></li>';
         }
     },
     header:{
         bar:function() {
-            return '<ul class="wb-header"></ul>';
-        },
-        button:function() {
-            return '<li class="wb-header-button"></li>';
+            return '<ul class="wb-menu wb-header"></ul>';
         },
         searchField:function() {
-            return '<input type="text" class="wb-search-global" />';
+            return '<input type="text" class="wb-menuitem wb-search-global" />';
         }
     },
     footer:function() {
         return '<ul class="wb-footer"></ul>';
+    },
+    menu: {
+        base:function() {
+            return '<ul class="wb-menu"></ul>';
+        },
+        menuItem:function() {
+            return '<li class="wb-menuitem"><div class="wb-title" /></li>';
+        },
+        subMenu:function() {
+            return '<ul class="wb-submenu"></ul>';
+        }
     },
     window: {
         container:function() {

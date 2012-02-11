@@ -1,200 +1,6 @@
 $wb.ui = {};
 
-$wb.ui.Widget = function(opts) {
-    var _internalEventTypes = ['render','beforerender','resize','afterrender','paint'];
-    
-    this._elm = $(opts.tmpl());
-    if (opts.target) {
-        this._target = this._elm.find(opts.target);
-    } else {
-        this._target = this._elm;
-    }
-    this._layout = opts.layout ? opts.layout : function() {};
-    
-    if (!opts.bindInner) {
-        opts.bindInner = {};
-    }
-    if (!opts.bind) {
-        opts.bind = {};
-    }
-    
-    
-    this._bindInner = $.extend(true,{},opts.bindInner);
-    this._bind = $.extend(true,{},opts.bind);
-    this._children = [];
-    
-    this.add = function(child) {
-        this._children.push(child);
-    };
-    this.children = function() {
-        return this._children;
-    }
-    
-    this.bind = function(path,evt,handler) {
-        if ($.type(evt) == 'function') {
-            //evt,handler
-            this._bind[path] = evt;
-            if (_internalEventTypes.indexOf(evt) == -1)
-                this._target.bind(path,evt);
-        } else if (_internalEventTypes.indexOf(evt) == -1) {
-            //xpath,evt,handler
-            if (!this._bindInner[path])
-                this._bindInner[path] = {};
-            this._bindInner[path][evt] = handler;
-            this.find(path).bind(evt,handler);
-        }   
-    }
-    this.html = function(html) {
-        return this._elm.html(html);
-    }
-    
-    this.trigger = function(evt) {
-        if (_internalEventTypes.indexOf(evt) > -1) {
-            if (this._bind[evt])
-                this._bind[evt].apply(this);
-            return;
-        }
-            
-        this._target.trigger(evt);
-    }
-    
-    this.find = function(path) {
-        return this._elm.find(path);
-    }
-    this.elm = function() {
-        return this._elm;
-    }
-    
-    this._applyBindings = function() {
-        if (this._bindInner) {
-            for(var xpath in this._bindInner) {
-                var bindings = this._bindInner[xpath];
-                for(var evt in bindings) {
-                    this.bind(xpath,evt,bindings[evt]);
-                }
-            }
-        }
-        
-        if (this._bind) {
-            for(var evt in this._bind) {
-                this.bind(evt,this._bind[evt]);
-            }
-        }
-    }
-    this._paint = function() {
-        for(var i in this._children) {
-            this._target.append(this._children[i].elm());
-        }
-    }
-    
-    this._place = function(target) {
-        if (target) {
-            $(target).append(this._elm);
-        }
-    }
-    this._triggerRender = function() {
-        for(var i in this._children) {
-            this._children[i].render();
-        }
-        this.trigger('render');
-    }
-    
-    this._resize = function() {
-        this._layout.apply(this);
-        for(var i in this._children) {
-            var child = this._children[i];
-            child._resize();
-        }
-    }
-    
-    this.render = function(target) {
-        this._paint();
-        this.trigger('paint');
-        this._place(target);
-        this._layout.apply(this);
-        this._applyBindings();
-        
-        
-        this.trigger('beforerender');
-        this._triggerRender();
-        
-        this.trigger('afterrender');
-        return this._elm;
-    };
-}
-
-$wb.ui.BasePane = function(topbar,header) {
-    var base = new $wb.ui.Widget({
-        tmpl:$wb.template.base
-    });
-    $.extend(true,this,base);
-    
-    this._layout = function() {
-        this.makeFullScreen();
-        $wb.ui.layout.GridBag.apply(this);
-    };
-    
-    this.makeFullScreen = function() {
-        var w = $(window).width();
-        var h = $(window).height();
-        this.elm().width(w);
-        this.elm().height(h);
-    }
-    
-    var self = this;
-    var resizeTimeout = null;
-    $(window).bind('resize',function() {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(function() {
-            self._resize();
-            self._resize();
-        },0);
-    });
-    
-    
-    this.add(topbar);
-    this.add(header);
-};
-
-$wb.ui.TopBar = function() {
-    $.extend(true,this,
-        new $wb.ui.Widget({tmpl:$wb.template.top.bar})
-    );
-    
-    this.add = function(title,func) {
-        var btn = new $wb.ui.Widget({
-            tmpl:$wb.template.top.menuItem,
-            bind:{
-                'paint':function() {
-                    this.elm().html(title);
-                },
-                'click':func
-            }
-        });
-        this._children.push(btn);
-        return btn;
-    }
-};
-
-$wb.ui.Header = function() {
-    $.extend(true,this,
-        new $wb.ui.Widget({tmpl:$wb.template.header.bar})
-    );
-
-    this.add = function(title,func) {
-        var btn = new $wb.ui.Widget({
-            tmpl:$wb.template.header.button,
-            bind:{
-                'paint':function() {
-                    this.elm().html(title);
-                },
-                'click':func
-            }
-        });
-        this._children.push(btn);
-        return btn;
-    }
-};
+//Layouts
 $wb.ui.layout = {};
 $wb.ui.layout.Stack = function() {
     this.elm().css({
@@ -224,6 +30,7 @@ $wb.ui.layout.Box = function() {
         });
     }
 }
+
 $wb.ui.layout.GridBag = function() {
     
     var w = this.elm().width();
@@ -246,54 +53,329 @@ $wb.ui.layout.GridBag = function() {
     last.width(w);
 }
 
-$wb.ui.Pane = function() {
-    var parent = new $wb.ui.Widget({
-        tmpl:$wb.template.panes.pane,
-        layout:$wb.ui.layout.Box
-    });
-    $.extend(true,this,parent);
-};
+//Widgets
+$wb.ui.Widget = $wb.Class('Widget',{
+    _elm:null,
+    _layoutMethod:null,
+    _tmpl:null,
+    _bind:null,
+    _bindInner:null,
+    _children:[],
+    _target:null,
+    __extends:[$wb.core.Events,$wb.core.Utils],
+    __construct:function(opts) {
+        this.__super();
+        
+        this.require(opts,'tmpl');
+        
+        this._tmpl = opts.tmpl;
+        this._elm = $(this._tmpl());
+        if (opts.target) {
+            this._target = this._elm.find(opts.target);
+        } else {
+            this._target = this._elm;
+        }
+        this._layoutMethod = opts.layout ? opts.layout : function() {};
+
+        if (!opts.bindInner) {
+            opts.bindInner = {};
+        }
+        if (!opts.bind) {
+            opts.bind = {};
+        }
+
+        this._bindInner = $.extend(true,{},opts.bindInner);
+        this._bind = $.extend(true,{},opts.bind);
+    },
+    add:function(child) {
+        this._children.push(child);
+    },
+    children:function() {
+        return this._children;
+    },
+    html: function(html) {
+        return this._elm.html(html);
+    },
+    find: function(path) {
+        return this._elm.find(path);
+    },
+    elm: function() {
+        return this._elm;
+    },
+    target:function() {
+        return this._target;
+    },
+    render: function(container) {
+        this._paint();
+        this._place(container);
+        this._layout();
+        this._renderChildren();
+        this.trigger('render');
+    },
+    
+    _paint: function() {
+        for(var i in this._children) {
+            this.target().append(this._children[i].elm());
+        }
+        this.trigger('paint');
+    },
+    _place: function(container) {
+        if (container) {
+            $(container).append(this.elm());
+        }
+    },
+    _layout: function() {
+        this.trigger('beforelayout');
+        if (this._layoutMethod) {
+            this._layoutMethod.apply(this);
+        }
+        this.trigger('afterlayout');
+    },
+    _renderChildren: function() {
+        this.trigger('beforerenderchildren');
+        for(var i in this._children) {
+            this._children[i].render();
+        }
+    },
+    _resize: function() {
+        this._layout.apply(this);
+        for(var i in this._children) {
+            var child = this._children[i];
+            child._resize();
+        }
+    }
+});
+
+$wb.ui.BasePane = $wb.Class('BasePane',{
+   __extends:[$wb.ui.Widget],
+   __construct:function(topbar,header) {
+        this.__super({
+            tmpl:$wb.template.base,
+            layout:$wb.ui.layout.GridBag
+        });
+
+        var self = this;
+        var resizeTimeout = null;
+        $(window).bind('resize',function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                self._resize();
+            },0);
+        });
+
+        this.add(topbar);
+        this.add(header);
+        this.bind('beforelayout',this.makeFullScreen);
+    },
+    makeFullScreen: function() {
+        var w = $(window).width();
+        var h = $(window).height();
+        this.elm().width(w);
+        this.elm().height(h);
+    }
+});
+
+$wb.ui.MenuButton = $wb.Class('MenuButton',{
+    _titleElm:null,
+    __extends:[$wb.ui.Widget],
+    __construct:function(opts) {
+        opts = $.extend({titleElm:'.wb-title'},opts)
+        this.__super(opts);
+        
+        this._titleElm = opts.titleElm;
+    },
+    title:function(title) {
+        return this.elm().find(this._titleElm).html(title);
+    }
+});
+
+$wb.ui.Menu = $wb.Class('Menu',{
+    _itemTmpl:null,
+    _subTmpl:null,
+    __extends:[$wb.ui.Widget],
+    _vertical:null,
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            tmpl:$wb.template.menu.base,
+            itemTmpl:$wb.template.menu.menuItem,
+            subTmpl:$wb.template.menu.subMenu,
+            vertical:true
+        },opts);
+        this.__super(opts);
+        
+        this.require(opts,'itemTmpl','subTmpl');
+        
+        this._vertical = opts.vertical;
+        this._subTmpl = opts.subTmpl;
+        this._itemTmpl = opts.itemTmpl;
+        
+        this.bind('paint',function() {
+            this.elm().addClass(this._vertical ? 'wb-vertical' : 'wb-horizontal');
+        });
+        
+    },
+    _makeButton:function(title,callback) {
+        var btn =  new $wb.ui.MenuButton({
+            tmpl:this._itemTmpl
+        });
+        btn.bind('paint',function() {
+            this.title(title);
+            if ($.type(callback) == 'function')
+                this.elm().unbind('click').bind('click',callback);
+        });
+        
+        return btn;
+    },
+    _makeSubMenu:function(title,menus) {
+        var subMenuBtn = this._makeButton(title);
+        var submenu = new $wb.ui.Menu({
+            tmpl:this._subTmpl,
+            itemTmpl:this._itemTmpl,
+            subTmpl:this._subTmpl,
+            vertical:true
+        });
+        for(var i in menus) {
+            var m = menus[i];
+            submenu.add(m.title,m.arg);
+        }
+        
+        subMenuBtn.add(submenu);
+        
+        return subMenuBtn;
+    },
+    add: function(title,arg) {
+        var elm;
+        if ($.type(arg) == 'array') {
+            elm = this._makeSubMenu(title,arg);
+        } else {
+            elm = this._makeButton(title,arg);
+            
+        }
+        this._children.push(elm);
+        return elm;
+    }
+});
+
+$wb.ui.TopBar = $wb.Class('TopBar',{
+    __extends:[$wb.ui.Menu],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        $.extend(opts,{tmpl:$wb.template.top.bar,vertical:false});
+        this.__super(opts);
+    }
+});
+
+$wb.ui.Header = $wb.Class('Header',{
+    __extends:[$wb.ui.Menu],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        $.extend(opts,{tmpl:$wb.template.header.bar,vertical:false});
+        this.__super(opts);
+    }
+});
+
+$wb.ui.Pane = $wb.Class('Pane',{
+    __extends:[$wb.ui.Widget],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            tmpl:$wb.template.panes.pane,
+            layout:$wb.ui.layout.Box
+        },opts);
+        
+        this.__super(opts);
+    }
+});
 
 
-$wb.ui.SplitPane = function(opts) {
-    var parent = new $wb.ui.Widget({
-        tmpl:$wb.template.panes.split
-    });
-    var defaultOpts = {
+$wb.ui.SplitPane = $wb.Class('SplitPane',{
+    defaultOpts: {
         vertical:true,
         splitPosition:.5
-    };
-    $.extend(true,this,parent);
-    
-    if (!opts) opts = {}
-    
-    opts = $.extend(defaultOpts,opts);
-    
-    this.elm().addClass(opts.vertical ? 'wb-vertical' : 'wb-horizontal');
-    
-    delete this.add;
-    
-    this.set = function(ix,pane) {
+    },
+    _vertical:true,
+    _splitPosition:.5,
+    __extends:[$wb.ui.Widget],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        var self = this;
+        opts = $.extend({},this.defaultOpts,opts,{
+            tmpl:$wb.template.panes.split,
+            layout:function() {
+                self.setSplitPosition(this._splitPosition);
+            }
+        });
+
+        this.__super(opts);
+        
+        this._vertical = opts.vertical;
+        this._splitPosition = opts.splitPosition;
+        this.elm().addClass(opts.vertical ? 'wb-vertical' : 'wb-horizontal');
+        this.bind('beforelayout',function() {
+            this.getSplitter().addClass(opts.vertical ? 'wb-vertical' : 'wb-horizontal');
+        });
+        this.bind('render',function() {
+            var moving = false;
+            var self = this;
+            this.getSplitter().mousedown(function(evt) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                moving = true;
+                self.elm().css('cursor',self._vertical ?  'col-resize': 'row-resize');
+            });
+            this.elm().mouseup(function(evt) {
+                evt.stopPropagation();
+                moving = false;
+                self.elm().css('cursor','inherit');
+            });
+            this.elm().mousemove(function(evt) {
+                if (!moving) return;
+                var splitterSize = $wb.utils.fullSize(self.getSplitter());
+                if (self._vertical) {
+                    var fullSize= self.elm().width()-splitterSize.width;
+                    var globalOffset = evt.pageX-Math.ceil(splitterSize.width/2);
+                    var elmOffset = self.elm().offset().left;
+                    
+                } else {
+                    var fullSize= self.elm().height()-splitterSize.height;
+                    var globalOffset = evt.pageY-Math.ceil(splitterSize.height/2);
+                    var elmOffset = self.elm().offset().top;
+                    
+                }
+                var offset = (globalOffset-elmOffset)/fullSize;
+                
+                self.setSplitPosition(offset);
+                self._children[0]._layout();
+                self._children[1]._layout();
+            });
+            
+        })
+    },
+    add:function() {throw new "Add is not supported for split panes"},
+    set: function(ix,pane) {
         if (ix < 0 || ix > 1)
             throw new "Invalid index for split pane: "+ix;
         this._children[ix] = pane;
-    }
-    this.get = function(ix) {
+    },
+    get: function(ix) {
         return this._children[ix];
-    }
-    this.getSplitter = function() {
+    },
+    getSplitter: function() {
         return this.elm().children('.wb-splitter');
-    }
-    this._paint = function() {
+    },
+    _paint: function() {
         this.getSplitter()
                 .before(this._children[0].elm())
                 .after(this._children[1].elm());
-    }
-    
-    this.setSplitPosition = function(splitPosition) {
+    },
+    setSplitPosition: function(splitPosition) {
+        if (!splitPosition)
+            splitPosition = this._splitPosition;
+        this._splitPosition = splitPosition;
         var splitterSize = $wb.utils.fullSize(this.getSplitter());
-        
-        if (opts.vertical) {
+
+        if (this._vertical) {
             var width = this.elm().width()-splitterSize.width;
             var height = this.elm().height();
             this.getSplitter().height(height);
@@ -311,7 +393,5 @@ $wb.ui.SplitPane = function(opts) {
             this.get(1).elm().height(h2).width(width);
         }
     }
-    this._layout = function() {
-        this.setSplitPosition(opts.splitPosition);
-    };
-};
+});
+
