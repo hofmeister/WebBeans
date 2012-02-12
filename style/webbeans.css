@@ -31,6 +31,15 @@ body {
     background-color: #787878;
     overflow:hidden;
 }
+/* tools */
+
+.wb-rounded {
+    -webkit-border-radius: 5px 5px 5px 5px ; 
+    -moz-border-radius: 5px 5px 5px 5px ; 
+    border-radius: 5px 5px 5px 5px ; 
+    -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box;
+}
+
 /* menu */
 .wb-menu,.wb-menuitem {
     position:relative;
@@ -259,4 +268,74 @@ body {
     border-top-color:#E8E8E8;
     border-top-width:1px;
     
+}
+
+
+/* tree */
+.wb-tree {
+    padding:3px;
+}
+.wb-tree.wb-noroot .wb-tree-root > .wb-tree-node > div {
+    display:none;
+}
+.wb-tree.wb-noroot .wb-tree-root > .wb-tree-node > .wb-tree-sub {
+    display:block !important;
+    padding-left:0;
+}
+
+.wb-tree .wb-title {
+    line-height: 16px;
+}
+.wb-tree .wb-tree-node > .wb-icon { 
+    width:16px;
+    height:16px;
+    margin-right: 3px;
+    background-repeat: no-repeat;
+    float:left;
+    background-image: url(../images/16x16-folder.png);
+}
+.wb-tree .wb-leaf > .wb-icon { 
+    background-image: url(../images/16x16-globe.png);
+}
+.wb-tree li > .wb-handle {
+    width:16px;
+    height:16px;
+    background-image: url(../images/tree-node-closed.png);
+    float:left;
+    background-repeat: no-repeat;
+    background-position: 4px 3px;
+}
+.wb-tree li.wb-open > .wb-handle {
+    background-image: url(../images/tree-node-open.png);
+}
+.wb-tree li.wb-leaf > .wb-handle {
+    background-image: none;
+    display:none;
+}
+.wb-tree-sub {
+    padding-left:25px;
+    display:none;
+}
+.wb-open > .wb-tree-sub {
+    display:block;
+}
+.wb-tree-node {
+    padding:2px 0;
+}
+.wb-tree-node > .wb-title {
+    display:inline;
+    cursor: pointer;
+    padding:1px 3px;
+}
+.wb-tree-node:focus {
+    outline: none;
+}
+.wb-tree-node:focus > .wb-title,
+    .wb-tree-node.wb-active > .wb-title {
+    background-color: #3875D7;
+    color:white;
+    -webkit-border-radius: 5px 5px 5px 5px ; 
+    -moz-border-radius: 5px 5px 5px 5px ; 
+    border-radius: 5px 5px 5px 5px ; 
+    -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box;
 }

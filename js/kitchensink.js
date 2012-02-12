@@ -49,8 +49,30 @@ $(function() {
 
                 topPane = new $wb.ui.TabPane({tabButtonFull:true});
                 
-                    var tab1 = new $wb.ui.Pane();
-                    tab1.html('Tab 1!');
+                    var treeTab = new $wb.ui.Pane();
+                        var tree = new $wb.ui.Tree({hideRoot:true});
+                        tree.add('root',[
+                            {title:'servers',
+                                arg:[
+                                    {title:'dk.cphse.com',
+                                        arg:[
+                                            {title:"service1"},
+                                            {title:"service2"},
+                                            {title:"web1"},
+                                            {title:"web2"}
+                                        ]
+                                    }
+                                ]},
+                            {title:'roles',
+                                arg:[
+                                    {title:"web"},
+                                    {title:"couchdb"},
+                                    {title:"rabbitmq"},
+                                    {title:"worker"},
+                                    {title:"service"}
+                                ]}
+                        ]);
+                        treeTab.add(tree);
                     
                     var tab2 = new $wb.ui.Pane();
                     tab2.html('Tab 2!');
@@ -58,7 +80,7 @@ $(function() {
                     var tab3 = new $wb.ui.Pane();
                     tab3.html('Tab 3!');
                     
-                    topPane.add("Tab 1",tab1);
+                    topPane.add("Tree",treeTab);
                     topPane.add("Tab 2",tab2);
                     topPane.add("Tab 3",tab3);
                 var bottomPane = new $wb.ui.Pane();

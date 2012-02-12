@@ -58,6 +58,14 @@ $wb.utils = {
           'margin':0,
           'border':0
       });
+    },
+    isClass:function(obj) {
+        return typeof obj.clz != 'undefined';
+    },
+    isA:function(obj,clz) {
+        if (!this.isClass(obj)) 
+            return false;
+        return obj.clz == clz;
     }
 };
 //jQuery util methods
@@ -133,5 +141,11 @@ $(function() {
             });
         }
         return $(this);
+    }
+    jQuery.fn.disableMarking = function() {
+        $(this).mousedown(function(evt) {
+            evt.preventDefault();
+            evt.stopPropagation();
+        });
     }
 })

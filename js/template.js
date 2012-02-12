@@ -68,6 +68,17 @@ $wb.template = {
         tab_button:function() {
             return '<li class="wb-tab"><div class="wb-title" /></li>';
         }
+    },
+    tree: {
+        base:function() {
+            return '<div class="wb-component wb-tree"><ul class="wb-tree-root" /></div>';
+        },
+        sub:function() {
+            return '<ul class="wb-tree-sub" />';
+        },
+        node:function() {
+            return '<li class="wb-tree-node"><div class="wb-handle" /><div class="wb-icon" /><div class="wb-title" /></li>';
+        }
     }
     
 };

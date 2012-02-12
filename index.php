@@ -11,6 +11,6 @@
         <script type="text/javascript" src="js/utils.js" ></script>
         <script type="text/javascript" src="js/template.js" ></script>
         <script type="text/javascript" src="js/widget.js" ></script>
-        <script type="text/javascript" src="js/layout.js" ></script>
+        <script type="text/javascript" src="js/kitchensink.js" ></script>
     </body>
 </html>

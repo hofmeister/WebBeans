@@ -102,7 +102,7 @@ $wb = {};
             for(var i = 1; i < arguments.length;i++) {
                 var arg = arguments[i];
                 if (!obj[arg])
-                    throw new "Missing argument: "+arg;
+                    throw "Missing argument: "+arg;
             }
         }
     });
