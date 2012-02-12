@@ -328,9 +328,19 @@ body {
     float:left;
     background-repeat: no-repeat;
     background-position: 4px 3px;
+    -webkit-transition: all 0.1s ease-out;  /* Saf3.2+, Chrome */
+     -moz-transition: all 0.1s ease-out;  /* FF4+ */
+      -ms-transition: all 0.1s ease-out;  /* IE10 */
+       -o-transition: all 0.1s ease-out;  /* Opera 10.5+ */
+          transition: all 0.1s ease-out;
 }
 .wb-tree li.wb-open > .wb-handle {
-    background-image: url(../images/tree-node-open.png);
+    -webkit-transform: rotate(90deg);  /* Saf3.1+, Chrome */
+     -moz-transform: rotate(90deg);  /* FF3.5+ */
+      -ms-transform: rotate(90deg);  /* IE9 */
+       -o-transform: rotate(90deg);  /* Opera 10.5 */
+          transform: rotate(90deg);
+               zoom: 1;
 }
 .wb-tree li.wb-leaf > .wb-handle {
     background-image: none;
