@@ -16,7 +16,7 @@ $(function() {
     
     
     var header = new $wb.ui.Header();
-    header.add('test 2',function() {alert('Hej')});
+    header.add('Create',function() {alert('Action!')});
     
     var base = new $wb.ui.BasePane(topbar, header);
     
