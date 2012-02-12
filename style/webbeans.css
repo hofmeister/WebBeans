@@ -65,10 +65,16 @@ body {
     box-shadow: 0px 10px 25px 0px #999; 
 
 }
+
+.wb-submenu > .wb-menuitem:last-child .wb-title {
+    -webkit-border-radius: 0px 0px 5px 5px ; 
+    -moz-border-radius: 0px 0px 5px 5px ; 
+    border-radius: 0px 0px 5px 5px ; 
+}
+
 .wb-menu.wb-horizontal,
     .wb-submenu.wb-horizontal {
     height:29px;
-    
 }
 .wb-menuitem {
     cursor: pointer;
