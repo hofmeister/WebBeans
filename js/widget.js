@@ -601,7 +601,13 @@ $wb.ui.Tree = $wb.Class('Tree',{
             var toggleOpen = function(evt) {
                 evt.preventDefault();
                 evt.stopPropagation();
-                $(this).parent().toggleClass('wb-open');
+                var parent = $(this).parent();
+                if (!parent.is('.wb-open')) 
+                    parent.children('.wb-tree-sub').slideDown('fast');
+                else {
+                    parent.children('.wb-tree-sub').slideUp('fast');
+                }
+                parent.toggleClass('wb-open');
             };
             this.elm().find('.wb-handle').bind('click',toggleOpen);
             this.elm().find('.wb-title,.wb-icon').bind('dblclick',toggleOpen);

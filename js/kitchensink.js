@@ -52,9 +52,9 @@ $(function() {
                     var treeTab = new $wb.ui.Pane();
                         var tree = new $wb.ui.Tree({hideRoot:true});
                         tree.add('root',[
-                            {title:'servers',
+                            {title:'Servers',
                                 arg:[
-                                    {title:'dk.cphse.com',
+                                    {title:'eu cluster',
                                         arg:[
                                             {title:"service1"},
                                             {title:"service2"},
@@ -63,7 +63,7 @@ $(function() {
                                         ]
                                     }
                                 ]},
-                            {title:'roles',
+                            {title:'Roles',
                                 arg:[
                                     {title:"web"},
                                     {title:"couchdb"},

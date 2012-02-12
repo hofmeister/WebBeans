@@ -31,7 +31,9 @@ body {
     background-color: #787878;
     overflow:hidden;
 }
+
 /* tools */
+
 
 .wb-rounded {
     -webkit-border-radius: 5px 5px 5px 5px ; 
@@ -156,6 +158,10 @@ body {
     padding:5px;
     outline: none;
     overflow: auto;
+    -webkit-border-radius: 5px 5px 5px 5px ; 
+    -moz-border-radius: 5px 5px 5px 5px ; 
+    border-radius: 5px 5px 5px 5px ; 
+    -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box;
 }
 
 /* split pane */
