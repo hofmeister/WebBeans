@@ -142,6 +142,17 @@ $(function() {
         }
         return $(this);
     }
+    jQuery.fn.outerMinHeight= function(height) {
+        var el = $(this)
+        if (typeof height == 'undefined')
+            return el.height()+el.edgeHeight();
+        else {
+            $(this).each(function() {
+               $(this).css('min-height',height-$(this).edgeHeight()); 
+            });
+        }
+        return $(this);
+    }
     jQuery.fn.disableMarking = function() {
         $(this).mousedown(function(evt) {
             evt.preventDefault();

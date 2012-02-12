@@ -93,16 +93,16 @@ $wb.ui.Widget = $wb.Class('Widget',{
         this.bind('resize',this._layout);
     },
     add:function(child) {
-        this._children.push(child);
+        this.children().push(child);
     },
     children:function() {
         return this._children;
     },
     html: function(html) {
-        return this._elm.html(html);
+        return this.target().html(html);
     },
     find: function(path) {
-        return this._elm.find(path);
+        return this.elm().find(path);
     },
     elm: function() {
         return this._elm;
@@ -121,7 +121,7 @@ $wb.ui.Widget = $wb.Class('Widget',{
     },
     
     _paint: function() {
-        for(var i in this._children) {
+        for(var i in this.children()) {
             this.target().append(this._children[i].elm());
         }
         this.trigger('paint');
@@ -598,12 +598,14 @@ $wb.ui.Tree = $wb.Class('Tree',{
         var self = this;
         btn.bind('paint',function() {
             this.title(title);
-            this.elm().find('.wb-handle').unbind('click').bind('click',function(evt) {
+            var toggleOpen = function(evt) {
                 evt.preventDefault();
                 evt.stopPropagation();
                 $(this).parent().toggleClass('wb-open');
-            });
-            this.elm().find('.wb-title').unbind('click').bind('click',function(evt) {
+            };
+            this.elm().find('.wb-handle').bind('click',toggleOpen);
+            this.elm().find('.wb-title,.wb-icon').bind('dblclick',toggleOpen);
+            this.elm().find('.wb-title,.wb-icon').bind('click',function(evt) {
                 evt.preventDefault();
                 evt.stopPropagation();
                 $(this).closest('.wb-tree').find('.wb-active').removeClass('wb-active');
@@ -631,5 +633,33 @@ $wb.ui.Tree = $wb.Class('Tree',{
         node.add(subTree);
         
         return node;
+    }
+});
+
+
+$wb.ui.HtmlPane = $wb.Class('HtmlPane',{
+    __extends:[$wb.ui.Pane],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            tmpl:$wb.template.panes.html,
+            target:'.wb-inner',
+            editable:false,
+            layout:function() {
+                var width = this.elm().width();
+                var height = this.elm().height();
+                this.target().outerWidth(width);
+                this.target().outerHeight(height);
+            }
+        },opts);
+        this.__super(opts);
+        
+        this.bind('paint',function() {
+            if (opts.editable) {
+                this.target().attr('contentEditable','true');
+            } else {
+                this.target().removeAttr('contentEditable');
+            }
+        });
     }
 });

@@ -67,6 +67,9 @@ $wb.template = {
         },
         tab_button:function() {
             return '<li class="wb-tab"><div class="wb-title" /></li>';
+        },
+        html:function() {
+             return '<div class="wb-pane wb-pane-html"><div class="wb-inner" /></div>';
         }
     },
     tree: {

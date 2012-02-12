@@ -145,6 +145,18 @@ body {
     overflow:auto;
     white-space:nowrap;
 }
+/* html pane */
+.wb-pane-html {
+    padding:5px;
+    
+}
+.wb-pane-html > .wb-inner {
+    background-color: white;
+    border:1px solid #BBB;
+    padding:5px;
+    outline: none;
+    overflow: auto;
+}
 
 /* split pane */
 .wb-splitpane {
@@ -326,6 +338,7 @@ body {
     display:inline;
     cursor: pointer;
     padding:1px 3px;
+    clear: both;
 }
 .wb-tree-node:focus {
     outline: none;

@@ -26,8 +26,8 @@ $(function() {
             
                 var topPane = new $wb.ui.TabPane({orientation:'bottom'});
                 
-                    var tab1 = new $wb.ui.Pane();
-                    tab1.html('Tab 1!');
+                    var htmlPane = new $wb.ui.HtmlPane({editable:true});
+                    htmlPane.html('<p>All sorts of HTML</p><p>All sorts of HTML</p><p>All sorts of HTML</p><p>All sorts of HTML</p><p>All sorts of HTML</p>');
                     
                     var tab2 = new $wb.ui.Pane();
                     tab2.html('Tab 2!');
@@ -35,7 +35,7 @@ $(function() {
                     var tab3 = new $wb.ui.Pane();
                     tab3.html('Tab 3!');
                     
-                    topPane.add("Tab 1",tab1);
+                    topPane.add("Html",htmlPane);
                     topPane.add("Tab 2",tab2);
                     topPane.add("Tab 3",tab3);
                     
