@@ -114,15 +114,24 @@ $(function() {
         var el = $(this)
         if (typeof width == 'undefined')
             return el.width()+el.edgeWidth();
-        else
-            return el.width(width-el.edgeWidth());
+        else {
+            $(this).each(function() {
+                $(this).width(width-$(this).edgeWidth());
+            })
+        }
+        return $(this);
+            
     }
     
     jQuery.fn.outerHeight= function(height) {
         var el = $(this)
         if (typeof height == 'undefined')
             return el.height()+el.edgeHeight();
-        else
-            return el.height(height-el.edgeHeight());
+        else {
+            $(this).each(function() {
+               $(this).height(height-$(this).edgeHeight()); 
+            });
+        }
+        return $(this);
     }
 })

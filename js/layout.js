@@ -23,9 +23,22 @@ $(function() {
         var mainSplitPane = new $wb.ui.SplitPane({vertical:true,splitPosition:.2,id:'main'});
 
             var rightPane = new $wb.ui.SplitPane({vertical:false,splitPosition:.8});
-
-                var topPane = new $wb.ui.Pane();
-                topPane.html('Top right!');
+            
+                var topPane = new $wb.ui.TabPane({orientation:'bottom'});
+                
+                    var tab1 = new $wb.ui.Pane();
+                    tab1.html('Tab 1!');
+                    
+                    var tab2 = new $wb.ui.Pane();
+                    tab2.html('Tab 2!');
+                    
+                    var tab3 = new $wb.ui.Pane();
+                    tab3.html('Tab 3!');
+                    
+                    topPane.add("Tab 1",tab1);
+                    topPane.add("Tab 2",tab2);
+                    topPane.add("Tab 3",tab3);
+                    
                 var bottomPane = new $wb.ui.Pane();
                 bottomPane.html('Bottom right!');
 
@@ -34,8 +47,20 @@ $(function() {
 
             var leftPane = new $wb.ui.SplitPane({vertical:false,splitPosition:.8});
 
-                var topPane = new $wb.ui.Pane();
-                topPane.html('Top left!');
+                topPane = new $wb.ui.TabPane({tabButtonFull:true});
+                
+                    var tab1 = new $wb.ui.Pane();
+                    tab1.html('Tab 1!');
+                    
+                    var tab2 = new $wb.ui.Pane();
+                    tab2.html('Tab 2!');
+                    
+                    var tab3 = new $wb.ui.Pane();
+                    tab3.html('Tab 3!');
+                    
+                    topPane.add("Tab 1",tab1);
+                    topPane.add("Tab 2",tab2);
+                    topPane.add("Tab 3",tab3);
                 var bottomPane = new $wb.ui.Pane();
                 bottomPane.html('Bottom left!');
 

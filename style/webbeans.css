@@ -9,6 +9,23 @@ html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pr
 /* fonts */
 body{font:13px/1.231 arial,helvetica,clean,sans-serif;*font-size:small;*font:x-small;}select,input,button,textarea{font:99% arial,helvetica,clean,sans-serif;}table{font-size:inherit;font:100%;}pre,code,kbd,samp,tt{font-family:monospace;*font-size:108%;line-height:100%;}
 
+/* oocss */
+.line:after{content: ".";display: block;height: 0;clear: both;visibility: hidden;}
+.lastUnit:after{content: " . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ";visibility:hidden; clear:both;height:0 !important;display:block;line-height:0;}
+.line{*zoom:1;}
+.unit{float:left;}
+.size1of1{float:none;}
+.size1of2{width:50%;}
+.size1of3{width:33.33333%;}
+.size2of3{width:66.66666%;}
+.size1of4{width:25%;}
+.size3of4{width:75%;}
+.size1of5{width:20%;}
+.size2of5{width:40%;}
+.size3of5{width:60%;}
+.size4of5{width:80%;}
+.lastUnit {display: table-cell; *display:block;*zoom:1;float:none;_position:relative; _left:-3px; _margin-right: -3px;width:auto;}
+
 body {
     font-family: "Helvetica Neue";
     background-color: #787878;
@@ -148,4 +165,88 @@ body {
 .wb-splitpane.wb-vertical > .wb-splitter {
     width:3px;
     cursor: col-resize;
+}
+
+/* tab pane */
+.wb-tabpane {
+    background-color: transparent;
+    background-image: none;
+    overflow:hidden;
+}
+.wb-tabpane.wb-top > .wb-tabs > .wb-tab,
+    .wb-tabpane.wb-bottom > .wb-tabs > .wb-tab{
+    float:left;
+}
+.wb-tabpane.wb-top > .wb-tabs,
+    .wb-tabpane.wb-bottom > .wb-tabs {
+    width:100%;
+}
+.wb-tabpane > .wb-panes > .wb-pane {
+    background-color: #E8E8E8;
+    background-image: none;
+    position:relative;
+    z-index: 2;
+}
+.wb-tabpane.wb-top > .wb-tabs {
+    border-bottom: 1px solid #404040;
+}
+.wb-tabs > .wb-tab {
+    padding:3px 10px;
+    font-size:12px;
+    line-height:12px;
+    border:1px solid #404040;
+    border-left-width:0;
+    border-bottom-width:0;
+    cursor: pointer;
+    background-color: #DCDCCF;
+    background-image: -webkit-linear-gradient(top, #DCDCCF 0, #C0C0C0 30%);     
+}
+.wb-tabs > .wb-tab:last-child {
+    border-right-width:0;
+}
+
+.wb-tab:hover {
+    background-color: #C6C6C6;
+    background-image: -webkit-linear-gradient(top, #C6C6C6 0, #ABABAB 30%); 
+}
+
+.wb-tab.wb-active,
+    .wb-tab.wb-active:hover {
+    background-color: #F9F9F9;
+    background-image: -webkit-linear-gradient(top, #F9F9F9 0, #E8E8E8 30%); 
+    border-bottom-color:#E8E8E8;
+    border-bottom-width:1px;
+    position:relative;
+    margin-bottom: -1px;
+    z-index: 1;
+    top:0px;
+}
+
+.wb-tabs > .wb-tab:last-child {
+    border-right-width:0;
+}
+
+.wb-tab:hover {
+    background-color: #C6C6C6;
+    background-image: -webkit-linear-gradient(top, #C6C6C6 0, #ABABAB 30%); 
+}
+
+.wb-tabpane.wb-bottom > .wb-tabs {
+    border-top:1px solid #404040;
+}
+.wb-tabpane.wb-bottom > .wb-tabs > .wb-tab {
+    border-top-width:0px;
+}
+
+.wb-tabpane.wb-bottom > .wb-tabs > .wb-tab.wb-active {
+    border-bottom:1px solid #404040;
+    border-top-width:0;
+    margin-bottom:0;
+    z-index: 1;
+    top:-1px;
+    background-color: #E8E8E8;
+    background-image: -webkit-linear-gradient(top, #E8E8E8 70%, #F9F9F9 100%); 
+    border-top-color:#E8E8E8;
+    border-top-width:1px;
+    
 }

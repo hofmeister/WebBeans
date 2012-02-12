@@ -4,12 +4,12 @@ $wb.template = {
     },
     top: {
         bar:function() {
-            return '<ul class="wb-menu wb-topmenu"><li class="wb-logo wb-menuitem"><img alt="WebBeans" title="WebBeans" src="images/logo.png" /></li></ul>';
+            return '<ul class="wb-menu wb-topmenu line"><li class="wb-logo wb-menuitem"><img alt="WebBeans" title="WebBeans" src="images/logo.png" /></li></ul>';
         }
     },
     header:{
         bar:function() {
-            return '<ul class="wb-menu wb-header"></ul>';
+            return '<ul class="wb-menu wb-header line"></ul>';
         },
         searchField:function() {
             return '<input type="text" class="wb-menuitem wb-search-global" />';
@@ -20,13 +20,13 @@ $wb.template = {
     },
     menu: {
         base:function() {
-            return '<ul class="wb-menu"></ul>';
+            return '<ul class="wb-menu line"></ul>';
         },
         menuItem:function() {
             return '<li class="wb-menuitem"><div class="wb-title" /></li>';
         },
         subMenu:function() {
-            return '<ul class="wb-submenu"></ul>';
+            return '<ul class="wb-submenu line"></ul>';
         }
     },
     window: {
@@ -48,8 +48,8 @@ $wb.template = {
         toolbarDivider:function() {
             return '<div class="wb-toolbar-divider"></div>';
         },
-        scrollbar:function(vertical) {
-            return '<div class="wb-scrollbar '+(vertical ? 'wb-vertical' : '')+'"><div class="wb-scroller"></div></div>';
+        scrollbar:function() {
+            return '<div class="wb-scrollbar"><div class="wb-scroller"></div></div>';
         }
     },
     button: function() {
@@ -61,6 +61,12 @@ $wb.template = {
         },
         split:function() {
             return '<div class="wb-pane wb-splitpane"><div class="wb-splitter"></div></div>';
+        },
+        tab:function() {
+            return '<div class="wb-pane wb-tabpane"><ul class="wb-tabs line" /><div class="wb-panes" /></div>';
+        },
+        tab_button:function() {
+            return '<li class="wb-tab"><div class="wb-title" /></li>';
         }
     }
     

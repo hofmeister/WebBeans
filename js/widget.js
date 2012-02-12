@@ -185,8 +185,7 @@ $wb.ui.BasePane = $wb.Class('BasePane',{
         this.elm().height(h);
     }
 });
-
-$wb.ui.MenuButton = $wb.Class('MenuButton',{
+$wb.ui.Button = $wb.Class('Button',{
     _titleElm:null,
     __extends:[$wb.ui.Widget],
     __construct:function(opts) {
@@ -197,6 +196,14 @@ $wb.ui.MenuButton = $wb.Class('MenuButton',{
     },
     title:function(title) {
         return this.elm().find(this._titleElm).html(title);
+    }
+});
+
+
+$wb.ui.MenuButton = $wb.Class('MenuButton',{
+    __extends:[$wb.ui.Button],
+    __construct:function(opts) {
+        this.__super(opts);
     }
 });
 
@@ -409,3 +416,126 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
     }
 });
 
+$wb.ui.TabButton = $wb.Class('TabButton',{
+    __extends:[$wb.ui.Button],
+    __construct:function(opts) {
+        this.__super(opts);
+    }
+});
+
+$wb.ui.TabPane = $wb.Class('TabPane',{
+    __extends:[$wb.ui.Widget],
+    
+    _tabTmpl:null,
+    _orientation:'top',
+    _tabButtonWidgets:[],
+    _tabButtonFull:false,
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            tmpl:$wb.template.panes.tab,
+            tabTmpl:$wb.template.panes.tab_button,
+            orientation:'top',
+            tabButtonFull:false,
+            target:'.wb-panes'
+        },opts);
+        
+        opts.layout = function() {
+            var layoutHorizontal = function() {
+                var h,w,tabs;
+                h = this.elm().height();
+                var btnH = this._tabButtons().outerHeight();
+                this.elm().find('.wb-pane').outerHeight(h-btnH);
+
+                if (this._tabButtonFull) {
+                    w = this._tabButtons().width();
+                    tabs = this._tabButtons().find('.wb-tab');
+                    if (tabs.length > 0) {
+                        var btnW = Math.floor(w / tabs.length);
+                        tabs.outerWidth(btnW);
+
+                        var first = btnW + (w-(btnW*tabs.length));
+
+                        $(tabs[0]).outerWidth(first);
+                    }
+                }
+            }
+            
+            switch(this._orientation) {
+                case 'top':
+                case 'bottom':
+                    layoutHorizontal.apply(this);
+                    break;
+                case 'left':
+                case 'right':
+                    break;
+            }
+            
+        };
+        
+        this.__super(opts);
+        
+        this.require(opts,'tabTmpl','orientation');
+        
+        this._orientation = opts.orientation;
+        this._tabTmpl = opts.tabTmpl;
+        this._tabButtonFull = opts.tabButtonFull;
+        
+        this.bind('paint',function() {
+            this.elm().addClass("wb-"+this._orientation);
+            switch(this._orientation) {
+                case 'top':
+                    this.elm().prepend(this._tabButtons());
+                    break;
+                case 'bottom':
+                    this.elm().append(this._tabButtons());
+                    break;
+                case 'left':
+                case 'right':
+                    break;
+            }
+        });
+        this.bind('beforerenderchildren',function() {
+            for(var i in this._tabButtonWidgets) {
+                var btn = this._tabButtonWidgets[i];
+                btn.render();
+                this._tabButtons().append(btn.elm());
+            }
+        });
+        this.bind('render',function() {
+            var btns = this._tabButtons().find('.wb-tab');
+            if (btns.length > 0)
+                $(btns[0]).click();
+        });
+        
+    },
+    _tabButtons:function() {
+        return this.elm().children('.wb-tabs');
+    },
+    _panes:function() {
+        return this.elm().children('.wb-panes');
+    },
+    _makeTabButton:function(title,pane) {
+        var btn =  new $wb.ui.TabButton({
+            tmpl:this._tabTmpl
+        });
+        var self = this;
+        btn.bind('paint',function() {
+            this.title(title);
+            btn.elm().click(function() {
+                self._tabButtons().find('.wb-tab').removeClass('wb-active');
+                $(this).addClass('wb-active');
+                self.target().children().hide();
+                pane.elm().show();
+            });
+        });
+        
+        return btn;
+    },
+    add: function(title,pane) {
+        var btn = this._makeTabButton(title,pane);
+        this._tabButtonWidgets.push(btn);
+        this._children.push(pane);
+        return pane;
+    }
+});
