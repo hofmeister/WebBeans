@@ -20,6 +20,12 @@ $wb.ui.layout.Stack = function() {
         nodes[i].elm().outerHeight(height);
     }
 }
+$wb.ui.layout.Flow = function() {
+    var nodes = this.children();
+    for(var i in nodes) {
+        nodes[i].elm().css({'float':'left'});
+    }
+}
 
 $wb.ui.layout.Box = function() {
     var width = this.elm().width();
