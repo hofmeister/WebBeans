@@ -340,7 +340,6 @@ body {
       -ms-transform: rotate(90deg);  /* IE9 */
        -o-transform: rotate(90deg);  /* Opera 10.5 */
           transform: rotate(90deg);
-               zoom: 1;
 }
 .wb-tree li.wb-leaf > .wb-handle {
     background-image: none;
