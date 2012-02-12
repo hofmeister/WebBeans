@@ -134,6 +134,7 @@ body {
     background-color: #c3c3c3;
     background-image: -webkit-linear-gradient(top, #c3c3c3 0, #aeaeae 80px); 
     overflow:auto;
+    white-space:nowrap;
 }
 
 /* split pane */
@@ -190,6 +191,15 @@ body {
 .wb-tabpane.wb-top > .wb-tabs {
     border-bottom: 1px solid #404040;
 }
+.wb-tabpane.wb-top .wb-tabs,
+    .wb-tabpane.wb-bottom .wb-tabs {
+    height:19px;
+}
+.wb-tab {
+    white-space:nowrap;
+    overflow:hidden;
+}
+
 .wb-tabs > .wb-tab {
     padding:3px 10px;
     font-size:12px;
