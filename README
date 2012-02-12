@@ -1,0 +1,9 @@
+WebBeans is basically a UI layer using jQuery.
+
+It makes heavy use of CSS3 and is currently only tested in Chrome on OSX.
+
+The idea here is to make something that is very lightweight - at first primarily for making admin systems , taking away the hazzle of making the complex ui's dmin systems often require.
+
+Its inspired by Java Swing, ExtJS,jQuery and on the visual side - brutally stolen from Netbeans as you might have guessed :)
+
+View a demo of current status: http://screencast.com/t/89fomjqPm
