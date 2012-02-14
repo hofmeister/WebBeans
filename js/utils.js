@@ -6,7 +6,7 @@ $wb.utils = {
             $(elm).width(w);
             $(elm).height(h);
             elm.trigger('resize');
-        }
+        };
         if (listenForResize) {
             $(window).bind('resize',resize);
         }
@@ -16,7 +16,7 @@ $wb.utils = {
         var out = {
             width:0,
             height:0
-        }
+        };
         $(elm).each(function() {
             var el = $(this);
             out.width += el.width()
@@ -46,7 +46,7 @@ $wb.utils = {
             var usedSize = $wb.utils.fullSize(others);
             elm.height(h-usedSize.height);
             elm.width(w);
-        }
+        };
         if (listenForResize) {
             parent.bind('resize',resize);
         }
@@ -74,31 +74,32 @@ $(function() {
     
     jQuery.fn.widget = function(widget) {
         return $(this).data('__widget',widget);
-    }
+    };
     
     jQuery.fn.fullSize = function() {
         return $wb.utils.fullSize(this);
-    }
+    };
     
     jQuery.fn.makeFullScreen = function(listenForResize) {
         return $wb.utils.makeFullScreen(this, listenForResize);
-    }
+    };
     
     jQuery.fn.fillContainer = function(listenForResize) {
         return $wb.utils.fillContainer(this, listenForResize);
-    }
+    };
     
     jQuery.fn.paddingHeight= function() {
-        var el = $(this)
+        var el = $(this);
         return parseInt(el.css('padding-top'))
                     +parseInt(el.css('padding-bottom'));
-    }
+    };
     
     jQuery.fn.paddingWidth= function() {
-        var el = $(this)
+        var el = $(this);
         return parseInt(el.css('padding-left'))
                     +parseInt(el.css('padding-right'));
-    }
+    };
+    
     jQuery.fn.edgeWidth = function() {
         var el = $(this);
         return parseInt(el.css('padding-left'))
@@ -107,7 +108,8 @@ $(function() {
                         +parseInt(el.css('margin-right'))
                         +parseInt(el.css('border-left-width'))
                         +parseInt(el.css('border-right-width'))
-    }
+    };
+    
     jQuery.fn.edgeHeight = function() {
         var el = $(this);
         return parseInt(el.css('padding-top'))
@@ -116,7 +118,7 @@ $(function() {
                         +parseInt(el.css('margin-bottom'))
                         +parseInt(el.css('border-top-width'))
                         +parseInt(el.css('border-bottom-width'))
-    }
+    };
     
     jQuery.fn.outerWidth = function(width) {
         var el = $(this)
@@ -128,8 +130,7 @@ $(function() {
             })
         }
         return $(this);
-            
-    }
+    };
     
     jQuery.fn.outerHeight= function(height) {
         var el = $(this)
@@ -141,7 +142,8 @@ $(function() {
             });
         }
         return $(this);
-    }
+    };
+    
     jQuery.fn.outerMinHeight= function(height) {
         var el = $(this)
         if (typeof height == 'undefined')
@@ -152,11 +154,12 @@ $(function() {
             });
         }
         return $(this);
-    }
+    };
+    
     jQuery.fn.disableMarking = function() {
         $(this).mousedown(function(evt) {
             evt.preventDefault();
             evt.stopPropagation();
         });
-    }
+    };
 })

@@ -14,7 +14,7 @@ $wb.ui.layout.Stack = function() {
             position:'absolute',
             top:0,
             left:0,
-            zIndex:i == 0 ? 10 : 1
+            zIndex:i === 0 ? 10 : 1
         });
         nodes[i].elm().outerWidth(width);
         nodes[i].elm().outerHeight(height);
@@ -25,7 +25,7 @@ $wb.ui.layout.Flow = function() {
     for(var i in nodes) {
         nodes[i].elm().css({'float':'left'});
     }
-}
+};
 
 $wb.ui.layout.Box = function() {
     var width = this.elm().width();
@@ -33,7 +33,7 @@ $wb.ui.layout.Box = function() {
     for(var i in nodes) {
         nodes[i].elm().outerWidth(width);
     }
-}
+};
 
 $wb.ui.layout.GridBag = function() {
     
@@ -41,13 +41,14 @@ $wb.ui.layout.GridBag = function() {
     var h = this.elm().height();
     var nodes = this.children();
     var others = [];
-    if (nodes.length == 0)
+    if (nodes.length === 0)
         return;
     
+    var last = null;
     for(var i in nodes) {
         var isLast = i == (nodes.length-1);
         if (isLast) {
-            var last = nodes[i].elm();
+            last = nodes[i].elm();
         } else {
             others.push(nodes[i].elm());
         }
@@ -56,7 +57,7 @@ $wb.ui.layout.GridBag = function() {
     var usedSize = $wb.utils.fullSize(others);
     last.outerHeight(h-usedSize.height);
     last.outerWidth(w);
-}
+};
 
 //Widgets
 $wb.ui.Widget = $wb.Class('Widget',{
@@ -191,6 +192,7 @@ $wb.ui.BasePane = $wb.Class('BasePane',{
         this.elm().height(h);
     }
 });
+
 $wb.ui.Button = $wb.Class('Button',{
     _titleElm:null,
     __extends:[$wb.ui.Widget],
@@ -375,12 +377,12 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
                 self._children[1]._layout();
             });
             
-        })
+        });
     },
-    add:function() {throw new "Add is not supported for split panes"},
+    add:function() {throw "Add is not supported for split panes";},
     set: function(ix,pane) {
         if (ix < 0 || ix > 1)
-            throw new "Invalid index for split pane: "+ix;
+            throw "Invalid index for split pane: "+ix;
         this._children[ix] = pane;
     },
     get: function(ix) {
@@ -465,7 +467,7 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
                         $(tabs[0]).outerWidth(first);
                     }
                 }
-            }
+            };
             
             switch(this._orientation) {
                 case 'top':
@@ -601,7 +603,7 @@ $wb.ui.Tree = $wb.Class('Tree',{
         var btn =  new $wb.ui.TreeNode({
             tmpl:this._nodeTmpl
         });
-        var self = this;
+        
         btn.bind('paint',function() {
             this.title(title);
             var toggleOpen = function(evt) {

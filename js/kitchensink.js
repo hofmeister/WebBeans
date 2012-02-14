@@ -3,20 +3,20 @@ $(function() {
     var topbar = new $wb.ui.TopBar();
     
     topbar.add('File',[
-        {title:"Open...",arg:function() {alert('OPEN!')}},
-        {title:"Save",arg:function() {alert('Save!')}},
-        {title:"Save as...",arg:function() {alert('Save ASS!')}},
-        {title:"Log out",arg:function() {alert('Log out!')}}
+        {title:"Open...",arg:function() {alert('OPEN!');}},
+        {title:"Save",arg:function() {alert('Save!');}},
+        {title:"Save as...",arg:function() {alert('Save ASS!');}},
+        {title:"Log out",arg:function() {alert('Log out!');}}
     ]);
     
     topbar.add('Tools',[
-        {title:"View",arg:function() {alert('OPEN!')}},
-        {title:"Preferences...",arg:function() {alert('Save!')}}
+        {title:"View",arg:function() {alert('OPEN!');}},
+        {title:"Preferences...",arg:function() {alert('Save!');}}
     ]);
     
     
     var header = new $wb.ui.Header();
-    header.add('Create',function() {alert('Action!')});
+    header.add('Create',function() {alert('Action!');});
     
     var base = new $wb.ui.BasePane(topbar, header);
     
