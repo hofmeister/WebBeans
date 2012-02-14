@@ -700,18 +700,13 @@ $wb.ui.Accordion = $wb.Class('Accordion',{
         });
         this.bind('render',function() {
             var first = $(this.elm().children('.wb-menuitem')[0]);
-            console.log(first);
-            console.log(first.find('.wb-submenu'));
             first.find('.wb-submenu').show().slideDown();
         });
         this.bind('afterlayout',function() {
             var h = this.elm().height();
             var mainBtns = this.elm().children('.wb-menuitem').children('.wb-title');
             var btnSize = mainBtns.fullSize();
-
-            console.log('h:'+h);
             var availH = h - btnSize.height;
-            console.log(availH);
             this.elm().find('.wb-submenu').outerHeight(availH);
         });
     }
