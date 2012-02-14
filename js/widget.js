@@ -36,14 +36,14 @@ $wb.ui.layout.Box = function() {
 };
 
 $wb.ui.layout.GridBag = function() {
-    
+
     var w = this.elm().width();
     var h = this.elm().height();
     var nodes = this.children();
     var others = [];
     if (nodes.length === 0)
         return;
-    
+
     var last = null;
     for(var i in nodes) {
         var isLast = i == (nodes.length-1);
@@ -53,7 +53,7 @@ $wb.ui.layout.GridBag = function() {
             others.push(nodes[i].elm());
         }
     }
-    
+
     var usedSize = $wb.utils.fullSize(others);
     last.outerHeight(h-usedSize.height);
     last.outerWidth(w);
@@ -70,24 +70,24 @@ $wb.ui.Widget = $wb.Class('Widget',{
     __extends:[$wb.core.Events,$wb.core.Utils],
     __construct:function(opts) {
         this.__super();
-        
+
         this.require(opts,'tmpl');
-        
+
         this._tmpl = opts.tmpl;
         this._elm = $(this._tmpl());
         this._elm.widget(this);
-        
+
         if (opts.target) {
             this._target = this._elm.find(opts.target);
         } else {
             this._target = this._elm;
         }
         this._id = opts.id;
-        
+
         if (this._id) {
             this.target().attr('id',this._id);
         }
-        
+
         this._layoutMethod = opts.layout ? opts.layout : function() {};
 
         if (!opts.bindInner) {
@@ -121,12 +121,12 @@ $wb.ui.Widget = $wb.Class('Widget',{
         this._paint();
         this._place(container);
         this._renderChildren();
-        
+
         this._layout();
-        
+
         this.trigger('render');
     },
-    
+
     _paint: function() {
         for(var i in this.children()) {
             this.target().append(this._children[i].elm());
@@ -199,7 +199,7 @@ $wb.ui.Button = $wb.Class('Button',{
     __construct:function(opts) {
         opts = $.extend({titleElm:'.wb-title'},opts)
         this.__super(opts);
-        
+
         this._titleElm = opts.titleElm;
     },
     title:function(title) {
@@ -229,17 +229,17 @@ $wb.ui.Menu = $wb.Class('Menu',{
             vertical:true
         },opts);
         this.__super(opts);
-        
+
         this.require(opts,'itemTmpl','subTmpl');
-        
+
         this._vertical = opts.vertical;
         this._subTmpl = opts.subTmpl;
         this._itemTmpl = opts.itemTmpl;
-        
+
         this.bind('paint',function() {
             this.elm().addClass(this._vertical ? 'wb-vertical' : 'wb-horizontal');
         });
-        
+
     },
     _makeButton:function(title,callback) {
         var btn =  new $wb.ui.MenuButton({
@@ -250,7 +250,7 @@ $wb.ui.Menu = $wb.Class('Menu',{
             if ($.type(callback) == 'function')
                 this.elm().unbind('click').bind('click',callback);
         });
-        
+
         return btn;
     },
     _makeSubMenu:function(title,menus) {
@@ -265,9 +265,9 @@ $wb.ui.Menu = $wb.Class('Menu',{
             var m = menus[i];
             submenu.add(m.title,m.arg);
         }
-        
+
         subMenuBtn.add(submenu);
-        
+
         return subMenuBtn;
     },
     add: function(title,arg) {
@@ -276,7 +276,7 @@ $wb.ui.Menu = $wb.Class('Menu',{
             elm = this._makeSubMenu(title,arg);
         } else {
             elm = this._makeButton(title,arg);
-            
+
         }
         this._children.push(elm);
         return elm;
@@ -309,7 +309,7 @@ $wb.ui.Pane = $wb.Class('Pane',{
             tmpl:$wb.template.panes.pane,
             layout:$wb.ui.layout.Box
         },opts);
-        
+
         this.__super(opts);
     }
 });
@@ -334,7 +334,7 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
         });
 
         this.__super(opts);
-        
+
         this._vertical = opts.vertical;
         this._splitPosition = opts.splitPosition;
         this.elm().addClass(opts.vertical ? 'wb-vertical' : 'wb-horizontal');
@@ -359,7 +359,7 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
                 var fullSize,globalOffset,elmOffset;
                 if (!moving) return;
                 var splitterSize = self.getSplitter().fullSize();
-                
+
                 if (self._vertical) {
                     fullSize= self.elm().width()-splitterSize.width;
                     globalOffset = evt.pageX-Math.ceil(splitterSize.width/2);
@@ -368,15 +368,15 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
                     fullSize= self.elm().height()-splitterSize.height;
                     globalOffset = evt.pageY-Math.ceil(splitterSize.height/2);
                     elmOffset = self.elm().offset().top;
-                    
+
                 }
                 var offset = (globalOffset-elmOffset)/fullSize;
-                
+
                 self.setSplitPosition(offset);
                 self._children[0]._layout();
                 self._children[1]._layout();
             });
-            
+
         });
     },
     add:function() {throw "Add is not supported for split panes";},
@@ -398,12 +398,12 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
     },
     setSplitPosition: function(splitPosition) {
         var width,height;
-        
+
         if (!splitPosition)
             splitPosition = this._splitPosition;
         this._splitPosition = splitPosition;
         var splitterSize = this.getSplitter().fullSize();
-        
+
         if (this._vertical) {
             width = this.elm().width()-splitterSize.width;
             height = parseInt(this.elm().css('height'));
@@ -433,7 +433,7 @@ $wb.ui.TabButton = $wb.Class('TabButton',{
 
 $wb.ui.TabPane = $wb.Class('TabPane',{
     __extends:[$wb.ui.Widget],
-    
+
     _tabTmpl:null,
     _orientation:'top',
     _tabButtonWidgets:[],
@@ -447,7 +447,7 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
             tabButtonFull:false,
             target:'.wb-panes'
         },opts);
-        
+
         opts.layout = function() {
             var layoutHorizontal = function() {
                 var h,w,tabs;
@@ -468,7 +468,7 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
                     }
                 }
             };
-            
+
             switch(this._orientation) {
                 case 'top':
                 case 'bottom':
@@ -478,17 +478,17 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
                 case 'right':
                     break;
             }
-            
+
         };
-        
+
         this.__super(opts);
-        
+
         this.require(opts,'tabTmpl','orientation');
-        
+
         this._orientation = opts.orientation;
         this._tabTmpl = opts.tabTmpl;
         this._tabButtonFull = opts.tabButtonFull;
-        
+
         this.bind('paint',function() {
             this.elm().addClass("wb-"+this._orientation);
             switch(this._orientation) {
@@ -515,7 +515,7 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
             if (btns.length > 0)
                 $(btns[0]).click();
         });
-        
+
     },
     _tabButtons:function() {
         return this.elm().children('.wb-tabs');
@@ -537,7 +537,7 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
                 pane.elm().show();
             });
         });
-        
+
         return btn;
     },
     add: function(title,pane) {
@@ -566,7 +566,7 @@ $wb.ui.Tree = $wb.Class('Tree',{
             subTreeTmpl:$wb.template.tree.sub,
             hideRoot:false,
             target:'.wb-tree-root'
-               
+
         },opts);
         this.__super(opts);
         this._nodeTmpl = opts.nodeTmpl;
@@ -588,7 +588,7 @@ $wb.ui.Tree = $wb.Class('Tree',{
             this.children().push(title);
             return title;
         }
-        
+
         var elm;
         if ($.type(arg) == 'array') {
             elm = this._makeSubTree(title,arg);
@@ -603,14 +603,14 @@ $wb.ui.Tree = $wb.Class('Tree',{
         var btn =  new $wb.ui.TreeNode({
             tmpl:this._nodeTmpl
         });
-        
+
         btn.bind('paint',function() {
             this.title(title);
             var toggleOpen = function(evt) {
                 evt.preventDefault();
                 evt.stopPropagation();
                 var parent = $(this).parent();
-                if (!parent.is('.wb-open')) 
+                if (!parent.is('.wb-open'))
                     parent.children('.wb-tree-sub').slideDown('fast');
                 else {
                     parent.children('.wb-tree-sub').slideUp('fast');
@@ -628,7 +628,7 @@ $wb.ui.Tree = $wb.Class('Tree',{
                     callback.apply(this);
             });
         });
-        
+
         return btn;
     },
     _makeSubTree:function(title,nodes) {
@@ -643,9 +643,9 @@ $wb.ui.Tree = $wb.Class('Tree',{
             var m = nodes[i];
             subTree.add(m.title,m.arg);
         }
-        
+
         node.add(subTree);
-        
+
         return node;
     }
 });
@@ -667,13 +667,52 @@ $wb.ui.HtmlPane = $wb.Class('HtmlPane',{
             }
         },opts);
         this.__super(opts);
-        
+
         this.bind('paint',function() {
             if (opts.editable) {
                 this.target().attr('contentEditable','true');
             } else {
                 this.target().removeAttr('contentEditable');
             }
+        });
+    }
+});
+
+$wb.ui.Accordion = $wb.Class('Accordion',{
+    __extends:[$wb.ui.Menu],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            tmpl:$wb.template.accordion
+        },opts);
+        this.__super(opts);
+        this.bind('paint',function() {
+            var self = this;
+
+            this.elm().children('.wb-menuitem').click(function() {
+                var menu = $(this);
+                var submenu = menu.find('.wb-submenu');
+                self.find('.wb-submenu').not(submenu).slideUp('fast');
+                submenu.slideDown('fast');
+            });
+            this.elm().disableMarking();
+
+        });
+        this.bind('render',function() {
+            var first = $(this.elm().children('.wb-menuitem')[0]);
+            console.log(first);
+            console.log(first.find('.wb-submenu'));
+            first.find('.wb-submenu').show().slideDown();
+        });
+        this.bind('afterlayout',function() {
+            var h = this.elm().height();
+            var mainBtns = this.elm().children('.wb-menuitem').children('.wb-title');
+            var btnSize = mainBtns.fullSize();
+
+            console.log('h:'+h);
+            var availH = h - btnSize.height;
+            console.log(availH);
+            this.elm().find('.wb-submenu').outerHeight(availH);
         });
     }
 });

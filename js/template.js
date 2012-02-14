@@ -82,6 +82,9 @@ $wb.template = {
         node:function() {
             return '<li class="wb-tree-node"><div class="wb-handle" /><div class="wb-icon" /><div class="wb-title" /></li>';
         }
+    },
+    accordion:function() {
+        return '<ul class="wb-pane wb-accordion"></ul>';
     }
-    
+
 };
