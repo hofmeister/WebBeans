@@ -39,6 +39,13 @@ body {
     border-radius: 5px 5px 5px 5px ;
     -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box;
 }
+.wb-animate {
+    -webkit-transition: all 0.1s ease-out;  /* Saf3.2+, Chrome */
+     -moz-transition: all 0.1s ease-out;  /* FF4+ */
+      -ms-transition: all 0.1s ease-out;  /* IE10 */
+       -o-transition: all 0.1s ease-out;  /* Opera 10.5+ */
+          transition: all 0.1s ease-out;
+}
 
 /* menu */
 .wb-menu,.wb-menuitem {
@@ -328,11 +335,6 @@ body {
     float:left;
     background-repeat: no-repeat;
     background-position: 4px 3px;
-    -webkit-transition: all 0.1s ease-out;  /* Saf3.2+, Chrome */
-     -moz-transition: all 0.1s ease-out;  /* FF4+ */
-      -ms-transition: all 0.1s ease-out;  /* IE10 */
-       -o-transition: all 0.1s ease-out;  /* Opera 10.5+ */
-          transition: all 0.1s ease-out;
 }
 .wb-tree li.wb-open > .wb-handle {
     -webkit-transform: rotate(90deg);  /* Saf3.1+, Chrome */
