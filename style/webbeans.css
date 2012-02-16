@@ -398,6 +398,12 @@ body {
     border-bottom: 1px solid #404040;
     text-shadow: 1px 1px 1px #ccc;
 }
+.wb-accordion > .wb-menuitem.wb-active > .wb-title {
+    background-color: #d8fdfe;
+    background-image: -webkit-linear-gradient(-90deg, #d8fdfe 0,#b7dcf4 100%);
+    border-bottom:1px solid #47687F;
+    color:black;
+}
 
 .wb-accordion .wb-menuitem:hover > .wb-submenu {
     display:none;

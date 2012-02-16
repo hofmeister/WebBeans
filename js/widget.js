@@ -688,9 +688,12 @@ $wb.ui.Accordion = $wb.Class('Accordion',{
         this.__super(opts);
         this.bind('paint',function() {
             var self = this;
-
-            this.elm().children('.wb-menuitem').click(function() {
+            var mainBtns = this.elm().children('.wb-menuitem');
+            mainBtns.click(function() {
+                mainBtns.removeClass('wb-active');
                 var menu = $(this);
+                menu.addClass('wb-active');
+
                 var submenu = menu.find('.wb-submenu');
                 self.find('.wb-submenu').not(submenu).slideUp('fast');
                 submenu.slideDown('fast');
@@ -700,6 +703,7 @@ $wb.ui.Accordion = $wb.Class('Accordion',{
         });
         this.bind('render',function() {
             var first = $(this.elm().children('.wb-menuitem')[0]);
+            first.addClass('wb-active');
             first.find('.wb-submenu').show().slideDown();
         });
         this.bind('afterlayout',function() {
