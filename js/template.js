@@ -83,6 +83,7 @@ $wb.template = {
             return '<li class="wb-tree-node"><div class="wb-handle" /><div class="wb-icon" /><div class="wb-title" /></li>';
         }
     },
+
     form: {
         form:function() {
             return '<form  class="wb-pane" />';
@@ -102,6 +103,9 @@ $wb.template = {
         select_option:function() {
             return '<option />';
         }
+    },
+    accordion:function() {
+        return '<ul class="wb-pane wb-accordion"></ul>';
     }
-    
+
 };
