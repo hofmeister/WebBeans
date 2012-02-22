@@ -373,3 +373,44 @@ body {
     border-radius: 5px 5px 5px 5px ; 
     -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box;
 }
+
+/* form */
+.wb-input-container {
+    padding:5px;
+}
+.wb-input-container > label:after {
+    content: ".";display: block;height: 0;clear: both;visibility: hidden;
+    
+}
+.wb-input-container > label > span {
+    display:block;
+    font-size:12px;
+    color:#333;    
+}
+
+
+
+.wb-input-container.wb-label-left > label > span {
+    text-align:right;
+    padding-right:5px;
+    float:left;
+    width:90px;
+}
+
+.wb-input-container.wb-label-right > label {
+    margin-left:95px;
+}
+.wb-input-container.wb-label-right > label > span {
+    text-align:left;
+    display:inline;
+    padding-left:5px;
+}
+
+.wb-input {
+    border:1px solid #999;
+    font-size:12px;
+    line-height:13px;
+}
+.wb-input.wb-empty {
+    color:#CCC;
+}

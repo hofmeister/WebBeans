@@ -82,6 +82,26 @@ $wb.template = {
         node:function() {
             return '<li class="wb-tree-node"><div class="wb-handle" /><div class="wb-icon" /><div class="wb-title" /></li>';
         }
+    },
+    form: {
+        form:function() {
+            return '<form  class="wb-pane" />';
+        },
+        input:function(type) {
+            return '<div class="wb-input-container"><label><span class="wb-label" /><input class="wb-input wb-input-'+type+'" type="'+type+'" value="" /></label></div>';
+        },
+        textarea:function() {
+            return '<div class="wb-input-container"><label><span class="wb-label" /><textarea class="wb-input wb-input-textarea" /></label></div>';
+        },
+        select:function() {
+            return '<div class="wb-input-container"><label><span class="wb-label" /><select class="wb-input wb-input-select" /></label></div>';
+        },
+        fieldset:function() {
+            return '<fieldset />';
+        },
+        select_option:function() {
+            return '<option />';
+        }
     }
     
 };
