@@ -177,4 +177,17 @@ $(function() {
         });
         $(this).attr('unselectable','true');
     };
+    jQuery.fn.enableMarking = function(textOnly) {
+        var val = textOnly ? 'text' : 'auto';
+        $(this).css({
+            '-webkit-touch-callout': val,
+            '-webkit-user-select': val,
+            '-khtml-user-select':val,
+            '-moz-user-select': val,
+            '-ms-user-select': val,
+            '-o-user-select':val,
+            'user-select':val
+        });
+        $(this).removeAttr('unselectable');
+    };
 })

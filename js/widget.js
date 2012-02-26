@@ -234,8 +234,10 @@ $wb.ui.Button = $wb.Class('Button',{
     __construct:function(opts) {
         opts = $.extend({titleElm:'.wb-title'},opts)
         this.__super(opts);
-
         this._titleElm = opts.titleElm;
+        this.bind('paint',function() {
+            this.elm().disableMarking();
+        });
     },
     title:function(title) {
         return this.elm().find(this._titleElm).html(title);
@@ -273,6 +275,7 @@ $wb.ui.Menu = $wb.Class('Menu',{
 
         this.bind('paint',function() {
             this.elm().addClass(this._vertical ? 'wb-vertical' : 'wb-horizontal');
+            this.elm().disableMarking();
         });
 
     },
@@ -369,6 +372,9 @@ $wb.ui.Pane = $wb.Class('Pane',{
         },opts);
 
         this.__super(opts);
+        this.bind('paint',function() {
+           this.elm().disableMarking(); 
+        });
     }
 });
 
@@ -490,7 +496,7 @@ $wb.ui.TabButton = $wb.Class('TabButton',{
 });
 
 $wb.ui.TabPane = $wb.Class('TabPane',{
-    __extends:[$wb.ui.Widget],
+    __extends:[$wb.ui.Pane],
 
     _tabTmpl:null,
     _orientation:'top',
@@ -732,6 +738,7 @@ $wb.ui.HtmlPane = $wb.Class('HtmlPane',{
             } else {
                 this.target().removeAttr('contentEditable');
             }
+            this.target().enableMarking(true);
         });
     }
 });
