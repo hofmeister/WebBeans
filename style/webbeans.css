@@ -68,7 +68,6 @@ body {
     -webkit-box-shadow: 0px 10px 25px 0px #999;
     -moz-box-shadow: 0px 10px 25px 0px #999;
     box-shadow: 0px 10px 25px 0px #999;
-
 }
 
 .wb-submenu > .wb-menuitem:last-child .wb-title {
@@ -105,7 +104,41 @@ body {
 .wb-menuitem:hover > .wb-submenu {
     display:block;
 }
+/* context */
+.wb-context {
+    position:absolute;
+    display:none;
+    z-index: 999;
+    width:130px;
+    background-color: white;
+    opacity:0.95;
+    -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box;
+    -webkit-box-shadow: 0px 10px 25px 0px #999;
+    -moz-box-shadow: 0px 10px 25px 0px #999;
+    box-shadow: 0px 10px 25px 0px #999;
+    display:block;
+    -webkit-border-radius: 5px ;
+    -moz-border-radius: 5px ;
+    border-radius:5px ;
+}
 
+.wb-context .wb-menuitem:hover > .wb-title {
+    background-color: #6e8bf4;
+    background-image: -webkit-linear-gradient(top, #6e8bf4, #2759f1);
+    color:white;
+}
+.wb-context > .wb-menuitem:first-child .wb-title {
+    -webkit-border-radius: 5px 5px 0px 0px ;
+    -moz-border-radius: 5px 5px 0px 0px ;
+    border-radius: 5px 5px 0px 0px ;
+}
+
+
+.wb-context > .wb-menuitem:last-child .wb-title {
+    -webkit-border-radius: 0px 0px 5px 5px ;
+    -moz-border-radius: 0px 0px 5px 5px ;
+    border-radius: 0px 0px 5px 5px ;
+}
 
 /* topmenu */
 .wb-topmenu {

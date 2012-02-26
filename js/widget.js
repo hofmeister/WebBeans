@@ -61,13 +61,14 @@ $wb.ui.layout.GridBag = function() {
 
 //Widgets
 $wb.ui.Widget = $wb.Class('Widget',{
+    __extends:[$wb.core.Events,$wb.core.Utils],
     _elm:null,
     _id:null,
     _layoutMethod:null,
     _tmpl:null,
     _children:[],
     _target:null,
-    __extends:[$wb.core.Events,$wb.core.Utils],
+    _context:null,
     __construct:function(opts) {
         this.__super();
 
@@ -75,6 +76,7 @@ $wb.ui.Widget = $wb.Class('Widget',{
 
         this._tmpl = opts.tmpl;
         this._elm = $(this._tmpl());
+        
         this._elm.widget(this);
 
         if (opts.target) {
@@ -125,8 +127,41 @@ $wb.ui.Widget = $wb.Class('Widget',{
         this._layout();
 
         this.trigger('render');
+        return this.elm();
     },
-
+    setContextMenu:function(w) {
+        var ccontext_id = '-wb-state-current-context';
+        
+        this.elm().bind('contextmenu',function(evt) {
+            //Remove all others
+            $('.'+ccontext_id).detach();
+            evt.preventDefault();
+            evt.stopPropagation();
+            
+            var elm = w.elm();
+            
+            $('body').append(elm);
+            elm.css({
+                position:'absolute',
+                left:evt.pageX,
+                top:evt.pageY,
+                zIndex:9999
+            });
+            elm.addClass(ccontext_id);
+            w.render();
+            w.source($(evt.target).widget());
+            var hideHandler = function(evt) {
+                evt.stopPropagation();
+                elm.detach();
+                $('body').unbind('click',hideHandler);
+                elm.unbind('click',hideHandler);
+            };
+            
+            elm.bind('click',hideHandler);
+            $('body').bind('click',hideHandler);
+            
+        });
+    },
     _paint: function() {
         for(var i in this.children()) {
             this.target().append(this._children[i].elm());
@@ -274,9 +309,14 @@ $wb.ui.Menu = $wb.Class('Menu',{
         var elm;
         if ($.type(arg) == 'array') {
             elm = this._makeSubMenu(title,arg);
+        } else if ($.type(title) == 'array') {
+            for(var i = 0; i < title.length;i++) {
+                var m = title[i];
+                this.add(m.title,m.arg);
+            }
+            return this._children;
         } else {
             elm = this._makeButton(title,arg);
-
         }
         this._children.push(elm);
         return elm;
@@ -289,6 +329,24 @@ $wb.ui.TopBar = $wb.Class('TopBar',{
         if (!opts) opts = {};
         $.extend(opts,{tmpl:$wb.template.top.bar,vertical:false});
         this.__super(opts);
+    }
+});
+
+$wb.ui.ContextMenu = $wb.Class('ContextMenu',{
+    __extends:[$wb.ui.Menu],
+    _source:null,
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        $.extend(opts,{tmpl:$wb.template.context.menu,vertical:true});
+        this.__super(opts);
+    },
+    source:function(source) {
+        if (source) {
+            this._source = source;
+            return this;
+        } else {
+            return this._source;
+        }
     }
 });
 
@@ -346,12 +404,12 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
             var self = this;
             this.getSplitter().mousedown(function(evt) {
                 evt.preventDefault();
-                evt.stopPropagation();
+                //evt.stopPropagation();
                 moving = true;
                 self.elm().css('cursor',self._vertical ?  'col-resize': 'row-resize');
             });
             $('body').mouseup(function(evt) {
-                evt.stopPropagation();
+                //evt.stopPropagation();
                 moving = false;
                 self.elm().css('cursor','inherit');
             });
@@ -608,7 +666,7 @@ $wb.ui.Tree = $wb.Class('Tree',{
             this.title(title);
             var toggleOpen = function(evt) {
                 evt.preventDefault();
-                evt.stopPropagation();
+                //evt.stopPropagation();
                 var parent = $(this).parent();
                 if (!parent.is('.wb-open'))
                     parent.children('.wb-tree-sub').slideDown('fast');
@@ -621,7 +679,7 @@ $wb.ui.Tree = $wb.Class('Tree',{
             this.elm().find('.wb-title,.wb-icon').bind('dblclick',toggleOpen);
             this.elm().find('.wb-title,.wb-icon').bind('click',function(evt) {
                 evt.preventDefault();
-                evt.stopPropagation();
+                //evt.stopPropagation();
                 $(this).closest('.wb-tree').find('.wb-active').removeClass('wb-active');
                 $(this).parent().addClass('wb-active');
                 if (callback)

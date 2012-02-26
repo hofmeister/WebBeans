@@ -7,6 +7,11 @@ $wb.template = {
             return '<ul class="wb-menu wb-topmenu line"><li class="wb-logo wb-menuitem"><img alt="WebBeans" title="WebBeans" src="images/logo.png" /></li></ul>';
         }
     },
+    context: {
+        menu:function() {
+            return '<ul class="wb-menu wb-context line"></ul>';
+        }
+    },
     header:{
         bar:function() {
             return '<ul class="wb-menu wb-header line"></ul>';

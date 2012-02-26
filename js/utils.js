@@ -73,7 +73,16 @@ $(function() {
     
     
     jQuery.fn.widget = function(widget) {
-        return $(this).data('__widget',widget);
+        var clz = '-wb-state-widget';
+        var elm = $(this);
+        if (widget) {
+            elm .addClass(clz);
+            return elm.data('__widget',widget);
+        } else {
+            if (elm.is('.'+clz))
+                return elm.data('__widget');
+            return elm.closest('.'+clz).data('__widget');
+        }
     };
     
     jQuery.fn.fullSize = function() {
@@ -157,9 +166,15 @@ $(function() {
     };
     
     jQuery.fn.disableMarking = function() {
-        $(this).mousedown(function(evt) {
-            evt.preventDefault();
-            evt.stopPropagation();
+        $(this).css({
+            '-webkit-touch-callout': 'none',
+            '-webkit-user-select': 'none',
+            '-khtml-user-select': 'none',
+            '-moz-user-select': 'none',
+            '-ms-user-select': 'none',
+            '-o-user-select': 'none',
+            'user-select': 'none'
         });
+        $(this).attr('unselectable','true');
     };
 })

@@ -17,8 +17,20 @@ $(function() {
 
     var header = new $wb.ui.Header();
     header.add('Create',function() {alert('Action!');});
+    
+    var context = new $wb.ui.ContextMenu();
+    context.add([
+        {title:"Test",arg:function() {
+            console.log(context.source());
+        }},
+        {title:"Save",arg:function() {alert('Save!');}},
+        {title:"Save as...",arg:function() {alert('Save ASS!');}},
+        {title:"Log out",arg:function() {alert('Log out!');}}
+    ]);
 
     var base = new $wb.ui.BasePane(topbar, header);
+    
+        base.setContextMenu(context);
 
         var mainSplitPane = new $wb.ui.SplitPane({vertical:true,splitPosition:.2,id:'main'});
 
@@ -71,8 +83,6 @@ $(function() {
                         input.add("first option");
                         input.add(2,"second option");
                         form.add(input);
-                        console.log(form);
-                        
                     
                     var tab3 = new $wb.ui.Pane();
                     tab3.html('Tab 3!');
