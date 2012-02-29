@@ -216,8 +216,10 @@ $wb.ui.BasePane = $wb.Class('BasePane',{
             },0);
         });
 
-        this.add(topbar);
-        this.add(header);
+        if (topbar)
+            this.add(topbar);
+        if (header)
+            this.add(header);
         this.bind('beforelayout',this.makeFullScreen);
     },
     makeFullScreen: function() {
@@ -227,6 +229,10 @@ $wb.ui.BasePane = $wb.Class('BasePane',{
         this.elm().height(h);
     }
 });
+
+
+
+
 
 $wb.ui.Button = $wb.Class('Button',{
     _titleElm:null,
@@ -374,6 +380,23 @@ $wb.ui.Pane = $wb.Class('Pane',{
         this.__super(opts);
         this.bind('paint',function() {
            this.elm().disableMarking(); 
+        });
+    }
+});
+
+
+$wb.ui.Canvas = $wb.Class('Canvas',{
+    __extends:[$wb.ui.Pane],
+   __construct:function(painter) {
+        this.__super({
+            tmpl:$wb.template.panes.canvas
+        });
+        this.bind('afterlayout',function() {
+            var elm = this.target();
+            elm.attr('width',elm.width());
+            elm.attr('height',elm.height());
+            elm.clearCanvas();
+            painter.apply(this);
         });
     }
 });

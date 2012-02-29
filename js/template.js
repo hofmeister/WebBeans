@@ -64,6 +64,9 @@ $wb.template = {
         pane:function() {
              return '<div class="wb-pane"></div>';
         },
+        canvas:function() {
+             return '<canvas class="wb-pane"></canvas>';
+        },
         split:function() {
             return '<div class="wb-pane wb-splitpane"><div class="wb-splitter"></div></div>';
         },
