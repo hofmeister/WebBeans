@@ -720,10 +720,12 @@ $wb.ui.Tree = $wb.Class('Tree',{
                  
             switch(evt.keyCode) {
                 case 38://UP
-                    prev.children('.wb-title').click();   
+                    if (prev.children('.wb-title').is(':visible'))
+                        prev.children('.wb-title').click();   
                     break;
                 case 40://DOWN
-                    next.children('.wb-title').click();
+                    if (next.children('.wb-title').is(':visible'))
+                        next.children('.wb-title').click();
                     break;
                 case 39://RIGHT
                     

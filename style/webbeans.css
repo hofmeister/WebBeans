@@ -374,7 +374,7 @@ body {
     float:left;
     background-repeat: no-repeat;
     background-position: 4px 3px;
-    margin-right: 3px;
+    margin-right: 6px;
 }
 .wb-tree li.wb-open > .wb-handle {
     -webkit-transform: rotate(90deg);  /* Saf3.1+, Chrome */
@@ -388,10 +388,10 @@ body {
     display:none;
 }
 .wb-tree li.wb-leaf {
-    
+    margin-left:19px;
 }
 .wb-tree-sub {
-    padding-left:40px;
+    padding-left:21px;
     display:none;
 }
 .wb-open > .wb-tree-sub {
