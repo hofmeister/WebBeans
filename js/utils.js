@@ -187,10 +187,22 @@ $(function() {
         var input = $('<input type="text" class="wb-keynav-input" style="position:absolute;left:-9999px" />')
         elm.append(input);
         
-        elm.bind('mouseover click focus',function(evt) {
+        elm.bind('mousedown',function(evt) {
+            evt.preventDefault();
+            $(this).mouseup();
+            $(this).click();
+        })
+        elm.bind('click mousedown',function(evt) {
             evt.stopPropagation();
             input.focus();
         });
+        input.focus(function() {
+            elm.addClass('wb-focus');
+        });
+        input.blur(function(evt) {
+            elm.removeClass('wb-focus');
+        });
+        
     };
     
     jQuery.fn.enableMarking = function(textOnly) {

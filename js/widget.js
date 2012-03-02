@@ -784,10 +784,14 @@ $wb.ui.Tree = $wb.Class('Tree',{
                 evt.preventDefault();
                 //evt.stopPropagation();
                 var parent = $(this).parent();
-                if (!parent.is('.wb-open'))
+                if (!parent.is('.wb-open')) {
                     parent.children('.wb-tree-sub').slideDown('fast');
-                else {
-                    parent.children('.wb-tree-sub').slideUp('fast');
+                } else {
+                    parent.children('.wb-tree-sub').slideUp('fast',function() {
+                        if (parent.find('.wb-active').length > 0) {
+                            parent.find('.wb-title:eq(0)').click();
+                        }
+                    });
                 }
                 parent.toggleClass('wb-open');
             };

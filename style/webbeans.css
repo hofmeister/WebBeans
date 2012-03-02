@@ -411,12 +411,18 @@ body {
 }
 .wb-tree-node:focus > .wb-title,
     .wb-tree-node.wb-active > .wb-title {
-    background-color: #3875D7;
-    color:white;
+    background-color: #CCC;
+    color:black;
     -webkit-border-radius: 5px 5px 5px 5px ;
     -moz-border-radius: 5px 5px 5px 5px ;
     border-radius: 5px 5px 5px 5px ;
     -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box;
+}
+
+.wb-tree.wb-focus .wb-tree-node:focus > .wb-title,
+    .wb-tree.wb-focus .wb-tree-node.wb-active > .wb-title {
+    background-color: #3875D7;
+    color:white;
 }
 
 /* accordion */
