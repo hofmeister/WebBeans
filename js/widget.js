@@ -413,11 +413,11 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
     __extends:[$wb.ui.Pane],
     __construct:function(opts) {
         if (!opts) opts = {};
-        var self = this;
+        
         opts = $.extend({},this.defaultOpts,opts,{
             tmpl:$wb.template.panes.split,
             layout:function() {
-                self.setSplitPosition(this._splitPosition);
+                this.setSplitPosition(this._splitPosition);
             }
         });
 
@@ -425,11 +425,14 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
 
         this._vertical = opts.vertical;
         this._splitPosition = opts.splitPosition;
-        this.elm().addClass(opts.vertical ? 'wb-vertical' : 'wb-horizontal');
-        this.bind('beforelayout',function() {
+        
+        this.bind('paint',function() {
             this.getSplitter().addClass(opts.vertical ? 'wb-vertical' : 'wb-horizontal');
-        });
-        this.bind('render',function() {
+            this.elm()
+                .removeClass('wb-vertical')
+                .removeClass('wb-horizontal')
+                .addClass(opts.vertical ? 'wb-vertical' : 'wb-horizontal');
+                
             var moving = false;
             var self = this;
             this.getSplitter().mousedown(function(evt) {
@@ -483,6 +486,7 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
         this.getSplitter()
                 .before(this._children[0].elm())
                 .after(this._children[1].elm());
+        this.trigger('paint');
     },
     setSplitPosition: function(splitPosition) {
         var width,height;

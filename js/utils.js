@@ -187,7 +187,7 @@ $(function() {
         var input = $('<input type="text" class="wb-keynav-input" style="position:absolute;left:-9999px" />')
         elm.append(input);
         
-        elm.bind('mouseover click',function(evt) {
+        elm.bind('mouseover click focus',function(evt) {
             evt.stopPropagation();
             input.focus();
         });
