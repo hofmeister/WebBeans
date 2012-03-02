@@ -30,11 +30,12 @@ $(function() {
 
     var base = new $wb.ui.BasePane(topbar, header);
     
-        base.setContextMenu(context);
+        
 
         var mainSplitPane = new $wb.ui.SplitPane({vertical:true,splitPosition:.2,id:'main'});
 
             var rightPane = new $wb.ui.SplitPane({vertical:false,splitPosition:.8});
+                rightPane.setContextMenu(context);
             
                 var topPane = new $wb.ui.TabPane({orientation:'bottom'});
                 

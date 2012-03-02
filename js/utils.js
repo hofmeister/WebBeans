@@ -177,6 +177,22 @@ $(function() {
         });
         $(this).attr('unselectable','true');
     };
+    
+    jQuery.fn.keyboardNavigation = function() {
+        var elm = $(this);
+        
+        if (elm.children('input.wb-keynav-input').length > 0) 
+            return;
+        
+        var input = $('<input type="text" class="wb-keynav-input" style="position:absolute;left:-9999px" />')
+        elm.append(input);
+        
+        elm.bind('mouseover click',function(evt) {
+            evt.stopPropagation();
+            input.focus();
+        });
+    };
+    
     jQuery.fn.enableMarking = function(textOnly) {
         var val = textOnly ? 'text' : 'auto';
         $(this).css({
