@@ -20,19 +20,19 @@ $wb.utils = {
         $(elm).each(function() {
             var el = $(this);
             out.width += el.width()
-                    +parseInt(el.css('padding-left'))
-                    +parseInt(el.css('padding-right'))
-                    +parseInt(el.css('margin-left'))
-                    +parseInt(el.css('margin-right'))
-                    +parseInt(el.css('border-left-width'))
-                    +parseInt(el.css('border-right-width'));
+            +parseInt(el.css('padding-left'))
+            +parseInt(el.css('padding-right'))
+            +parseInt(el.css('margin-left'))
+            +parseInt(el.css('margin-right'))
+            +parseInt(el.css('border-left-width'))
+            +parseInt(el.css('border-right-width'));
             out.height += el.height() 
-                    +parseInt(el.css('padding-top'))
-                    +parseInt(el.css('padding-bottom'))
-                    +parseInt(el.css('margin-top'))
-                    +parseInt(el.css('margin-bottom'))
-                    +parseInt(el.css('border-top-width'))
-                    +parseInt(el.css('border-bottom-width'));
+            +parseInt(el.css('padding-top'))
+            +parseInt(el.css('padding-bottom'))
+            +parseInt(el.css('margin-top'))
+            +parseInt(el.css('margin-bottom'))
+            +parseInt(el.css('border-top-width'))
+            +parseInt(el.css('border-bottom-width'));
         })
         return out;
     },
@@ -53,11 +53,11 @@ $wb.utils = {
         resize();
     },
     resetMPB:function(elm) {
-      elm.css({
-          'padding':0,
-          'margin':0,
-          'border':0
-      });
+        elm.css({
+            'padding':0,
+            'margin':0,
+            'border':0
+        });
     },
     isClass:function(obj) {
         return typeof obj.clz != 'undefined';
@@ -100,33 +100,33 @@ $(function() {
     jQuery.fn.paddingHeight= function() {
         var el = $(this);
         return parseInt(el.css('padding-top'))
-                    +parseInt(el.css('padding-bottom'));
+        +parseInt(el.css('padding-bottom'));
     };
     
     jQuery.fn.paddingWidth= function() {
         var el = $(this);
         return parseInt(el.css('padding-left'))
-                    +parseInt(el.css('padding-right'));
+        +parseInt(el.css('padding-right'));
     };
     
     jQuery.fn.edgeWidth = function() {
         var el = $(this);
         return parseInt(el.css('padding-left'))
-                        +parseInt(el.css('padding-right'))
-                        +parseInt(el.css('margin-left'))
-                        +parseInt(el.css('margin-right'))
-                        +parseInt(el.css('border-left-width'))
-                        +parseInt(el.css('border-right-width'))
+        +parseInt(el.css('padding-right'))
+        +parseInt(el.css('margin-left'))
+        +parseInt(el.css('margin-right'))
+        +parseInt(el.css('border-left-width'))
+        +parseInt(el.css('border-right-width'))
     };
     
     jQuery.fn.edgeHeight = function() {
         var el = $(this);
         return parseInt(el.css('padding-top'))
-                        +parseInt(el.css('padding-bottom'))
-                        +parseInt(el.css('margin-top'))
-                        +parseInt(el.css('margin-bottom'))
-                        +parseInt(el.css('border-top-width'))
-                        +parseInt(el.css('border-bottom-width'))
+        +parseInt(el.css('padding-bottom'))
+        +parseInt(el.css('margin-top'))
+        +parseInt(el.css('margin-bottom'))
+        +parseInt(el.css('border-top-width'))
+        +parseInt(el.css('border-bottom-width'))
     };
     
     jQuery.fn.outerWidth = function(width) {
@@ -147,7 +147,7 @@ $(function() {
             return el.height()+el.edgeHeight();
         else {
             $(this).each(function() {
-               $(this).height(height-$(this).edgeHeight()); 
+                $(this).height(height-$(this).edgeHeight()); 
             });
         }
         return $(this);
@@ -159,7 +159,7 @@ $(function() {
             return el.height()+el.edgeHeight();
         else {
             $(this).each(function() {
-               $(this).css('min-height',height-$(this).edgeHeight()); 
+                $(this).css('min-height',height-$(this).edgeHeight()); 
             });
         }
         return $(this);
@@ -218,4 +218,15 @@ $(function() {
         });
         $(this).removeAttr('unselectable');
     };
+    jQuery.fn.rotate = function(degrees) {
+        var val = 'rotate('+degrees+'deg)'
+        $(this).css({
+            '-webkit-transform': val,
+            '-moz-transform': val,
+            '-ms-transform': val,
+            '-o-transform': val,
+            'transform': val,
+            'zoom': 1
+        });
+    }
 })

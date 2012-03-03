@@ -1,0 +1,11 @@
+.game-board {
+    position: relative;
+}
+.game-car {
+    position:absolute;
+    width:90px;
+    height:45px;
+    background-image: url(../images/car.png);
+    left:0px;
+    top:0px;
+}

@@ -233,8 +233,6 @@ $wb.ui.BasePane = $wb.Class('BasePane',{
 
 
 
-
-
 $wb.ui.Button = $wb.Class('Button',{
     _titleElm:null,
     __extends:[$wb.ui.Widget],
