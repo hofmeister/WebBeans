@@ -60,6 +60,9 @@ var $wb = {};
         this._arr = [];
     };
     $wb.Set.prototype = {
+        get length() {
+            return this.arr.length;
+        },
         _clz:"Set",
         add:function(elm) {
             if (this._arr.indexOf(elm) == -1)
@@ -77,8 +80,61 @@ var $wb = {};
             return $.extend([],this._arr);
         }
     };
-
-
+    
+    $wb.Array = function(arr) {
+        this._arr = arr ? arr : [];
+    };
+    $wb.Array.prototype = {
+        _clz:"Array",
+        push:function(elm) {
+            this._arr.push(elm);
+        },
+        pushAll:function(elms) {
+            for(var i in elms) {
+                this.add(elms[i]);
+            }
+        },
+        get:function(i) {
+            return this._arr[i];
+        },
+        remove:function(i) {
+            return this._arr.splice(i,1);
+        },
+        removeValue:function(value) {
+            var ix = this._arr.indexOf(value);
+            if (ix > -1)
+                this.remove(ix);
+        },
+        length:function() {
+            return this._arr.length;
+        },
+        sort:function(compareFunction) {
+            this._arr.sort(compareFunction);
+        },
+        clear:function() {
+            for(var i = (this._arr.length-1); i > -1;i--) {
+                this.remove(i);
+            }
+        },
+        find:function(path,value) {
+            var out = [];
+            this.each(function(elm) {
+                if ($wb.utils.GetValue(elm,path) == value) {
+                    out.push(elm);
+                }
+            });
+            return out;
+        },
+        each:function(cb) {
+            for(var i in this._arr) {
+                cb.apply(this,[this._arr[i]]);
+            }
+        },
+        toArray:function() {
+            return this._arr;
+        }
+    };
+    
     $wb.core = {};
     $wb.core.Events = $wb.Class('Events',{
         _bindings:{},

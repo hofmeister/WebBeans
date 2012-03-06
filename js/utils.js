@@ -1,4 +1,29 @@
 $wb.utils = {
+    GetValue:function(obj,path) {
+        var parts = path.split('.');
+        var cur = obj;
+        for(var i in parts) {
+            var p = parts[i];
+            cur = cur[p];
+            if (!cur)
+                break;
+        }
+        return cur;
+    },
+    SetValue:function(obj,path,value) {
+        var parts = path.split('.');
+        var cur = obj;
+        for(var i in parts) {
+            var p = parts[i];
+            if (i == (parts.length-1))
+                break;
+            cur = cur[p];
+            if (!cur)
+                break;
+        }
+        if (p && cur)
+            cur[p] = value;
+    },
     makeFullScreen:function(elm,listenForResize) {
         var resize = function() {
             var w = $(window).width();
