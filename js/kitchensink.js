@@ -84,13 +84,29 @@ $(function() {
                         input.add("first option");
                         input.add(2,"second option");
                         form.add(input);
+                        
+                    var tStore = new $wb.data.TableStore();
+                    tStore.setColumns("id","name");
+                    tStore.addAll([
+                        {id:"marx",name:"Karl",age:28},
+                        {id:"jimbo",name:"Jim",age:54},
+                        {id:"jfk",name:"Johnny",age:54},
+                        {id:"fil",name:"Schopenhauer",age:54}
+                    ]);
                     
-                    var tab3 = new $wb.ui.Pane();
-                    tab3.html('Tab 3!');
+                    var table = new $wb.ui.Table({
+                        store:tStore
+                    });
+                    
+                    $wb.registry.register('tstore',tStore);
+                    $wb.registry.register('table',table);
+                    
+                    var tablePane = new $wb.ui.Pane();
+                    tablePane.add(table)
                     
                     topPane.add("Html",htmlPane);
                     topPane.add("Form",form);
-                    topPane.add("Tab 3",tab3);
+                    topPane.add("Table",tablePane);
                     
                 var bottomPane = new $wb.ui.Pane();
                 bottomPane.html('Bottom right!');
@@ -158,12 +174,12 @@ $(function() {
 
 
 
-                    var tab3 = new $wb.ui.Pane();
-                    tab3.html('Tab 3!');
+                    var table = new $wb.ui.Pane();
+                    table.html('Tab 3!');
 
                     topPane.add("Tree",treeTab);
                     topPane.add("Accordion",accordion);
-                    topPane.add("Tab 3",tab3);
+                    topPane.add("Tab 3",table);
                 var bottomPane = new $wb.ui.Pane();
                 bottomPane.html('Bottom left!');
 

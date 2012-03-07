@@ -80,6 +80,29 @@ $wb.template = {
              return '<div class="wb-pane wb-pane-html"><div class="wb-inner" /></div>';
         }
     },
+    table: {
+        base:function() {
+            return '<table class="wb-component wb-table"></table>';
+        },
+        header:function() {
+            return '<thead class="wb-table-head"></thead>';
+        },
+        footer:function() {
+            return '<tfoot class="wb-table-foot"></tfoot>';
+        },
+        body:function() {
+            return '<tbody class="wb-table-body"></tbody>';
+        },
+        row:function() {
+            return '<tr class="wb-table-row" />';
+        },
+        body_cell:function() {
+            return '<td class="wb-table-cell" />';
+        },
+        header_cell:function() {
+            return '<th class="wb-table-cell" />';
+        }
+    },
     tree: {
         base:function() {
             return '<div class="wb-component wb-tree"><ul class="wb-tree-root" /></div>';

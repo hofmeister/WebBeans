@@ -69,21 +69,16 @@ $wb.ui.Widget = $wb.Class('Widget',{
     _children:[],
     _target:null,
     _context:null,
+    opts:{},
     __construct:function(opts) {
         this.__super();
-
-        this.require(opts,'tmpl');
-
-        this._tmpl = opts.tmpl;
-        this._elm = $(this._tmpl());
         
-        this._elm.widget(this);
+        this.require(opts,'tmpl');
+        
+        $.extend(true,this.opts,opts);
 
-        if (opts.target) {
-            this._target = this._elm.find(opts.target);
-        } else {
-            this._target = this._elm;
-        }
+        this._makeElm();
+        
         this._id = opts.id;
 
         if (this._id) {
@@ -92,20 +87,33 @@ $wb.ui.Widget = $wb.Class('Widget',{
 
         this._layoutMethod = opts.layout ? opts.layout : function() {};
 
-        if (!opts.bindInner) {
-            opts.bindInner = {};
-        }
-        if (!opts.bind) {
-            opts.bind = {};
+        this.bind('resize',this._layout);
+    },
+    _makeElm:function() {
+        this._tmpl = this.opts.tmpl;
+        var el = $(this._tmpl());
+        if (this._elm) {
+            this._elm.html(el.html());
+            this._elm.unbind('click,keydown,keyup,mouseover,mousedown');
+        } else {
+            this._elm = el;
+            this._elm.widget(this);
         }
 
-        this.bind('resize',this._layout);
+        if (this.opts.target) {
+            this._target = this._elm.find(this.opts.target);
+        } else {
+            this._target = this._elm;
+        }
     },
     add:function(child) {
         this.children().push(child);
     },
     children:function() {
         return this._children;
+    },
+    parent:function() {
+        return this.elm().parent().closest('.-wb-state-widget').widget();
     },
     html: function(html) {
         return this.target().html(html);
@@ -122,9 +130,14 @@ $wb.ui.Widget = $wb.Class('Widget',{
     render: function(container) {
         this._paint();
         this._place(container);
-        this._renderChildren();
-
+        
         this._layout();
+        
+        this._renderChildren();
+        
+        this._layout();
+
+        
 
         this.trigger('render');
         return this.elm();
@@ -164,6 +177,7 @@ $wb.ui.Widget = $wb.Class('Widget',{
         });
     },
     _paint: function() {
+        this.trigger('before-paint');
         for(var i in this.children()) {
             this.target().append(this._children[i].elm());
         }
@@ -603,9 +617,17 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
         this.bind('render',function() {
             var btns = this._tabButtons().find('.wb-tab');
             if (btns.length > 0)
-                $(btns[0]).click();
+                this.showTab(0);
         });
 
+    },
+    showTab:function(ix) {
+        this._tabButtons().find('.wb-tab').removeClass('wb-active');
+        var btn = this._tabButtons().find('.wb-tab:eq('+ix+")");
+        btn.addClass('wb-active');
+        var panes = this._panes().children();
+        panes.offscreen();
+        $(panes[ix]).onscreen();
     },
     _tabButtons:function() {
         return this.elm().children('.wb-tabs');
@@ -613,25 +635,23 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
     _panes:function() {
         return this.elm().children('.wb-panes');
     },
-    _makeTabButton:function(title,pane) {
+    _makeTabButton:function(title,pane,ix) {
         var btn =  new $wb.ui.TabButton({
             tmpl:this._tabTmpl
         });
         var self = this;
         btn.bind('paint',function() {
             this.title(title);
-            btn.elm().click(function() {
-                self._tabButtons().find('.wb-tab').removeClass('wb-active');
-                $(this).addClass('wb-active');
-                self.target().children().hide();
-                pane.elm().show();
-            });
+        });
+        btn.elm().click(function(evt) {
+            evt.preventDefault();
+            self.showTab(ix);
         });
 
         return btn;
     },
     add: function(title,pane) {
-        var btn = this._makeTabButton(title,pane);
+        var btn = this._makeTabButton(title,pane,this.children().length);
         this._tabButtonWidgets.push(btn);
         this._children.push(pane);
         return pane;
@@ -644,6 +664,7 @@ $wb.ui.TreeNode = $wb.Class('TreeNode',{
         this.__super(opts);
     }
 });
+
 $wb.ui.Tree = $wb.Class('Tree',{
     __extends:[$wb.ui.Widget],
     _nodeTmpl:null,
@@ -663,16 +684,25 @@ $wb.ui.Tree = $wb.Class('Tree',{
         this._nodeTmpl = opts.nodeTmpl;
         this._subTreeTmpl = opts.subTreeTmpl;
         this._hideRoot = opts.hideRoot;
+        
+        this.bind('before-paint',function() {
+            if (opts.target == '.wb-tree-root')
+                this._makeElm();
+        });
+        
         this.bind('paint',function() {
             if (opts.hideRoot) {
                 this.elm().addClass('wb-noroot');
             }
             if (opts.target == '.wb-tree-root') {
-                this.elm().disableMarking();
                 this.elm().keyboardNavigation();
-                this._bindKeyNav();
             }
         });
+        if (opts.target == '.wb-tree-root') {
+            this.elm().disableMarking();
+            
+            this._bindKeyNav();
+        }
     },
     _bindKeyNav:function() {
         this.elm().keydown(function(evt) {
@@ -778,32 +808,32 @@ $wb.ui.Tree = $wb.Class('Tree',{
 
         btn.bind('paint',function() {
             this.title(title);
-            var toggleOpen = function(evt) {
-                evt.preventDefault();
-                //evt.stopPropagation();
-                var parent = $(this).parent();
-                if (!parent.is('.wb-open')) {
-                    parent.children('.wb-tree-sub').slideDown('fast');
-                } else {
-                    parent.children('.wb-tree-sub').slideUp('fast',function() {
-                        if (parent.find('.wb-active').length > 0) {
-                            parent.find('.wb-title:eq(0)').click();
-                        }
-                    });
-                }
-                parent.toggleClass('wb-open');
-            };
-            this.elm().find('.wb-handle').bind('click',toggleOpen);
-            this.elm().find('.wb-title,.wb-icon').bind('dblclick',toggleOpen);
-            this.elm().find('.wb-title,.wb-icon').bind('click',function(evt) {
-                evt.preventDefault();
-                //evt.stopPropagation();
-                $(this).closest('.wb-tree').find('.wb-active').removeClass('wb-active');
-                $(this).parent().addClass('wb-active');
-                $(this).parent().focus();
-                if (callback)
-                    callback.apply(this);
-            });
+        });
+        var toggleOpen = function(evt) {
+            evt.preventDefault();
+            //evt.stopPropagation();
+            var parent = $(this).parent();
+            if (!parent.is('.wb-open')) {
+                parent.children('.wb-tree-sub').slideDown('fast');
+            } else {
+                parent.children('.wb-tree-sub').slideUp('fast',function() {
+                    if (parent.find('.wb-active').length > 0) {
+                        parent.find('.wb-title:eq(0)').click();
+                    }
+                });
+            }
+            parent.toggleClass('wb-open');
+        };
+        btn.elm().find('.wb-handle').bind('click',toggleOpen);
+        btn.elm().find('.wb-title,.wb-icon').bind('dblclick',toggleOpen);
+        btn.elm().find('.wb-title,.wb-icon').bind('click',function(evt) {
+            evt.preventDefault();
+            //evt.stopPropagation();
+            $(this).closest('.wb-tree').find('.wb-active').removeClass('wb-active');
+            $(this).parent().addClass('wb-active');
+            $(this).parent().focus();
+            if (callback)
+                callback.apply(this);
         });
 
         return btn;
@@ -892,4 +922,91 @@ $wb.ui.Accordion = $wb.Class('Accordion',{
             this.elm().find('.wb-submenu').outerHeight(availH);
         });
     }
+});
+
+/* Table */
+$wb.ui.Table = $wb.Class('Table',{
+    __extends:[$wb.ui.Widget],
+    _header:null,
+    _footer:null,
+    _body:null,
+   __construct:function(opts) {
+       if (!opts) opts = {};
+        this.__super($.extend({
+            tmpl:$wb.template.table.base,
+            headerTmpl:$wb.template.table.header,
+            footerTmpl:$wb.template.table.footer,
+            bodyTmpl:$wb.template.table.body,
+            rowTmpl:$wb.template.table.row,
+            bodyCellTmpl:$wb.template.table.body_cell,
+            headerCellTmpl:$wb.template.table.header_cell
+        },opts));
+        
+        this.require(this.opts,'store');
+        
+        this._header = $(this.opts.headerTmpl());
+        this._footer = $(this.opts.footerTmpl());
+        this._body = $(this.opts.bodyTmpl());
+        
+        this.bind('paint',function() {
+            var elm = this.target();
+            elm.append(this._header)
+                .append(this._footer)
+                .append(this._body);
+                
+            this._paintHeader();
+            this._paintRows();
+            this._paintFooter();
+            
+        });
+        var self = this;
+        this.opts.store.bind('change',function() {
+            self.render();
+        });
+    },
+    _paintFooter:function() {
+        
+    },
+    _paintHeader:function() {
+        this._header.clear();
+        var row = this._newRow();
+        this._header.append(row);
+        var cols = this.opts.store.getColumns();
+        for(var i in cols) {
+            var col = cols[i];
+            var cell = $(this.opts.headerCellTmpl());
+            cell.attr('rel',col.id);
+            cell.html(col.name);
+            row.append(cell);
+        }
+    },
+    _newRow:function() {
+        return $(this.opts.rowTmpl());
+    },
+    _paintRows:function() {
+        this._body.clear();
+        var rows = this.opts.store.getRows().toArray();
+        var odd = false;
+        for(var i in rows) {
+            var row = this._paintRow(rows[i]);
+            this._body.append(row);
+            if (odd)
+                row.addClass('wb-odd');
+            odd = !odd;
+        }
+    },
+    _paintRow:function(rowData) {
+        var row = this._newRow();
+        
+        var cols = this.opts.store.getColumns();
+        for(var i in cols) {
+            var col = cols[i];
+            var cell = $(this.opts.bodyCellTmpl());
+            var value = $wb.utils.GetValue(rowData,col.id);
+            cell.html(value);
+            row.append(cell);
+        }
+        return row;
+    }
+    
 });

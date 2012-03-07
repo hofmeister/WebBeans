@@ -253,5 +253,15 @@ $(function() {
             'transform': val,
             'zoom': 1
         });
+    };
+    jQuery.fn.offscreen = function() {
+        $(this).addClass('wb-offscreen');
     }
+    jQuery.fn.onscreen = function() {
+        $(this).removeClass('wb-offscreen');
+    }
+    
+    jQuery.fn.clear = function() {
+        $(this).html('');
+    };
 })

@@ -55,7 +55,7 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         this._data.rows.push(row);
         this._makeDirty();
         this.trigger('change');
-        this.trigger('add',[row]);
+        this.trigger('added',[[row]]);
     },
     addAll:function(rows) {
         for(var i in rows) {
@@ -64,7 +64,7 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         if (rows.length > 0) {
             this._makeDirty();
             this.trigger('change');
-            this.trigger('addAll',[rows]);
+            this.trigger('added',[rows]);
         }
     },
     get:function(ix) {
@@ -167,5 +167,64 @@ $wb.data.ListStore = $wb.Class('ListStore',{
                 return false;
         }
         return true;
+    }
+});
+
+$wb.data.TableStore = $wb.Class('TableStore',{
+    __extends:[$wb.data.ListStore],
+    _cols:[],
+    __construct:function(opts) {
+        this.__super(opts);
+    },
+    setColumns:function() {
+        this._clearColumns();
+        this._addColumns(arguments);
+        this.trigger('columns-changed');
+        this.trigger('change');
+        return this;
+    },
+    getColumns:function() {
+        return this._cols;
+    },
+    clearColumns:function() {
+        this._clearColumns();
+        this.trigger('columns-changed');
+        this.trigger('change');
+        return this;
+        
+    },
+    addColumn:function(id,name) {
+        this._addColumn(id,name);
+        this.trigger('columns-changed');
+        this.trigger('change');
+        return this;
+    },
+    addColumns:function(columns) {
+        this._addColumns(columns);
+        this.trigger('columns-changed');
+        this.trigger('change');
+        return this;
+    },
+    _clearColumns:function() {
+        this._cols = [];
+        
+    },
+    _addColumn:function(id,name) {
+        if (!name)
+            name = id;
+        this._cols.push({id:id,name:name});
+    },
+    _addColumns:function(columns) {
+        for(var i in columns) {
+            var col = columns[i];
+            if ($.type(col) == 'string')
+                col = {id:col};
+            
+            if (!col || !col.id) continue;
+            if (!col.name)
+                col.name = col.id;
+            this._cols.push(col);
+        }
+        
     }
 });

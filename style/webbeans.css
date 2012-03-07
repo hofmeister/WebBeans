@@ -46,6 +46,10 @@ body {
        -o-transition: all 0.1s ease-out;  /* Opera 10.5+ */
           transition: all 0.1s ease-out;
 }
+.wb-offscreen {
+    position:absolute !important;
+    left:-9999px !important;
+}
 
 /* menu */
 .wb-menu,.wb-menuitem {
@@ -513,4 +517,30 @@ body {
 }
 .wb-input.wb-empty {
     color:#CCC;
+}
+
+
+/* table */
+
+.wb-table, 
+    .wb-table-head,
+    .wb-table-foot,
+    .wb-table-body {
+    width:100%;
+}
+.wb-table .wb-table-cell {
+    
+    padding:2px 5px;
+}
+.wb-table .wb-table-row.wb-odd {
+    background-color: white;
+}
+.wb-table-head .wb-table-cell {
+    background-color: #F9F9F9;
+    background-image: -webkit-linear-gradient(top, #F9F9F9 0, #E8E8E8 30%);
+    border-bottom:1px solid  #404040;
+    border-right:1px solid #404040;
+}
+.wb-table-head .wb-table-cell:last-child {
+    border-right:0px;
 }

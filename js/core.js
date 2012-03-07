@@ -136,6 +136,19 @@ var $wb = {};
     };
     
     $wb.core = {};
+    
+    $wb.core.Registry = $wb.Class('Registry',{
+        _data:{},
+        get:function(key) {
+            return this._data[key.toLowerCase()];
+        },
+        register:function(key,value) {
+            this._data[key.toLowerCase()] = value;
+        },
+        unregister:function(key) {
+            delete this._data[key.toLowerCase()];
+        }
+    });
     $wb.core.Events = $wb.Class('Events',{
         _bindings:{},
         trigger:function(evt,args) {
@@ -162,4 +175,7 @@ var $wb = {};
             }
         }
     });
+    
+    //Init global registry
+    $wb.registry = new $wb.core.Registry();
 })()
