@@ -1,18 +1,54 @@
 $(function() {
+    
+    if (window.$qt) {
+        $qt.setTitle($('title').html());
+        $qt.addMenu("file","File");
+            $qt.addMenuItem("file","open","Open...");
+            $qt.addMenuItem("file","debug","Debug");
+            $qt.addMenuItem("file","saveas","Save as..");
+            $qt.addMenuItem("file","logout","Log out");
+        $qt.addMenu("tools","Tools");
+            $qt.addMenuItem("tools","prefs","Prefs");
+            $qt.addMenuItem("tools","view","View");
+        $qt.menuClicked.connect(function(menuId) {
+            switch(menuId) {
+                case 'open':
+                    alert('OPEN!');
+                    return;
+                case 'logout':
+                    alert('Log out!');
+                    return;
+                case 'view':
+                    alert('View it!');
+                    return;
+                case 'prefs':
+                    alert('Pref PANE!');
+                    return;
+            }
+            
+        });
+            
+    } else {
+        var topbar = new $wb.ui.TopBar();
 
-    var topbar = new $wb.ui.TopBar();
+        topbar.add('File',[
+            {title:"Open...",arg:function() {alert('OPEN!');}},
+            {title:"Debug",arg:function() {
+                    if (window.$qt) {
+                        window.$qt.toggleDebug();
+                    }
+            }},
+            {title:"Save as...",arg:function() {alert('Save ASS!');}},
+            {title:"Log out",arg:function() {alert('Log out!');}}
+        ]);
 
-    topbar.add('File',[
-        {title:"Open...",arg:function() {alert('OPEN!');}},
-        {title:"Save",arg:function() {alert('Save!');}},
-        {title:"Save as...",arg:function() {alert('Save ASS!');}},
-        {title:"Log out",arg:function() {alert('Log out!');}}
-    ]);
+        topbar.add('Tools',[
+            {title:"View",arg:function() {alert('OPEN!');}},
+            {title:"Preferences...",arg:function() {alert('Save!');}}
+        ]);
+    }
 
-    topbar.add('Tools',[
-        {title:"View",arg:function() {alert('OPEN!');}},
-        {title:"Preferences...",arg:function() {alert('Save!');}}
-    ]);
+    
 
 
     var header = new $wb.ui.Header();
@@ -27,6 +63,15 @@ $(function() {
         {title:"Save as...",arg:function() {alert('Save ASS!');}},
         {title:"Log out",arg:function() {alert('Log out!');}}
     ]);
+    
+    if (window.$qt) {
+        context.add([{title:'Debug',arg:function() {
+            window.$qt.toggleDebug();
+        }}]);
+        context.add([{title:'Reload',arg:function() {
+            location.reload();
+        }}]);
+    }
 
     var base = new $wb.ui.BasePane(topbar, header);
     
@@ -74,7 +119,7 @@ $(function() {
                         form.add(input);
                         
                         input = new $wb.ui.form.TextArea(
-                            {   name:'thetext',
+                            {name:'thetext',
                                 label:'Text Area',
                                 labelPosition:'right'});
                         form.add(input);
