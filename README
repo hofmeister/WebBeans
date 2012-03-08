@@ -9,3 +9,10 @@ It's inspired by Java Swing, ExtJS,jQuery and on the visual side - brutally stol
 View a demo of current status: http://screencast.com/t/89fomjqPm
 
 Any and all forks are welcome and appreciated - i'm building this because I want it... now... :)
+
+Update:
+Just added a desktop wrapper app that allows you to add native menus to the application. It uses QtWebkit to render the 
+application itself.
+
+
+Build using Qt Creator
