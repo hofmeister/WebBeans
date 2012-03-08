@@ -22,6 +22,11 @@
     <height>768</height>
    </size>
   </property>
+  <property name="font">
+   <font>
+    <family>Lucida Grande</family>
+   </font>
+  </property>
   <property name="contextMenuPolicy">
    <enum>Qt::NoContextMenu</enum>
   </property>
@@ -56,6 +61,11 @@
         <verstretch>100</verstretch>
        </sizepolicy>
       </property>
+      <property name="font">
+       <font>
+        <family>Lucida Grande</family>
+       </font>
+      </property>
       <property name="contextMenuPolicy">
        <enum>Qt::NoContextMenu</enum>
       </property>
@@ -64,7 +74,7 @@
       </property>
       <property name="url">
        <url>
-        <string>file:///Users/henrik/git/private/webbeans/index.html</string>
+        <string>http://vonhofmeister.com/webbeans/</string>
        </url>
       </property>
      </widget>

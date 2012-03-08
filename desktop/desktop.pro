@@ -6,7 +6,7 @@
 
 QT       += core gui webkit
 
-TARGET = webbeans_app
+TARGET = desktop
 TEMPLATE = app
 
 
