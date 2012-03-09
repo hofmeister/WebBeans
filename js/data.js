@@ -157,7 +157,7 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         
     },
     _sort:function() {
-        if (this._sort)
+        if (this._sortFunction)
             this._data.rows.sort(this._sortFunction);
         
     },

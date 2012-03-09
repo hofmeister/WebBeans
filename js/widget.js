@@ -557,7 +557,7 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
                 var h,w,tabs;
                 h = this.elm().height();
                 var btnH = this._tabButtons().outerHeight();
-                this.elm().find('.wb-pane').outerHeight(h-btnH);
+                this.elm().find('.wb-pane,.wb-panes').outerHeight(h-btnH);
 
                 if (this._tabButtonFull) {
                     w = this._tabButtons().width();
@@ -626,6 +626,7 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
         var btn = this._tabButtons().find('.wb-tab:eq('+ix+")");
         btn.addClass('wb-active');
         var panes = this._panes().children();
+        
         panes.offscreen();
         $(panes[ix]).onscreen();
     },
