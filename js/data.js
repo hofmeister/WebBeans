@@ -143,7 +143,8 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         this._clearFiltered();
         this._sort();
         var rowI = 0;
-        for(var i in this._data.rows.toArray()) {
+        var rows = this._data.rows.toArray();
+        for(var i = 0; i < rows.length;i++ ) {
             var row = this._data.rows.get(i);
             if (this._isValidRow(row)) {
                 if (rowI < this._offset) continue;
@@ -161,7 +162,8 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         
     },
     _isValidRow:function(row) {
-        for(var fi in this._filters.toArray()) {
+        var filters = this._filters.toArray();
+        for(var fi = 0; fi < filters.length;fi++) {
             var f = this._filters.get(fi);
             if (!f(row))
                 return false;
@@ -215,10 +217,12 @@ $wb.data.TableStore = $wb.Class('TableStore',{
         this._cols.push({id:id,name:name});
     },
     _addColumns:function(columns) {
-        for(var i in columns) {
+        
+        for(var i = 0;i < columns.length;i++) {
             var col = columns[i];
             if ($.type(col) == 'string')
                 col = {id:col};
+            
             
             if (!col || !col.id) continue;
             if (!col.name)

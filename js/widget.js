@@ -729,7 +729,9 @@ $wb.ui.Tree = $wb.Class('Tree',{
             var nextNode = false;
             var lastNode = null;
             
-            for(var i in visibleNodes) {
+            
+            
+            for(var i = 0; i < visibleNodes.length;i++) {
                 var node = $(visibleNodes[i]);
                 
                 if (nextNode) {
@@ -739,13 +741,14 @@ $wb.ui.Tree = $wb.Class('Tree',{
 
                 if (node.is('.wb-active')) {
                     nextNode = true;
-                    if (lastNode)
+                    if (lastNode) {
                         prev = lastNode;
+                    }
+                        
                 }
                 lastNode = node;
             }
             
-                 
             switch(evt.keyCode) {
                 case 38://UP
                     if (prev.children('.wb-title').is(':visible'))
@@ -972,7 +975,7 @@ $wb.ui.Table = $wb.Class('Table',{
         var row = this._newRow();
         this._header.append(row);
         var cols = this.opts.store.getColumns();
-        for(var i in cols) {
+        for(var i = 0;i < cols.length;i++) {
             var col = cols[i];
             var cell = $(this.opts.headerCellTmpl());
             cell.attr('rel',col.id);
