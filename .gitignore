@@ -1,3 +1,5 @@
 nbproject
 desktop-build-desktop-Desktop_Qt_4_8_0_for_GCC__Qt_SDK__Debug
 desktop/desktop.pro.user
+server/target/
+server/nbactions.xml
