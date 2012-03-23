@@ -5,29 +5,31 @@ import com.vonhof.babelshark.language.JsonLanguage;
 import com.vonhof.webi.FileRequestHandler;
 import com.vonhof.webi.Webi;
 import com.vonhof.webi.mvc.MVCRequestHandler;
+import com.vonhof.webi.websocket.SocketService;
 import java.io.File;
 import java.sql.SQLException;
+import org.hsqldb.server.Server;
 
 public class DemoServer {
     public static void main( String[] args ) throws SQLException, Exception {
         
         BabelShark.register(new JsonLanguage());
         
-        final Webi server = new Webi(8081);
-        final MVCRequestHandler restHandler = new MVCRequestHandler();
+        Server server = new Server();
+        server.setNoSystemExit(true);
         
-        restHandler.expose(new DataController());
+        final Webi webi = new Webi(8081);
+        webi.addBean(server);
         
-        server.add("/rest/",restHandler);
+        webi.add("/socket/data", new SocketService<DataClient>(DataClient.class));
         
-        final FileRequestHandler fileHandler = FileRequestHandler.getStandardFileHandler();
+        final MVCRequestHandler mvcHandler = webi.add("/rest/",new MVCRequestHandler());
+        mvcHandler.expose(new DataController());
         
+        final FileRequestHandler fileHandler = webi.add("/", FileRequestHandler.getStandardFileHandler());
         File root = new File("../");
-        
         fileHandler.setDocumentRoot(root.getAbsolutePath());
         
-        server.add("/", fileHandler);
-        
-        server.start();
+        webi.start();
     }
 }
