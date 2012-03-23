@@ -9,7 +9,6 @@ import com.vonhof.webi.annotation.Path;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import org.hsqldb.jdbc.JDBCDriver;
 import org.hsqldb.server.Server;
 
 @Path("data")
@@ -18,7 +17,7 @@ public class DataController {
     static {
         server.setNoSystemExit(true);
     }
-    private final JDBCDriver dbDriver = new JDBCDriver();
+    
     private final Connection conn;
     public DataController() throws SQLException {
         conn = DriverManager.getConnection("jdbc:hsqldb:mem:webbeans", "SA", "");

@@ -11,7 +11,7 @@ import java.sql.SQLException;
 public class DemoServer {
     public static void main( String[] args ) throws SQLException, Exception {
         
-        BabelShark.getInstance().register(new JsonLanguage());
+        BabelShark.register(new JsonLanguage());
         
         final Webi server = new Webi(8081);
         final RESTRequestHandler restHandler = new RESTRequestHandler();
