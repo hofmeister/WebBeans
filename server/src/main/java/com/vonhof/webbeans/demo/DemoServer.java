@@ -4,7 +4,7 @@ import com.vonhof.babelshark.BabelShark;
 import com.vonhof.babelshark.language.JsonLanguage;
 import com.vonhof.webi.FileRequestHandler;
 import com.vonhof.webi.Webi;
-import com.vonhof.webi.rest.RESTRequestHandler;
+import com.vonhof.webi.mvc.MVCRequestHandler;
 import java.io.File;
 import java.sql.SQLException;
 
@@ -14,7 +14,7 @@ public class DemoServer {
         BabelShark.register(new JsonLanguage());
         
         final Webi server = new Webi(8081);
-        final RESTRequestHandler restHandler = new RESTRequestHandler();
+        final MVCRequestHandler restHandler = new MVCRequestHandler();
         
         restHandler.expose(new DataController());
         
