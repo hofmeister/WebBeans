@@ -1,10 +1,173 @@
 $wb.data = {};
+
+$wb.data.Model = $wb.Class('Model',{
+    __extends:[$wb.core.Events,$wb.core.Utils],
+    _defaults:{
+        id:null,
+        name:null,
+        valueType:"string",
+        shortName:null,
+        defaultValue: null,
+        validator:null,
+        primary:false
+    },
+    _fields:{},
+    _type:null,
+    __construct:function(type,fields) {
+        this.__super({});
+        this._type = type;
+        if (fields) {
+            this.addFields(fields);
+        }
+    },
+    getType:function() {
+        return this._type;
+    },
+    addFields:function(fields) {
+        for(var id in fields) {
+            this._fields[id] = $.extend({},this._defaults,fields[id]);
+            this._fields[id].id = id;
+            if (!this._fields[id].shortName)
+                this._fields[id].shortName = this._fields[id].name;
+        }
+    },
+    addField:function(id,name,valueType,validator,defaultValue,shortName) {
+        this._fields[id] = {
+            id:id,
+            name:name,
+            valueType:valueType,
+            shortName:shortName ? shortName : name,
+            defaultValue: defaultValue ? defaultValue : null,
+            validator:validator ? validator : null
+        };
+        this.trigger('added',[id]);
+    },
+    
+    getField:function(id) {
+        return this._fields[id];
+    },
+    getFields:function() {
+        return this._fields;
+    },
+    create:function(data) {
+        if (!data) data = {};
+        var row = {};
+        for(var id in this._fields) {
+            var f = this._fields[id];
+            row[id] = f.defaultValue;
+        }
+        var out = $.extend({},row,data);
+        return out;
+    },
+    getKey:function(row) {
+        var key = [];
+        for(var id in this._fields) {
+            var f = this._fields[id];
+            if (f.primary) {
+                key.push(row[id]);
+            }
+        }
+        return key.join(",");
+    },
+    validate:function(row) {
+        for(var id in row) {
+            if (!this._fields[id])
+                continue;
+            var f = this._fields[id];
+            var value = row[id];
+            if (!value)
+                value = f.defaultValue;
+            if (f.validator) {
+                if (!f.validator(value)) {
+                    return false;
+                }
+            };
+            if ($wb.utils.type(value) != f.valueType) {
+                return false;
+            }
+        }
+        return true;
+    }
+});
+
+$wb.data.Service = $wb.Class('Service',{
+    __extends:[$wb.core.Events,$wb.core.Utils],
+    _autoSync:true,
+    _adder:null,
+    _remover:null,
+    _updater:null,
+    _getter:null,
+    _loader:null,
+    _listener:null,
+    _connection:null,
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        if (typeof opts.autoSync != 'undefined')
+            this._autoSync = opts.autoSync;
+        if (opts.adder)
+            this._adder = opts.adder;
+        if (opts.remover)
+            this._remover = opts.remover;
+        if (opts.updater)
+            this._updater = opts.updater;
+        if (opts.getter)
+            this._getter = opts.getter;
+        if (opts.loader)
+            this._loader = opts.loader;
+        if (opts.listener)
+            this._listener = opts.listener;
+    },
+    startListening:function() {
+        this.stopListening();
+        if (this._listener) {
+            this._connection = this._listener.apply(this);
+        }
+    },
+    stopListening:function() {
+        if (this._connection) {
+            this._connection.close();
+            this._connection = null;
+        }
+    },
+    get:function(id) {
+        if (this._getter)
+            this._getter.apply(this,[id]);
+    },
+    load:function(opts) {
+        if (this._loader)
+            this._loader.apply(this,[opts]);
+    },
+    update:function(rows) {
+        if ($.type(rows) != 'array')
+            rows = [rows];
+        if (this._updater)
+            this._updater.apply(this,[rows]);
+    },
+    add:function(rows) {
+        if ($.type(rows) != 'array')
+            rows = [rows];
+        if (this._adder)
+            this._adder.apply(this,[rows]);
+    },
+    remove:function(ids) {
+        if ($.type(ids) != 'array')
+            ids = [ids];
+        if (this._remover)
+            this._remover.apply(this,[ids]);
+    }
+});
+
 $wb.data.Store = $wb.Class('Store',{
     __extends:[$wb.core.Events,$wb.core.Utils],
-    
     _data:null,
+    _model:null,
     __construct:function(opts) {
         this.__super(opts);
+        if (opts && opts.model) {
+            if (!$wb.utils.isA(opts.model, "Model"))
+                throw "'model' argument must be instance of Model";
+            this._model = opts.model;
+        }            
     }
 });
 
@@ -12,7 +175,10 @@ $wb.data.KeyValueStore = $wb.Class('KeyValueStore',{
     __extends:[$wb.data.Store],
     __construct:function(opts) {
         this.__super(opts);
-        this._data = {};
+        if (this.model)
+            this._data = this.model.create();
+        else
+            this._data = {};
     },
     put:function(key,value) {
         this._data[key] = value;
@@ -52,29 +218,73 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         };
     },
     add:function(row) {
-        this._data.rows.push(row);
-        this._makeDirty();
-        this.trigger('change');
-        this.trigger('added',[[row]]);
+        this.addAll([row]);
     },
     addAll:function(rows) {
-        for(var i in rows) {
-            this._data.rows.push(rows[i]);
+        var self = this;
+        for(var i = 0; i < rows.length;i++) {
+            if (this._model)
+                rows[i] = this._model.create(rows[i]);
+            var found = false;
+            if (this._model) {
+                var key = this._model.getKey(rows[i]);
+                var oldRow = this.getByMethod(key,function(row) {
+                    return self._model.getKey(row);
+                });
+
+                if (oldRow) {
+                    $.extend(oldRow,rows[i]);
+                    found = true;
+                }
+            }
+            if (!found)
+                this._data.rows.push(rows[i]);
         }
+        
         if (rows.length > 0) {
             this._makeDirty();
             this.trigger('change');
             this.trigger('added',[rows]);
         }
     },
+    getByMethod:function(value,comparator) {
+        var i = this.getIndexByMethod(value,comparator);
+        if (i > -1)
+            return this._data.rows.get(i);
+        return null;
+    },
+    getIndexByMethod:function(value,comparator) {
+        for(var i = 0; i < this._data.rows.length();i++) {
+            var key = comparator(this._data.rows.get(i));
+            if (key == value)
+                return i;
+        }
+        return -1;
+    },
     get:function(ix) {
-        return this._data.rows[ix];
+        return this._data.rows.get(ix);
     },
     remove:function(ix) {
-        delete this._data.rows.remove(ix);
+        this.removeAll([ix]);
+    },
+    removeAll:function(ixs) {
+        var self = this;
+        for(var i = 0; i < ixs.length;i++) {
+            var ix = ixs[i];
+            if (this._model) {
+                ix = this.getIndexByMethod(""+ix,function(row) {
+                    return self._model.getKey(row);
+                });
+                if (ix > -1)
+                    this._data.rows.remove(ix);
+            } else {
+                this._data.rows.remove(ix);
+            }
+        }
+        
         this._makeDirty();
         this.trigger('change');
-        this.trigger('remove',[ix]);
+        this.trigger('remove',ixs);
     },
     addFilter:function(filterFunction) {
         this._filters.push(filterFunction);
@@ -177,6 +387,20 @@ $wb.data.TableStore = $wb.Class('TableStore',{
     _cols:[],
     __construct:function(opts) {
         this.__super(opts);
+        if (this._model) {
+            
+            var fields = this._model.getFields();
+            
+            for(var id in fields) {
+                var f = fields[id];
+                this._addColumn(f.id,f.shortName);
+            }
+            var self = this;
+            this._model.bind('added',function(id) {
+                var f = self._model.getField(id);
+                self._addColumn(f.id,f.shortName);
+            });
+        }
     },
     setColumns:function() {
         this._clearColumns();

@@ -42,38 +42,47 @@ public class DataController {
     }
     
     @Path(value="add",method= HttpMethod.POST)
-    public DbEntry add(@Body DbEntry dbEntry) throws SQLException {
-        PreparedStatement stmt = conn.prepareStatement(
-                "INSERT INTO entries (name,description,tags) VALUES (?,?,?)",
-                Statement.RETURN_GENERATED_KEYS);
-        stmt.setString(1,dbEntry.getName());
-        stmt.setString(2,dbEntry.getDescription());
-        stmt.setString(3,dbEntry.getTags());
-        
-        if (stmt.executeUpdate() > 0) {
-            ResultSet result = stmt.getGeneratedKeys();
-            if (result.next()) {
-                dbEntry.setId(result.getInt(1));
+    public List<DbEntry> add(@Body List<DbEntry> dbEntries) throws SQLException {
+        List<DbEntry> out = new ArrayList<DbEntry>(dbEntries.size());
+        for(DbEntry dbEntry:dbEntries) {
+            PreparedStatement stmt = conn.prepareStatement(
+                    "INSERT INTO entries (name,description,tags) VALUES (?,?,?)",
+                    Statement.RETURN_GENERATED_KEYS);
+            stmt.setString(1,dbEntry.getName());
+            stmt.setString(2,dbEntry.getDescription());
+            stmt.setString(3,dbEntry.getTags());
+
+            if (stmt.executeUpdate() > 0) {
+                ResultSet result = stmt.getGeneratedKeys();
+                if (result.next()) {
+                    dbEntry.setId(result.getInt(1));
+                }
             }
+            DbEntry entry = get(dbEntry.getId());
+            out.add(entry);
         }
-        DbEntry entry = get(dbEntry.getId());
-        socket.broadcast("added", entry);
-        return entry;
+        socket.broadcast("added", out);
+        return out;
     }
+    
     @Path(value="update",method= HttpMethod.POST)
-    public DbEntry update(@Body DbEntry dbEntry) throws SQLException {
-        PreparedStatement stmt = conn.prepareStatement(
-                "UPDATE entries SET name=?,description=?,tags=? where id = ?",
-                new String[]{"id"});
-        stmt.setString(1,dbEntry.getName());
-        stmt.setString(2,dbEntry.getDescription());
-        stmt.setString(3,dbEntry.getTags());
-        stmt.setInt(4,dbEntry.getId());
-        stmt.execute();
-        
-        DbEntry entry = get(dbEntry.getId());
-        socket.broadcast("updated", entry);
-        return entry;
+    public List<DbEntry> update(@Body List<DbEntry> dbEntries) throws SQLException {
+        List<DbEntry> out = new ArrayList<DbEntry>(dbEntries.size());
+        for(DbEntry dbEntry:dbEntries) {
+            PreparedStatement stmt = conn.prepareStatement(
+                    "UPDATE entries SET name=?,description=?,tags=? where id = ?",
+                    new String[]{"id"});
+            stmt.setString(1,dbEntry.getName());
+            stmt.setString(2,dbEntry.getDescription());
+            stmt.setString(3,dbEntry.getTags());
+            stmt.setInt(4,dbEntry.getId());
+            stmt.execute();
+
+            DbEntry entry = get(dbEntry.getId());
+            out.add(entry);
+        }
+        socket.broadcast("updated", out);
+        return out;
     }
     
     @Path(value="get")
@@ -93,13 +102,15 @@ public class DataController {
         return null;
     }
     
-    @Path(value="delete")
-    public void delete(@Parm(required=true) int id) throws SQLException {
-        PreparedStatement stmt = conn.prepareStatement(
-                "DELETE FROM entries where id = ?");
-        stmt.setInt(1,id);
-        stmt.executeUpdate();
-        socket.broadcast("deleted", id);
+    @Path(value="delete",method= HttpMethod.POST)
+    public void delete(@Body int[] ids) throws SQLException {
+        for(int id:ids) {
+            PreparedStatement stmt = conn.prepareStatement(
+                    "DELETE FROM entries where id = ?");
+            stmt.setInt(1,id);
+            stmt.executeUpdate();
+        }
+        socket.broadcast("deleted", ids);
     }
     
     @Path(value="list")

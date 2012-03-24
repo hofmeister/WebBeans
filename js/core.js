@@ -13,7 +13,11 @@ var $wb = {};
                         val = $.extend(true,{},val);
                     this[key] = val;
                 }
-
+                if (!this.__callConstructor) {
+                    console.log(this);
+                    throw "No constructor found for "+this._clz;
+                }
+                    
                 this.__callConstructor.apply(this,arguments);
             };
 

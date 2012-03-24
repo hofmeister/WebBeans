@@ -947,6 +947,8 @@ $wb.ui.Table = $wb.Class('Table',{
         },opts));
         
         this.require(this.opts,'store');
+        if (!$wb.utils.isA(this.opts.store,'TableStore'))
+            throw "Table widget requires TableStore or descending";
         
         this._header = $(this.opts.headerTmpl());
         this._footer = $(this.opts.footerTmpl());

@@ -1,5 +1,4 @@
 $(function() {
-    
     if (window.$qt) {
         $qt.setTitle($('title').html());
         $qt.addMenu("file","File");
@@ -129,21 +128,92 @@ $(function() {
                         input.add("first option");
                         input.add(2,"second option");
                         form.add(input);
+                    
+                    var model = new $wb.data.Model('entry',{
+                        id:{name:"ID",valueType:"number",primary:true},
+                        name:{name:"Name",valueType:"string"},
+                        description:{name:"Description",valueType:"string"},
+                        created:{name:"Created",valueType:"date",defaultValue:function() {return new Date()}},
+                        tags:{name:"Tags",valueType:"string"}
+                    });
                         
-                    var tStore = new $wb.data.TableStore();
-                    tStore.setColumns("id","name");
-                    tStore.addAll([
-                        {id:"marx",name:"Karl",age:28},
-                        {id:"jimbo",name:"Jim",age:54},
-                        {id:"jfk",name:"Johnny",age:54},
-                        {id:"fil",name:"Schopenhauer",age:54}
-                    ]);
+                    var tStore = new $wb.data.TableStore({model:model});
+                    
+                    window.entryService = new $wb.data.Service({
+                        adder:function(rows) {
+                            $.ajax({
+                                type:"POST",
+                                url:"/rest/data/add",
+                                data:JSON.stringify(rows),
+                                processData:false,
+                                contentType:"application/json",
+                                success:function(rows) {
+                                    //tStore.addAll(rows);
+                                }
+                            });
+                        },
+                        updater:function(rows) {
+                            $.ajax({
+                                type:"POST",
+                                url:"/rest/data/update",
+                                processData:false,
+                                data:JSON.stringify(rows),
+                                contentType:"application/json",
+                                success:function(rows) {
+                                    //tStore.addAll(rows);
+                                }
+                            });
+                        },
+                        remover:function(keys) {
+                            $.ajax({
+                                type:"POST",
+                                url:"/rest/data/delete",
+                                processData:false,
+                                data:JSON.stringify(keys),
+                                contentType:"application/json",
+                                success:function(rows) {
+                                    //tStore.removeAll(keys);
+                                }
+                            });
+                        },
+                        loader:function() {
+                            $.get("/rest/data/list",function(rows) {
+                                tStore.addAll(rows);
+                            });
+                        },
+                        getter:function(id) {
+                            $.get("/rest/data/get",{id:id},function(row) {
+                                tStore.add(row);
+                            });
+                        },
+                        listener:function() {
+                            var ws = new WebSocket("ws://localhost:8081/socket/data");
+                            ws.onmessage = function(evt) {
+                                var data = JSON.parse(evt.data);
+                                var pl = data.args[0];
+                                switch (data.type) {
+                                    case 'added':
+                                        tStore.addAll(pl);
+                                        break;
+                                    case 'updated':
+                                        tStore.addAll(pl);
+                                        break;
+                                    case 'deleted':
+                                        tStore.removeAll(pl);
+                                        break;
+                                }
+                            }
+                            
+
+                            return ws;
+                        }
+                    });
                     
                     var table = new $wb.ui.Table({
                         store:tStore
                     });
                     
-                    $wb.registry.register('tstore',tStore);
+                    $wb.registry.register('entryStore',tStore);
                     $wb.registry.register('table',table);
                     
                     var tablePane = new $wb.ui.Pane();

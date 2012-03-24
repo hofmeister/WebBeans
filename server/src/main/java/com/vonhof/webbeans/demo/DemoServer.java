@@ -20,7 +20,6 @@ public class DemoServer {
         
         final Webi webi = new Webi(8081);
         webi.addBean(server);
-        
         webi.add("/socket/data", new SocketService<DataClient>(DataClient.class));
         
         final MVCRequestHandler mvcHandler = webi.add("/rest/",new MVCRequestHandler());

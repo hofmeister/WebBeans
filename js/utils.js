@@ -1,4 +1,19 @@
 $wb.utils = {
+    _typeResolvers:[
+        function(v) {
+            if ($wb.utils.isClass(v))
+                return v.clz;
+            return null;
+        },
+        function(v) {
+            if ($wb.utils.isA(v,'Model'))
+                return "Model/"+v.getType();
+            return null;
+        },
+        function(v) {
+            return $.type(v);
+        }
+    ],
     GetValue:function(obj,path) {
         var parts = path.split('.');
         var cur = obj;
@@ -84,13 +99,29 @@ $wb.utils = {
             'border':0
         });
     },
+    getClass:function(obj) {
+        if (this.isClass(obj))
+            return obj._clz;
+        return null;
+    },
     isClass:function(obj) {
-        return typeof obj.clz != 'undefined';
+        return obj && (typeof obj._clz != 'undefined');
     },
     isA:function(obj,clz) {
         if (!this.isClass(obj)) 
             return false;
-        return obj.clz == clz;
+        return obj._clz == clz;
+    },
+    type:function(v) {
+        if (v) {
+            for(var i = 0; i < this._typeResolvers.length;i++) {
+                var func = this._typeResolvers[i];
+                var type = func(v);
+                if (type != null)
+                    return type;
+            }
+        }
+        return "undefined";
     }
 };
 //jQuery util methods
