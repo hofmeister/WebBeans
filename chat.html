@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title></title>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" ></script>
+    </head>
+    <body>
+        <form id="register">
+            <input name="name" class="js-name" />
+            <input type="submit" value="Register" />
+        </form>
+        <form id="msg">
+            <input name="msg" class="js-msg" />
+            <input type="submit" value="Send" />
+        </form>
+        <ul id="messages"></ul>
+        
+        <script type="text/javascript">
+            $(function() {
+                
+                var regForm = $('form#register');
+                var msgForm = $('form#msg');
+                var msgs = $('#messages');
+                try {
+                    var ws = new WebSocket('ws://localhost:8081/socket/');
+                } catch(e) {
+                    alert(e);
+                }
+                
+                var state = {
+                    ready:false
+                };
+                
+                ws.onmessage = function(evt) {
+                    console.log(evt);
+                    var d = JSON.parse(evt.data);
+                    console.log(d);
+                    var pl = d.args[0];
+                    switch(d.type.toLowerCase()) {
+                        case 'ready':
+                            state.ready = true;
+                            break;
+                        case 'welcome':
+                            state.ready = true;
+                            addMsg("ChatBot","<b>"+pl+"</b> just entered the chat",new Date().getTime());
+                            break;
+                        case 'msg':
+                            state.ready = true;
+                            addMsg(pl.name,pl.msg,pl.time);
+                            break;
+                    }
+                };
+                
+                ws.onclose = function() {
+                    state.ready = false;
+                };
+                
+                var addMsg = function(name,msg,time) {
+                    msgs.prepend("<li>"+new Date(time)+":<b>"+name+"</b> wrote<br/>&nbsp;&nbsp;&nbsp;&nbsp;<em> "+msg+"</em></li>");
+                }
+                
+                var send = function(type,args) {
+                    var msg = {type:type,args:args};
+                    console.log(msg);
+                    if (!ws.send(JSON.stringify(msg))) {
+                        console.log("Failed to send type: "+type);
+                    }
+                        
+                }
+                window.sendEvent = send;
+                
+                window.sendMessage = function(msg) {
+                    send('write',[msg]);
+                    addMsg("You",msg,new Date().getTime());
+                }
+                
+                window.register = function(name) {
+                    send('register',[name]);
+                    addMsg("ChatBot","You registered as <b>"+name+"</b>",new Date().getTime());
+                }
+                
+                
+                regForm.submit(function(evt) {
+                    evt.preventDefault();
+                    if (!state.ready) {
+                        alert("Connection not ready");
+                        return;
+                    }
+                    var name = $(this).find('.js-name').val();
+                    register(name);
+                });
+                
+                msgForm.submit(function(evt) {
+                    evt.preventDefault();
+                    if (!state.ready) {
+                        alert("Connection not ready");
+                        return;
+                    }
+                    var msg = $(this).find('.js-msg').val();
+                    $(this).find('.js-msg').val('');
+                    sendMessage(msg);
+                });
+            });
+            
+        </script>
+    </body>
+</html>
