@@ -4,9 +4,22 @@ runtime: python
 api_version: 1
 
 handlers:
-- url: (.*)/
+- url: /
   static_files: index.html
   upload: index.html
-- url: /
-  static_dir: /
+- url: /canvas\.html
+  static_files: canvas.html
+  upload: canvas.html
+- url: /game\.html
+  static_files: game.html
+  upload: game.html
+- url: /chat\.html
+  static_files: chat.html
+  upload: chat.html
+- url: /js
+  static_dir: js
+- url: /style
+  static_dir: style
+- url: /images
+  static_dir: images
   
