@@ -167,22 +167,32 @@ $(function() {
     
     jQuery.fn.edgeWidth = function() {
         var el = $(this);
-        return parseInt(el.css('padding-left'))
-        +parseInt(el.css('padding-right'))
-        +parseInt(el.css('margin-left'))
-        +parseInt(el.css('margin-right'))
-        +parseInt(el.css('border-left-width'))
-        +parseInt(el.css('border-right-width'))
+        
+        var out = parseInt(el.css('padding-left'))
+                +parseInt(el.css('padding-right'))
+                +parseInt(el.css('margin-left'))
+                +parseInt(el.css('margin-right'));
+        //Input fields has inner border
+        if (el[0].tagName.toLowerCase() != 'input')
+            out += parseInt(el.css('border-left-width'))
+                    +parseInt(el.css('border-right-width'))
+    
+        return out;
     };
     
     jQuery.fn.edgeHeight = function() {
         var el = $(this);
-        return parseInt(el.css('padding-top'))
+        var out = parseInt(el.css('padding-top'))
         +parseInt(el.css('padding-bottom'))
         +parseInt(el.css('margin-top'))
-        +parseInt(el.css('margin-bottom'))
-        +parseInt(el.css('border-top-width'))
-        +parseInt(el.css('border-bottom-width'))
+        +parseInt(el.css('margin-bottom'));
+        //Input fields has inner border
+        if (el[0].tagName.toLowerCase() != 'input')
+            out += parseInt(el.css('border-top-width'))
+                    +parseInt(el.css('border-bottom-width'));
+            
+            
+        return out;
     };
     
     jQuery.fn.outerWidth = function(width) {

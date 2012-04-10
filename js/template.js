@@ -4,7 +4,7 @@ $wb.template = {
     },
     top: {
         bar:function() {
-            return '<ul class="wb-menu wb-topmenu line"><li class="wb-logo wb-menuitem"><img alt="WebBeans" title="WebBeans" src="images/logo.png" /></li></ul>';
+            return '<ul class="wb-menu wb-topmenu line"></ul>';
         }
     },
     context: {
@@ -35,26 +35,11 @@ $wb.template = {
         }
     },
     window: {
-        container:function() {
-            return '<div class="wb-window"></div>';
+        base:function() {
+            return '<div class="wb-window wb-pane"></div>';
         },
-        header:function(fixed) {
-            return '<div class="wb-window-header '+(fixed ? 'wb-fixed' : '')+'"></div>';
-        },
-        headerTab:function() {
-            return '<div class="wb-window-tab"><span class="wb-title"></span><a class="wb-close" href="#"></a></div>';
-        },
-        toolbar:function() {
-            return '<div class="wb-window-toolbar"></div>';
-        },
-        toolbarButton:function() {
-            return '<div class="wb-toolbar-button"></div>';
-        },
-        toolbarDivider:function() {
-            return '<div class="wb-toolbar-divider"></div>';
-        },
-        scrollbar:function() {
-            return '<div class="wb-scrollbar"><div class="wb-scroller"></div></div>';
+        header:function() {
+            return '<div class="wb-window-header"></div>';
         }
     },
     button: function() {
@@ -122,21 +107,31 @@ $wb.template = {
         input:function(type) {
             return '<div class="wb-input-container"><label><span class="wb-label" /><input class="wb-input wb-input-'+type+'" type="'+type+'" value="" /></label></div>';
         },
+        button:function(type) {
+            return '<input class="wb-form-button" type="'+type+'" value="" />';
+        },
         textarea:function() {
             return '<div class="wb-input-container"><label><span class="wb-label" /><textarea class="wb-input wb-input-textarea" /></label></div>';
         },
         select:function() {
             return '<div class="wb-input-container"><label><span class="wb-label" /><select class="wb-input wb-input-select" /></label></div>';
         },
+        
         fieldset:function() {
             return '<fieldset />';
         },
         select_option:function() {
             return '<option />';
+        },
+        button_pane:function() {
+            return '<div class="wb-button-pane"></div>';
         }
     },
     accordion:function() {
         return '<ul class="wb-pane wb-accordion"></ul>';
+    },
+    link:function() {
+        return '<a href="#" />'
     }
 
 };

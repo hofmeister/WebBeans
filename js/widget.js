@@ -30,7 +30,7 @@ $wb.ui.layout.Flow = function() {
 $wb.ui.layout.Box = function() {
     var width = this.elm().width();
     var nodes = this.children();
-    for(var i in nodes) {
+    for(var i = 0; i < nodes.length;i++) {
         nodes[i].elm().outerWidth(width);
     }
 };
@@ -91,12 +91,35 @@ $wb.ui.Widget = $wb.Class('Widget',{
     },
     _makeElm:function() {
         this._tmpl = this.opts.tmpl;
-        var el = $(this._tmpl());
+        var el = null;
+        if (typeof this._tmpl == 'function')
+            el = $(this._tmpl());
+        else if (this._tmpl.tagName) {
+            //dom element
+            el = $(this._tmpl);
+        } else if (this._tmpl.css) {
+            //jquery object
+            if (this._tmpl.length > 0)
+                el = $($(this._tmpl[0]).html());
+            else
+                throw "Empty jquery object received";
+        } else if (typeof this._tmpl == 'string') {
+            //path
+            el = $($(this._tmpl).html());
+            if (el.length == 0) {
+                throw "Empty jquery path received:"+this._tmpl;
+            }
+        } else 
+            throw "Invalid template argument provided:"+this._tmpl;
+        
         if (this._elm) {
             this._elm.html(el.html());
             this._elm.unbind('click,keydown,keyup,mouseover,mousedown');
         } else {
             this._elm = el;
+            if (this.opts["class"]) {
+                el.addClass(this.opts["class"]);
+            }
             this._elm.widget(this);
         }
 
@@ -111,6 +134,18 @@ $wb.ui.Widget = $wb.Class('Widget',{
     },
     children:function() {
         return this._children;
+    },
+    clear:function() {
+        while(this._children.length > 0) {
+            var child = this._children.pop();
+            child.elm().detach();
+        }
+    },
+    remove:function() {
+        this.clear();
+        delete this.opts;
+        delete this._children;
+        this.elm().detach();
     },
     parent:function() {
         return this.elm().parent().closest('.-wb-state-widget').widget();
@@ -136,8 +171,6 @@ $wb.ui.Widget = $wb.Class('Widget',{
         this._renderChildren();
         
         this._layout();
-
-        
 
         this.trigger('render');
         return this.elm();
@@ -178,7 +211,7 @@ $wb.ui.Widget = $wb.Class('Widget',{
     },
     _paint: function() {
         this.trigger('before-paint');
-        for(var i in this.children()) {
+        for(var i = 0; i < this.children().length;i++) {
             this.target().append(this._children[i].elm());
         }
         this.trigger('paint');
@@ -245,7 +278,38 @@ $wb.ui.BasePane = $wb.Class('BasePane',{
     }
 });
 
-
+$wb.ui.Link = $wb.Class('Link',{
+    __extends:[$wb.ui.Widget],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            tmpl:$wb.template.link
+        },opts);
+        
+        this.require(opts,'title');
+        
+        this.__super(opts);
+        
+        var self = this;
+        this.elm().click(function(evt) {
+            evt.preventDefault();
+            if (self.opts.action) {
+                self.opts.action(evt);
+            }
+        });
+        
+        this.bind('paint',function() {
+            this.title(this.opts.title);
+        });
+    },
+    title:function(title) {
+        if (title) {
+            this.elm().html(title).attr('title',title);
+            return this;
+        }
+        return this.elm().html();
+    }
+});
 
 $wb.ui.Button = $wb.Class('Button',{
     _titleElm:null,
@@ -486,6 +550,8 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
     set: function(ix,pane) {
         if (ix < 0 || ix > 1)
             throw "Invalid index for split pane: "+ix;
+        if (this._children[ix])
+            this._children[ix].remove();
         this._children[ix] = pane;
     },
     get: function(ix) {
@@ -1015,4 +1081,48 @@ $wb.ui.Table = $wb.Class('Table',{
         return row;
     }
     
+});
+
+
+/* Window */
+$wb.ui.Window = $wb.Class('Window',{
+    __extends:[$wb.ui.Pane],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            tmpl:$wb.template.window.base
+        },opts);
+        
+        this.__super(opts);
+        
+        this.bind('afterlayout',function() {
+            var parent = this.parent();
+            if (!parent) {
+                parent = $('body');
+            }
+            var self = this;
+            
+            var center = function() {
+                var availWidth = parent.innerWidth();
+                var availHeight = parent.innerHeight();
+
+                var el = self.elm();
+                var width = el.outerWidth();
+                var height = el.outerHeight();
+
+                el.css({
+                    position:'relative',
+                    top:(availHeight-height)/2,
+                    left:(availWidth-width)/2
+                });
+            }
+            center();
+            $(window).resize(center);
+        });
+    },
+    set:function(child) {
+        this.clear();
+        this.add(child);
+        return this;
+    }
 });
