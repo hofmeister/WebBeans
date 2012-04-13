@@ -1,4 +1,17 @@
+/**
+ * @fileOverview
+ * Demo application using usually all elements available in webbeans
+ * @author <a href="http://twitter.com/vonhofdk"/>Henrik Hofmeister</a>
+ * @version 1.0
+ */
+
 $(function() {
+    
+    var prefPane = new $wb.ui.Pane();
+    prefPane.html('Preferences!');
+    var showPrefPane = function() {
+        var win = $wb.ui.Window.open({title:"Preferences",content:prefPane});
+    }
     if (window.$qt) {
         $qt.setTitle($('title').html());
         $qt.addMenu("file","File");
@@ -21,7 +34,7 @@ $(function() {
                     alert('View it!');
                     return;
                 case 'prefs':
-                    alert('Pref PANE!');
+                    showPrefPane();
                     return;
             }
             
@@ -43,12 +56,9 @@ $(function() {
 
         topbar.add('Tools',[
             {title:"View",arg:function() {alert('OPEN!');}},
-            {title:"Preferences...",arg:function() {alert('Save!');}}
+            {title:"Preferences...",arg:showPrefPane}
         ]);
     }
-
-    
-
 
     var header = new $wb.ui.Header();
     header.add('Create',function() {alert('Action!');});

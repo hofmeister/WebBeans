@@ -1,3 +1,11 @@
+/**
+ * @fileOverview
+ * Contains all the default templates
+ * @author <a href="http://twitter.com/vonhofdk"/>Henrik Hofmeister</a>
+ * @version 1.0
+ */
+
+
 $wb.template = {
     base:function() {
         return '<div class="wb-base"></div>';
@@ -34,13 +42,14 @@ $wb.template = {
             return '<ul class="wb-submenu line"></ul>';
         }
     },
-    window: {
-        base:function() {
-            return '<div class="wb-window wb-pane"></div>';
-        },
-        header:function() {
-            return '<div class="wb-window-header"></div>';
-        }
+    frame: function() {
+        return '<div class="wb-frame wb-pane"><div class="wb-frame-header"><div class="wb-title" /></div><div class="wb-content" /></div>';
+    },
+    window: function() {
+        return '<div class="wb-window wb-frame wb-pane"><div class="wb-frame-header"><div class="wb-title" /><a href="#" class="wb-close" /></div><div class="wb-content" /></div>';
+    },
+    shade: function() {
+        return '<div class="wb-shade"></div>';
     },
     button: function() {
         return '<a href="#" class="wb-button"></a>';

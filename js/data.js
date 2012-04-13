@@ -1,3 +1,11 @@
+/**
+ * @fileOverview
+ * All methods and classes related to data handling is in here
+ * @author <a href="http://twitter.com/vonhofdk"/>Henrik Hofmeister</a>
+ * @version 1.0
+ */
+
+
 $wb.data = {};
 
 $wb.data.Model = $wb.Class('Model',{
@@ -24,12 +32,15 @@ $wb.data.Model = $wb.Class('Model',{
         return this._type;
     },
     addFields:function(fields) {
+        var ids = [];
         for(var id in fields) {
+            ids.push(id);
             this._fields[id] = $.extend({},this._defaults,fields[id]);
             this._fields[id].id = id;
             if (!this._fields[id].shortName)
                 this._fields[id].shortName = this._fields[id].name;
         }
+        this.trigger('added',[ids]);
     },
     addField:function(id,name,valueType,validator,defaultValue,shortName) {
         this._fields[id] = {
@@ -40,7 +51,7 @@ $wb.data.Model = $wb.Class('Model',{
             defaultValue: defaultValue ? defaultValue : null,
             validator:validator ? validator : null
         };
-        this.trigger('added',[id]);
+        this.trigger('added',[[id]]);
     },
     
     getField:function(id) {
@@ -154,6 +165,101 @@ $wb.data.Service = $wb.Class('Service',{
             ids = [ids];
         if (this._remover)
             this._remover.apply(this,[ids]);
+    }
+});
+
+$wb.data.JsonService = $wb.Class('JsonService',{
+    __extends:[$wb.core.Events,$wb.core.Utils],
+    opts:{},
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        this.__super(opts);
+        this.require(opts,'schema');
+        this.opts = opts;
+        
+    },
+    load:function() {
+        var self = this;
+        $.getJSON(this.opts.schema,function(data) {
+            var baseUrl = new $wb.Url(data.url,self.opts.schema);
+            for(var controllerName in data.methods) {
+                var controller = data.methods[controllerName];
+                self[controllerName] = {};
+                for(var methodName in controller.methods) {
+                    (function() {
+                        var method = controller.methods[methodName][0];
+                        self[controllerName][methodName] = function(args,callback) {
+                            var url = baseUrl+method.url;
+                            var data = null;
+                            
+                            //@TODO: Validate body against model and generate Model's from schema
+                            var bodyType = null;
+                        
+                            if (typeof args == 'function') {
+                                callback = args;
+                                args = null;
+                            }
+
+                            if (method.args) {
+
+                                if (method.args.length == 1 && method.args[0].transport == 'BODY') {
+                                    data = args;
+                                    bodyType = method.args[0].type;
+                                } else {
+                                    for(var i = 0; i < method.args.length;i++) {
+                                        var arg = method.args[i];
+                                        var value = args != null ? args[arg.name] : undefined;
+                                        if (arg.required && (typeof value == "undefined")) {
+                                            throw "Required argument missing: "+arg.name;
+                                        }
+                                    
+                                        if (typeof value == "undefined")
+                                            continue;
+
+                                        switch(arg.transport) {
+                                            case 'GET':
+                                                url += (url.indexOf('?') > -1) ? "&" : "?";
+                                                url += arg.name + "=" + encodeURIComponent(value);
+                                                break;
+                                            case 'BODY':
+                                                data = value;
+                                                bodyType = arg.type;
+                                                break;
+                                        }
+
+                                        if (arg.type == 'enum' && arg['enum'].indexOf(value) == -1) {
+                                            throw "Invalid value for enum argument: "+arg.name+" = "+value
+                                            +"\nMust be one of "+arg['enum'].join(', ');
+                                        }
+                                    }
+                                }
+                            }
+                        
+                            if (data) {
+                                data = JSON.stringify(data);
+                            }
+
+                            return $.ajax({
+                                url:url,
+                                type:method.method,
+                                dataType:'json',
+                                contentType:'application/json',
+                                data:data,
+                                success:function(out) {
+                                    if (callback)
+                                        callback(true,out);
+                                },
+                                error:function(out) {
+                                    if (callback)
+                                        callback(false);
+                                }
+                            });
+                        };
+                    })();
+                }
+            }
+            self.trigger('ready');
+        });
     }
 });
 

@@ -1,3 +1,11 @@
+/**
+ * @fileOverview
+ * All form widgets are in here
+ * @author <a href="http://twitter.com/vonhofdk"/>Henrik Hofmeister</a>
+ * @version 1.0
+ */
+
+
 $wb.ui.form = {};
 
 $wb.ui.form.Form = $wb.Class('Form',{
@@ -8,6 +16,9 @@ $wb.ui.form.Form = $wb.Class('Form',{
             tmpl:$wb.template.form.form
         },opts);
         this.__super(opts);
+        this.bind('render',function() {
+            this.find('.wb-input:eq(0)').focus();
+        });
     },
     disable:function() {
         var elms = this.elm().find('input,select,textarea');
@@ -27,6 +38,9 @@ $wb.ui.form.Form = $wb.Class('Form',{
                 el.widget().enable();
             }
         });
+    },
+    reset:function() {
+        this.elm()[0].reset();
     },
     setData:function(data) {
         for(var key in data) {

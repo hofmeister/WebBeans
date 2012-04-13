@@ -1,3 +1,14 @@
+/**
+ * @fileOverview
+ * This file contains all utilities provided and used by webbeans
+ * @author <a href="http://twitter.com/vonhofdk"/>Henrik Hofmeister</a>
+ * @version 1.0
+ */
+
+
+/**
+ * @namespace Utility functions
+ */
 $wb.utils = {
     _typeResolvers:[
         function(v) {
@@ -14,6 +25,17 @@ $wb.utils = {
             return $.type(v);
         }
     ],
+    /**
+     * Get value using path on object
+     * @param {Object} obj the object
+     * @param {String} path the path
+     * @type Object
+     * @example
+     * 
+     * var obj = {hello:{world:"test"}}
+     * var val = $wb.utils.GetValue(obj,"hello.world");
+     * console.log(val); //Emits "test"
+     */
     GetValue:function(obj,path) {
         var parts = path.split('.');
         var cur = obj;
@@ -25,6 +47,17 @@ $wb.utils = {
         }
         return cur;
     },
+    /**
+     * Sets value using path on object
+     * @param {Object} obj the object
+     * @param {String} path the path
+     * @param {Object} value
+     * @example
+     * 
+     * var obj = {hello:{world:"test"}}
+     * var val = $wb.utils.SetValue(obj,"hello.world","hi");
+     * console.log(obj.hello.world); //Emits "hi"
+     */
     SetValue:function(obj,path,value) {
         var parts = path.split('.');
         var cur = obj;
@@ -39,6 +72,11 @@ $wb.utils = {
         if (p && cur)
             cur[p] = value;
     },
+    /**
+     * Make an element full screen - optionally listening for window resize events
+     * @param {DOMNode|String} elm the element (passed to jQuery)
+     * @param {boolean} listenForResize if true - listen for resize events
+     */
     makeFullScreen:function(elm,listenForResize) {
         var resize = function() {
             var w = $(window).width();
@@ -52,6 +90,11 @@ $wb.utils = {
         }
         resize();
     },
+    /**
+     * Get full size including padding, borders and margin for element
+     * @param {DOMNode|String} elm the element (passed to jQuery)
+     * @type Object
+     */
     fullSize:function(elm) {
         var out = {
             width:0,
@@ -76,6 +119,13 @@ $wb.utils = {
         })
         return out;
     },
+    
+    /**
+     * make element fill available space in parent
+     * @param {DOMNode|String} elm the element (passed to jQuery)
+     * @param {Boolean} listenForResize listen for resize events on parent
+     * @type Object
+     */
     fillContainer:function(elm,listenForResize) {
         var parent = $(elm).parent();
         
@@ -92,6 +142,11 @@ $wb.utils = {
         }
         resize();
     },
+    
+    /**
+     * Reset padding,margin and border to 0 on element
+     * @param {DOMNode|String} elm the element (passed to jQuery)
+     */
     resetMPB:function(elm) {
         elm.css({
             'padding':0,
@@ -99,19 +154,40 @@ $wb.utils = {
             'border':0
         });
     },
+    /**
+     * Get class name of instance (created with $wb.Class)
+     * @param {Object} obj The instance
+     * @type String
+     */
     getClass:function(obj) {
         if (this.isClass(obj))
             return obj._clz;
         return null;
     },
+    /**
+     * Determine if an object is a class (created with $wb.Class)
+     * @param {Object} obj The instance
+     * @type Boolean
+     */
     isClass:function(obj) {
         return obj && (typeof obj._clz != 'undefined');
     },
+    /**
+     * Determine if an object is an instance of class. Does not yet check for inheritance.
+     * @param {Object} obj The instance
+     * @param {Class} clz The class
+     * @type Boolean
+     */
     isA:function(obj,clz) {
         if (!this.isClass(obj)) 
             return false;
         return obj._clz == clz;
     },
+    /**
+     * Type resolving of value
+     * @param {Object} v value
+     * @type String
+     */
     type:function(v) {
         if (v) {
             for(var i = 0; i < this._typeResolvers.length;i++) {
@@ -165,7 +241,7 @@ $(function() {
         +parseInt(el.css('padding-right'));
     };
     
-    jQuery.fn.edgeWidth = function() {
+    jQuery.fn.outerEdgeWidth = function() {
         var el = $(this);
         
         var out = parseInt(el.css('padding-left'))
@@ -180,12 +256,12 @@ $(function() {
         return out;
     };
     
-    jQuery.fn.edgeHeight = function() {
+    jQuery.fn.outerEdgeHeight = function() {
         var el = $(this);
-        var out = parseInt(el.css('padding-top'))
-        +parseInt(el.css('padding-bottom'))
-        +parseInt(el.css('margin-top'))
-        +parseInt(el.css('margin-bottom'));
+        var out = parseInt(el.css('padding-bottom'))
+                +parseInt(el.css('padding-top'))
+                +parseInt(el.css('margin-top'))
+                +parseInt(el.css('margin-bottom'));
         //Input fields has inner border
         if (el[0].tagName.toLowerCase() != 'input')
             out += parseInt(el.css('border-top-width'))
@@ -194,14 +270,40 @@ $(function() {
             
         return out;
     };
+    jQuery.fn.innerEdgeHeight = function() {
+        var el = $(this);
+        var out = parseInt(el.css('padding-top'))
+                +parseInt(el.css('padding-bottom'));
+        
+        //Input fields has inner border
+        if (el[0].tagName.toLowerCase() == 'input')
+            out += parseInt(el.css('border-top-width'))
+                    +parseInt(el.css('border-bottom-width'));
+            
+            
+        return out;
+    };
+    
+    jQuery.fn.innerEdgeWidth = function() {
+        var el = $(this);
+        
+        var out = parseInt(el.css('padding-left'))
+                +parseInt(el.css('padding-right'));
+        //Input fields has inner border
+        if (el[0].tagName.toLowerCase() == 'input')
+            out += parseInt(el.css('border-left-width'))
+                    +parseInt(el.css('border-right-width'))
+    
+        return out;
+    };
     
     jQuery.fn.outerWidth = function(width) {
         var el = $(this)
         if (typeof width == 'undefined')
-            return el.width()+el.edgeWidth();
+            return el.width()+el.outerEdgeWidth();
         else {
             $(this).each(function() {
-                $(this).width(width-$(this).edgeWidth());
+                $(this).width(Math.max(0,width-$(this).outerEdgeWidth()));
             })
         }
         return $(this);
@@ -210,10 +312,34 @@ $(function() {
     jQuery.fn.outerHeight= function(height) {
         var el = $(this)
         if (typeof height == 'undefined')
-            return el.height()+el.edgeHeight();
+            return el.height()+el.outerEdgeHeight();
         else {
             $(this).each(function() {
-                $(this).height(height-$(this).edgeHeight()); 
+                $(this).height(Math.max(0,height-$(this).outerEdgeHeight())); 
+            });
+        }
+        return $(this);
+    };
+    
+    jQuery.fn.innerWidth = function(width) {
+        var el = $(this)
+        if (typeof width == 'undefined')
+            return el.width();
+        else {
+            $(this).each(function() {
+                $(this).width(width);
+            })
+        }
+        return $(this);
+    };
+    
+    jQuery.fn.innerHeight= function(height) {
+        var el = $(this)
+        if (typeof height == 'undefined')
+            return el.height();
+        else {
+            $(this).each(function() {
+                $(this).height(height); 
             });
         }
         return $(this);
@@ -304,5 +430,13 @@ $(function() {
     
     jQuery.fn.clear = function() {
         $(this).html('');
+    };
+    
+    jQuery.fn.bindOnce = function(evt,handler) {
+        $(this).unbind(evt,handler).bind(evt,handler);
+    };
+    
+    jQuery.fn.contains = function(elms) {
+        return $(this).has(elms).length > 0;
     };
 })
