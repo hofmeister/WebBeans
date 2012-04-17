@@ -52,6 +52,7 @@ $wb.data.Model = $wb.Class('Model',{
             validator:validator ? validator : null
         };
         this.trigger('added',[[id]]);
+        return this._fields[id];
     },
     
     getField:function(id) {
@@ -167,21 +168,82 @@ $wb.data.Service = $wb.Class('Service',{
             this._remover.apply(this,[ids]);
     }
 });
+$wb.data.JsonSocket = $wb.Class('JsonSocket',{
+    __extends:[$wb.core.Events,$wb.core.Utils],
+    _url:null,
+    _ws:null,
+    _opened:false,
+    __construct:function(url) {
+        this._url = new $wb.Url(url,$wb.location);
+        this._url.protocol = 'ws';
+        this._url.anchor = '';
+        this._url.params = {};
+    },
+    open:function(callback) {
+        if (this._opened) {
+            if (callback)
+                callback();
+            return;
+        }
+        this._opened = true;
+        this._ws = new WebSocket(this._url.toString());
+        this._ws.onopen = function() {
+            this.trigger('open');
+            if (callback)
+                callback();
+        }.bind(this);
+        
+        this._ws.onmessage = this._onMessage.bind(this);
+        this._ws.onclose = function() {
+            this._opened = false;
+            this.trigger('close');
+        }.bind(this);
+    },
+    isOpened:function() {
+        return this._opened;
+    },
+    _onMessage:function(evt) {
+        var d = JSON.parse(evt.data);
+        this.trigger('message',[d,evt]);
+    },
+    send:function(data) {
+        var self = this;
+        this.open(function() {
+            self._ws.send(JSON.stringify(data));
+        });
+    }
+});
 
 $wb.data.JsonService = $wb.Class('JsonService',{
     __extends:[$wb.core.Events,$wb.core.Utils],
     opts:{},
+    _socket:{},
+    _socketInstances:{},
     __construct:function(opts) {
         if (!opts) opts = {};
         this.__super(opts);
         this.require(opts,'schema');
         this.opts = opts;
+    },
+    socket:function(name,type) {
+        if (!type)
+            type = $wb.data.JsonSocket;
         
+        if (!this._socketInstances[name])
+            this._socketInstances[name] = new type(this._socket[name].url);
+        return this._socketInstances[name];
     },
     load:function() {
         var self = this;
         $.getJSON(this.opts.schema,function(data) {
             var baseUrl = new $wb.Url(data.url,self.opts.schema);
+            if (data.sockets) {
+                for(var socketName in data.sockets) {
+                    var socket = data.sockets[socketName];
+                    self._socket[socketName] = socket;
+                }
+            }
+            self.baseUrl = baseUrl;
             for(var controllerName in data.methods) {
                 var controller = data.methods[controllerName];
                 self[controllerName] = {};
@@ -263,22 +325,49 @@ $wb.data.JsonService = $wb.Class('JsonService',{
     }
 });
 
-$wb.data.Store = $wb.Class('Store',{
-    __extends:[$wb.core.Events,$wb.core.Utils],
-    _data:null,
-    _model:null,
-    __construct:function(opts) {
-        this.__super(opts);
-        if (opts && opts.model) {
-            if (!$wb.utils.isA(opts.model, "Model"))
-                throw "'model' argument must be instance of Model";
-            this._model = opts.model;
-        }            
+$wb.data.Store = $wb.Class('Store',
+    /**
+     * @lends $wb.data.TreeStore.prototype
+     * @augments $wb.data.Events
+     * @augments $wb.core.Utils
+     */
+    {
+        __extends:[$wb.core.Events,$wb.core.Utils],
+        
+        /**
+         * The model instance - if any.
+         * @private
+         */
+        _model:null,
+        /**
+         * The options
+         * @private
+         */
+        opts:{},
+        /**
+         * @constructs
+         * @param {Object} opts Options
+         * @param {$wb.data.Model} [opts.model] Model for the data store. Usage is defined by subclasses
+         */
+        __construct:function(opts) {
+            if (!opts) opts = {};
+            this.__super(opts);
+            if (opts && opts.model) {
+                if (!$wb.utils.isA(opts.model, "Model"))
+                    throw "'model' argument must be instance of Model";
+                this._model = opts.model;
+            }
+            this.opts = opts;
+        },
+        getModel:function() {
+            return this._model;
+        }
     }
-});
+);
 
 $wb.data.KeyValueStore = $wb.Class('KeyValueStore',{
     __extends:[$wb.data.Store],
+    _data:null,
     __construct:function(opts) {
         this.__super(opts);
         if (this.model)
@@ -316,6 +405,7 @@ $wb.data.ListStore = $wb.Class('ListStore',{
     _sortFunction:null,
     _limit:0,
     _offset:0,
+    _data:null,
     __construct:function(opts) {
         this.__super(opts);
         this._data = {
@@ -327,17 +417,13 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         this.addAll([row]);
     },
     addAll:function(rows) {
-        var self = this;
         for(var i = 0; i < rows.length;i++) {
             if (this._model)
                 rows[i] = this._model.create(rows[i]);
             var found = false;
             if (this._model) {
                 var key = this._model.getKey(rows[i]);
-                var oldRow = this.getByMethod(key,function(row) {
-                    return self._model.getKey(row);
-                });
-
+                var oldRow = this.getByKey(key);
                 if (oldRow) {
                     $.extend(oldRow,rows[i]);
                     found = true;
@@ -353,6 +439,14 @@ $wb.data.ListStore = $wb.Class('ListStore',{
             this.trigger('added',[rows]);
         }
     },
+    update:function(row) {
+        var i = this.indexOf(row);
+        if (i < 0) 
+            return;
+        $.extend(this._data.rows.get(i),row);
+        this.trigger('change');
+        this.trigger('updated',[[row]]);
+    },
     getByMethod:function(value,comparator) {
         var i = this.getIndexByMethod(value,comparator);
         if (i > -1)
@@ -367,6 +461,25 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         }
         return -1;
     },
+    getByKey:function(key) {
+        var i = this.getIndexByKey(key);
+        if (i > -1)
+            return this._data.rows.get(i);
+        return null;
+    },
+    getIndexByKey:function(key) {
+        if ($.type(key) == 'array') {
+            key = key.join(',');
+        }
+        var i = this.getIndexByMethod(key,function(row) {
+            return this.getModel().getKey(row);
+        }.bind(this));
+        return i;
+    },
+    indexOf:function(row) {
+        var key = this.getModel().getKey(row);
+        return this.getIndexByKey(key);
+    },
     get:function(ix) {
         return this._data.rows.get(ix);
     },
@@ -374,13 +487,10 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         this.removeAll([ix]);
     },
     removeAll:function(ixs) {
-        var self = this;
-        for(var i = 0; i < ixs.length;i++) {
+         for(var i = 0; i < ixs.length;i++) {
             var ix = ixs[i];
-            if (this._model) {
-                ix = this.getIndexByMethod(""+ix,function(row) {
-                    return self._model.getKey(row);
-                });
+            if (this._model && $.type(ix) == 'object') {
+                ix = this.indexOf(ix);
                 if (ix > -1)
                     this._data.rows.remove(ix);
             } else {
@@ -499,7 +609,8 @@ $wb.data.TableStore = $wb.Class('TableStore',{
             
             for(var id in fields) {
                 var f = fields[id];
-                this._addColumn(f.id,f.shortName);
+                if (!f.hidden)
+                    this._addColumn(f.id,f.shortName);
             }
             var self = this;
             this._model.bind('added',function(id) {
@@ -562,3 +673,240 @@ $wb.data.TableStore = $wb.Class('TableStore',{
         
     }
 });
+
+
+$wb.data.TreeStore = $wb.Class('TreeStore',
+    /**
+     * @lends $wb.data.TreeStore.prototype
+     * @augments $wb.data.Store
+     */
+    {
+        __extends:[$wb.data.Store],
+        _nodes:{},
+        _children:{},
+        _roots:{},
+        /**
+        * @constructs
+        * @param {Object} opts Options
+        * @param {String} [opts.idField="id"] field that indicates which field contains the primary id
+        * @param {String} [opts.parentField="parentId"] field that indicates which parent a node belongs to
+        * @param {String} [opts.nameField="name"] field that indicates what a nodes name is
+        */
+        __construct:function(opts) {
+            opts = $.extend({
+                idField:"id",
+                parentField:"parentId",
+                nameField:"name"
+            },opts)
+            this.__super(opts);
+        },
+        /**
+         * Get parent id from row
+         * @private
+         */
+        _getParentId:function(row) {
+            var out =  $wb.utils.GetValue(row, this.opts.parentField);
+            if (!out)
+                out = null;
+            return out;
+        },
+        /**
+         * Get id from row
+         * @private
+         */
+        _getId:function(row) {
+            return $wb.utils.GetValue(row, this.opts.idField);
+        },
+        /**
+         * Get name from row
+         * @private
+         */
+        _getName:function(row) {
+            return $wb.utils.GetValue(row, this.opts.nameField);
+        },
+        /**
+         * Add row to store
+         * @param {Object|Object[]} row(s)
+         * @returns {$wb.data.TreeStore} itself
+         */
+        add:function(row) {
+            this.notEmpty(row,_("row is required"));
+            if ($.type(row) != 'array') {
+                row = [row];
+            }
+            for(var i = 0; i < row.length;i++) {
+                this._add(row[i]);
+            }
+            this.trigger('add',[row]);
+            return this;
+        },
+        /**
+         * Remove row from store
+         * @param {Object|Object[]} row(s)
+         * @returns {$wb.data.TreeStore} itself
+         */
+        remove:function(row) {
+            this.notEmpty(row,_("row is required"));
+            if ($.type(row) != 'array') {
+                row = [row];
+            }
+            for(var i = 0; i < row.length;i++) {
+                this._remove(row[i]);
+            }
+            this.trigger('remove',[row]);
+            return this;
+        },
+        /**
+         * Update row in store
+         * @param {Object|Object[]} row(s)
+         * @returns {$wb.data.TreeStore} itself
+         */
+        update:function(row) {
+            this.notEmpty(row,_("row is required"));
+            if ($.type(row) != 'array') {
+                row = [row];
+            }
+            for(var i = 0; i < row.length;i++) {
+                this._update(row[i]);
+            }
+            this.trigger('update',[row]);
+            return this;
+        },
+        /**
+         * Get tree structure
+         * @returns {Object} tree structure
+         */
+        getTree:function() {
+            var roots = [];
+            for(var id in this._roots) {
+                var root = this._roots[id];
+                roots.push(root);
+                root.children = this.getSubTree(id);
+            }
+            if (roots.length == 0) {
+                return null;
+            }
+            if (roots.length == 1) {
+                return roots[0];
+            }
+            return {
+                name:"root",
+                id:"root",
+                parentId:null,
+                children:roots
+            };
+        },
+        /**
+         * Get sub tree structure
+         * @returns {Object} tree structure
+         */
+        getSubTree:function(id) {
+            if (!this._children[id])
+                return null;
+            
+            var out = [];
+            for(var id in this._children[id]) {
+                var node = this._nodes[id];
+                out.push(node);
+                node.children = this.getSubTree(id);
+            }
+            return out;
+        },
+        
+        /**
+         * Make tree entry from row
+         * @private
+         * @param {Object} row
+         * @returns {Object} entry
+         */
+        _makeEntry:function(row) {
+            var parentId = this._getParentId(row);
+            var id = this._getId(row);
+            var name = this._getName(row);
+            return {id:id,parentId:parentId,row:row,name:name};
+        },
+        /**
+         * Add row to store
+         * @private
+         * @param {Object} row
+         * @returns {$wb.data.TreeStore} itself
+         */
+        _add:function(row) {
+            var parentId = this._getParentId(row);
+            var id = this._getId(row);
+            
+            if (!id)
+                throw new $wb.Error(_("Missing id value on tree node"),row);
+            
+            var entry = this._makeEntry(row);
+            
+            if (this._nodes[id])
+                throw new $wb.Error(_("Row already exists in store: %s",id),row);
+            
+            this._nodes[id] = entry;
+            
+            if (parentId) {
+                if (!this._children[parentId])
+                    this._children[parentId] = {};
+                this._children[parentId][id] = this._nodes[id];
+            } else {
+                this._roots[id] = this._nodes[id];
+            }
+            return this;
+        },
+        /**
+         * Remove row from store
+         * @private
+         * @param {Object} row
+         * @returns {$wb.data.TreeStore} itself
+         */
+        _remove:function(row) {
+            var parentId = this._getParentId(row);
+            var id = this._getId(row);
+            
+            if (!id)
+                throw new $wb.Error(_("Missing id value on tree node"),row);
+            
+            delete this._nodes[id];
+            delete this._roots[id];
+            
+            if (parentId && this._children[parentId]) {
+                var children = this._children[parentId];
+                for(var id in children) {
+                    this.remove(children[id].row);
+                }
+            }
+            return this;
+        },
+        /**
+         * Update row in store
+         * @private
+         * @param {Object} row
+         * @returns {$wb.data.TreeStore} itself
+         */
+        _update:function(row) {
+            var parentId = this._getParentId(row);
+            var id = this._getId(row);
+            
+            if (!id)
+                throw new $wb.Error(_("Missing id value on tree node"),row);
+            
+            var entry = this._makeEntry(row);
+            
+            if (!this._nodes[id])
+                throw new $wb.Error(_("Row not found in store: %s",id),row);
+            
+            this._nodes[id] = $.extend(true,this._nodes[id],entry);
+            delete this._roots[id];
+            
+            if (parentId) {
+                if (!this._children[parentId])
+                    this._children[parentId] = {};
+                this._children[parentId][id] = this._nodes[id];
+            } else {
+                this._roots[id] = this._nodes[id];
+            }
+            return this;
+        }
+    }
+);

@@ -55,8 +55,10 @@ $wb.ui.layout.Fill = function() {
         throw "Fill layout can only handle a single child";
     var width = this.target().innerWidth();
     var height = this.target().innerHeight();
-    nodes[0].elm().outerWidth(width);
-    nodes[0].elm().outerHeight(height);
+    if (width > 0)
+        nodes[0].elm().outerWidth(width);
+    if (height > 0)
+        nodes[0].elm().outerHeight(height);
     
 };
 
@@ -213,6 +215,13 @@ $wb.ui.Widget = $wb.Class('Widget',
             this.children().push(child);
             return this;
         },
+        option:function(name) {
+            if (arguments.length > 1) {
+                this.opts[name] = arguments[1];
+                return this;
+            }
+            return this.opts[name];
+        },
         /**
          * Get all child widgets of this widget
          * @returns {$wb.ui.Widget[]} children
@@ -227,7 +236,9 @@ $wb.ui.Widget = $wb.Class('Widget',
          * @returns {$wb.ui.Widget} itself
          */
         set:function(ix,child) {
-            this.remove(ix);
+            if (this._children[ix]) {
+                this._children[ix].detach();
+            }
             this._children[ix] = child;
             return this;
         },
@@ -306,7 +317,8 @@ $wb.ui.Widget = $wb.Class('Widget',
             if (this.parent())
                 this.parent().remove(this);
             delete this.opts;
-            this.elm().detach();
+            this.detach();
+            this.trigger('destroy');
             delete this;
         },
         /**
@@ -314,6 +326,11 @@ $wb.ui.Widget = $wb.Class('Widget',
          * @returns {$wb.ui.Widget}
          */
         detach:function() {
+            while(this._children.length > 0) {
+                var child = this._children.pop();
+                child.detach();
+            }
+            this.trigger('detach');
             this.elm().detach();
             return this;
         },
@@ -1045,6 +1062,8 @@ $wb.ui.Tree = $wb.Class('Tree',{
     _nodeTmpl:null,
     _subTreeTmpl:null,
     _hideRoot:false,
+    _nodeIndex:{},
+    _treeIndex:{},
     __construct:function(opts) {
         if (!opts) opts = {};
         opts = $.extend({
@@ -1053,13 +1072,13 @@ $wb.ui.Tree = $wb.Class('Tree',{
             subTreeTmpl:$wb.template.tree.sub,
             hideRoot:false,
             target:'.wb-tree-root',
-            root:null
+            root:null,
+            store:null
         },opts);
         this.__super(opts);
         this._nodeTmpl = opts.nodeTmpl;
         this._subTreeTmpl = opts.subTreeTmpl;
         this._hideRoot = opts.hideRoot;
-        
         
         this.bind('paint',function() {
             if (opts.hideRoot) {
@@ -1074,9 +1093,78 @@ $wb.ui.Tree = $wb.Class('Tree',{
             
             this._bindKeyNav();
         }
+        
+        if (opts.store) {
+            this.setStore(opts.store);
+        }
+    },
+    setStore:function(store) {
+        if (store && !$wb.utils.isA(store, "TreeStore"))
+            throw new $wb.Error(_("store option must be an instance of TreeStore",this));
+        this.opts.store = store;
+        if (store) {
+            this._readFromStore();
+            var self = this;
+            store.bind('add',function(rows) {
+                for(var i = 0; i < rows.length;i++) {
+                    var row = rows[i];
+                    if (row.parentId) {
+                        if (self._treeIndex[row.parentId]) {
+                            self._treeIndex[row.parentId].add(row.name,null,row,row.id);
+                        }
+                    } else {
+                        self.add(row.name,null,row,row.id);
+                    }
+                }
+
+                self.render();
+            });
+            store.bind('remove',function(rows) {
+                for(var i = 0; i < rows.length;i++) {
+                    var row = rows[i];
+                    if (self._nodeIndex[row.id])
+                        self._nodeIndex[row.id].destroy();
+                    delete self._nodeIndex[row.id];
+                    if (self._treeIndex[row.id])
+                        self._treeIndex[row.id].destroy();
+                    delete self._treeIndex[row.id];
+                }
+            });
+            store.bind('update',function(rows) {
+                for(var i = 0; i < rows.length;i++) {
+                    var row = rows[i];
+                    if (self._nodeIndex[row.id]) {
+                        self._nodeIndex[row.id].setData(row);
+                        self._nodeIndex[row.id].title(row.name);
+                    }
+                }
+            });
+        }
+    },
+    getStore:function() {
+        return this.opts.store;
     },
     getRoot:function() {
         return this.opts.root != null ? this.opts.root : this;
+    },
+    _readFromStore:function() {
+         if (!this.opts.store) return null;
+         var root = this.opts.store.getTree();
+         if (root == null) return null;
+         return this._addFromStore(root,true);
+    },
+    _addFromStore:function(node,isRoot) {
+        if (node.children && node.children.length > 0) {
+            var elm = this.parent();
+            if (!isRoot)
+                elm = this.add(node.name,[],node.row,node.id);
+            for(var i = 0; i < node.children.length;i++) {
+                elm.tree._addFromStore(node.children[i]);
+            }
+            return elm;
+        } else {
+            return this.add(node.name,null,node.row,node.id);
+        }
     },
     _bindKeyNav:function() {
         this.elm().keydown(function(evt) {
@@ -1161,10 +1249,15 @@ $wb.ui.Tree = $wb.Class('Tree',{
         if ($wb.utils.isA(title,'TreeNode')) {
             title.elm().addClass('wb-leaf');
             this.children().push(title);
+            if (title.opts.id)
+                this._nodeIndex[title.opts.id] = elm;
             return title;
         }
-        if ($wb.utils.isA(title,'Tree')) {
-            this.children().push(title);
+        
+        if ($wb.utils.isA(arg,'Tree')) {
+            var elm = this._addSubTree(title,arg,data);
+            console.log(elm);
+            this.children().push(elm);
             return title;
         }
 
@@ -1175,6 +1268,8 @@ $wb.ui.Tree = $wb.Class('Tree',{
             elm = this._makeNode(title,arg,data,id);
             elm.elm().addClass('wb-leaf');
         }
+        if (id)
+            this._nodeIndex[id] = elm;
         this._children.push(elm);
         return elm;
     },
@@ -1214,9 +1309,10 @@ $wb.ui.Tree = $wb.Class('Tree',{
             }
             parent.toggleClass('wb-open');
         };
+        
+        btn.title(title);
 
         btn.bind('paint',function() {
-            this.title(title);
             this.elm().find('.wb-handle,.wb-title,.wb-icon').unbind();
             this.elm().find('.wb-handle').bind('click',toggleOpen);
             this.elm().find('.wb-title,.wb-icon').bind('dblclick',toggleOpen);
@@ -1235,8 +1331,19 @@ $wb.ui.Tree = $wb.Class('Tree',{
 
         return btn;
     },
-    _makeSubTree:function(title,nodes,data,id) {
+    _addSubTree:function(title,subTree,data) {
         var node = this._makeNode(title,null,data);
+        
+        node.tree = subTree;
+        
+        if (subTree.opts.id)
+            this._treeIndex[subTree.opts.id] = subTree;
+        
+        node.add(subTree);
+
+        return node;
+    },
+    _makeSubTree:function(title,nodes,data,id) {
         var subTree = new $wb.ui.Tree({
             tmpl:this._subTreeTmpl,
             nodeTmpl:this._nodeTmpl,
@@ -1245,14 +1352,12 @@ $wb.ui.Tree = $wb.Class('Tree',{
             root:this.getRoot(),
             id:id
         });
+        
         for(var i in nodes) {
             var m = nodes[i];
             subTree.add(m.title,m.arg,m.data,m.id);
         }
-
-        node.add(subTree);
-
-        return node;
+        return this._addSubTree(title,subTree,data);
     }
 });
 
@@ -1326,334 +1431,608 @@ $wb.ui.Accordion = $wb.Class('Accordion',{
 });
 
 /* Table */
-$wb.ui.Table = $wb.Class('Table',{
-    __extends:[$wb.ui.Widget],
-    _header:null,
-    _footer:null,
-    _body:null,
-    __construct:function(opts) {
-        if (!opts) opts = {};
-        this.__super($.extend({
-            tmpl:$wb.template.table.base,
-            headerTmpl:$wb.template.table.header,
-            footerTmpl:$wb.template.table.footer,
-            bodyTmpl:$wb.template.table.body,
-            rowTmpl:$wb.template.table.row,
-            bodyCellTmpl:$wb.template.table.body_cell,
-            headerCellTmpl:$wb.template.table.header_cell
-        },opts));
-        
-        this.require(this.opts,'store');
-        if (!$wb.utils.isA(this.opts.store,'TableStore'))
-            throw "Table widget requires TableStore or descending";
-        
-        this._header = $(this.opts.headerTmpl());
-        this._footer = $(this.opts.footerTmpl());
-        this._body = $(this.opts.bodyTmpl());
-        
-        this.bind('paint',function() {
-            var elm = this.target();
-            elm.append(this._header)
-            .append(this._footer)
-            .append(this._body);
-                
-            this._paintHeader();
-            this._paintRows();
-            this._paintFooter();
+
+
+$wb.ui.TableRow = $wb.Class('TableRow',
+    {
+        __extends:[$wb.ui.Widget],
+        _editMode:false,
+        __construct:function(opts) {
+            if (!opts) opts = {};
+            this.require(opts,'table');
+            if (!opts.tmpl)
+                opts.tmpl = opts.table.option('rowTmpl')
+            this.__super(opts);
             
-        });
-        var self = this;
-        this.opts.store.bind('change',function() {
-            self.render();
-        });
-    },
-    _paintFooter:function() {
-        
-    },
-    _paintHeader:function() {
-        this._header.clear();
-        var row = this._newRow();
-        this._header.append(row);
-        var cols = this.opts.store.getColumns();
-        for(var i = 0;i < cols.length;i++) {
-            var col = cols[i];
-            var cell = $(this.opts.headerCellTmpl());
-            cell.attr('rel',col.id);
-            cell.html(col.name);
-            row.append(cell);
+            this.bind('paint',function() {
+                if (this._editMode) {
+                    this._editRow();
+                } else {
+                    this._viewRow();
+                }
+            });
+        },
+        getTable:function() {
+            return this.opts.table;
+        },
+        getStore:function() {
+            return this.opts.table.getStore();
+        },
+        getData:function() {
+            if (this._editMode) {
+                var data = $wb.ui.form.Form.methods.getData.apply(this);
+                $.extend(this.opts.data,data);
+            }
+            return this.opts.data;
+        },
+        setData:function(data) {
+            this.opts.data = data;
+            $wb.ui.form.Form.methods.setData.apply(this,[data]);
+            return this;
+        },
+        makeEditable:function() {
+            this._editMode = true;
+            this.render();
+            return this;
+        },
+        makeStatic:function() {
+            this._editMode = false;
+            this.render();
+            return this;
+        },
+        isNew:function() {
+            return this._isNew;
+        },
+        setIsNew:function(isNew) {
+            this._isNew = isNew;
+            return this;
+        },
+        _editRow:function() {
+            var row = this.target();
+            row.html('');
+            var cols = this.getStore().getColumns();
+            var cellEditors = this.getTable().option('celleditor');
+            var bodyCellTmpl = this.getTable().option('bodyCellTmpl');
+            var bodyCellEditor = this.getTable().option('bodyCellEditor');
+            
+            for(var i in cols) {
+                var col = cols[i];
+                var value = $wb.utils.GetValue(this.getData(),col.id);
+                var editor = bodyCellEditor;
+                
+                if (cellEditors && cellEditors[col.type]) {
+                    editor = cellEditors[col.type];
+                }
+                var cell = $(bodyCellTmpl());
+                cell.append(editor(col,value));
+                row.append(cell);
+            }
+            
+            var headerActions = this.getTable().option('headerActions');
+            var rowActions = this.getTable().option('rowActions');
+            var editActions = this.getTable().option('rowEditActions');
+            
+            if (headerActions || rowActions) {
+                var actionCell = $(bodyCellTmpl());
+                actionCell.addClass('wb-actions');
+                var action = new $wb.ui.Link({
+                    title:_('Cancel'),
+                    action:function() {
+                        if (this.isNew()) {
+                            this.destroy();
+                        } else {
+                            this.makeStatic();
+                        }
+                    }.bind(this)
+                });
+                actionCell.append(action.render());
+                
+                if (editActions) {
+                    for(var name in editActions) {
+                        var action = new $wb.ui.Link({
+                            title:name,
+                            action:editActions[name].bind(this)
+                        });
+                        actionCell.append(action.render());
+                    }
+                }
+                row.append(actionCell);
+            }
+            
+            return row;
+        },
+        remove:function() {
+          this.getStore().remove(this.getData());
+          this.__super();
+        },
+        destroy:function() {
+          this.getStore().remove(this.getData());
+          this.__super();
+        },
+        _viewRow:function() {
+            var row = this.target();
+            row.html('');
+            
+            var bodyCellTmpl = this.getTable().option('bodyCellTmpl');
+            var cols = this.getStore().getColumns();
+            for(var i in cols) {
+                var col = cols[i];
+                var cell = $(bodyCellTmpl());
+                var value = $wb.utils.GetValue(this.getData(),col.id);
+                cell.html(value);
+                row.append(cell);
+            }
+            
+            var headerActions = this.getTable().option('headerActions');
+            var rowActions = this.getTable().option('rowActions');
+            
+            if (headerActions || rowActions) {
+                var actionCell = $(bodyCellTmpl());
+                actionCell.addClass('wb-actions');
+                if (rowActions) {
+                    for(var name in rowActions) {
+                        var action = new $wb.ui.Link({
+                            title:name,
+                            action:rowActions[name].bind(this)
+                        });
+                        actionCell.append(action.render());
+                    }
+                }
+                row.append(actionCell);
+            }
+            
+            return row;
         }
-    },
-    _newRow:function() {
-        return $(this.opts.rowTmpl());
-    },
-    _paintRows:function() {
-        this._body.clear();
-        var rows = this.opts.store.getRows().toArray();
-        var odd = false;
-        for(var i in rows) {
-            var row = this._paintRow(rows[i]);
-            this._body.append(row);
-            if (odd)
-                row.addClass('wb-odd');
-            odd = !odd;
-        }
-    },
-    _paintRow:function(rowData) {
-        var row = this._newRow();
-        
-        var cols = this.opts.store.getColumns();
-        for(var i in cols) {
-            var col = cols[i];
-            var cell = $(this.opts.bodyCellTmpl());
-            var value = $wb.utils.GetValue(rowData,col.id);
-            cell.html(value);
-            row.append(cell);
-        }
-        return row;
     }
-    
-});
+);
+
+$wb.ui.Table = $wb.Class('Table',
+    /**
+     * @lends $wb.ui.Table.prototype
+     * @augments $wb.ui.Widget
+     */
+    {
+        __extends:[$wb.ui.Widget],
+        _header:null,
+        _footer:null,
+        _body:null,
+        _rows:[],
+        /**
+         * @constructs
+         * @param {Object} opts Options
+         * @param {Boolean} [opts.editable] Make table editable
+         * @param {Function} [opts.headerTmpl] Header template function
+         * @param {Function} [opts.footerTmpl] Footer template function
+         * @param {Function} [opts.bodyTmpl] Table body template function
+         * @param {Function} [opts.rowTmpl] Default row renderer
+         * @param {Function} [opts.bodyCellTmpl] Default cell renderer
+         * @param {$wb.ui.Widget} [opts.bodyCellEditor] Default cell editor
+         * @param {Function} [opts.heaerCellTmpl] Default header cell renderer
+         * @param {Map<Type,Function>} [opts.cellrenderer] Type specific cell renderers
+         * @param {Map<Type,Function>} [opts.rowActions] Map of row btn titles along with a callback function
+         * @param {Map<Type,Function>} [opts.headerActions] Map of header btn titles along with a callback function
+         * @param {Map<Type,Function>} [opts.celleditor] Type specific cell editors
+         * @param {$wb.ui.Widget} [opts.roweditor] Row editor
+         */
+        __construct:function(opts) {
+            if (!opts) opts = {};
+            this.__super($.extend({
+                tmpl:$wb.template.table.base,
+                headerTmpl:$wb.template.table.header,
+                footerTmpl:$wb.template.table.footer,
+                bodyTmpl:$wb.template.table.body,
+                rowTmpl:$wb.template.table.row,
+                bodyCellTmpl:$wb.template.table.body_cell,
+                headerCellTmpl:$wb.template.table.header_cell,
+                bodyCellEditor:function(col,value) {
+                    var field = new $wb.ui.form.TextField({name:col.id});
+                    field.value(value);
+                    return field.render();
+                }
+            },opts));
+
+            this.require(this.opts,'store');
+            if (!$wb.utils.isA(this.opts.store,'TableStore'))
+                throw "Table widget requires TableStore or descending";
+
+            this._header = $(this.opts.headerTmpl());
+            this._footer = $(this.opts.footerTmpl());
+            this._body = $(this.opts.bodyTmpl());
+
+            this.bind('paint',function() {
+                var elm = this.target();
+                elm.append(this._header)
+                .append(this._footer)
+                .append(this._body);
+
+                this._paintHeader();
+                this._paintRows();
+                this._paintFooter();
+
+            });
+            this.opts.store.bind('change',function() {
+                this.render();
+            }.bind(this));
+        },
+        getStore:function() {
+            return this.opts.store;
+        },
+        getRow:function(key) {
+            var i = this.getStore().getIndexByKey(key);
+            if (i > -1)
+                return this._rows[i];
+            return null;
+        },
+        _paintFooter:function() {
+
+        },
+        _paintHeader:function() {
+            this._header.clear();
+            var row = $(this.opts.rowTmpl());
+            this._header.append(row);
+            var cols = this.opts.store.getColumns();
+            for(var i = 0;i < cols.length;i++) {
+                var col = cols[i];
+                var cell = $(this.opts.headerCellTmpl());
+                cell.attr('rel',col.id);
+                cell.html(col.name);
+                row.append(cell);
+            }
+            if (this.opts.headerActions || this.opts.rowActions) {
+                var actionCell = $(this.opts.headerCellTmpl());
+                actionCell.addClass('wb-actions');
+                if (this.opts.headerActions) {
+                    for(var name in this.opts.headerActions) {
+                        var action = new $wb.ui.Link({
+                            title:name,
+                            action:this.opts.headerActions[name].bind(this)
+                        });
+                        actionCell.append(action.render());
+                    }
+                }
+                row.append(actionCell);
+            }
+        },
+        _paintRows:function() {
+            this._body.clear();
+            var rows = this.opts.store.getRows().toArray();
+            var odd = true;
+            this._rows = [];
+            for(var i in rows) {
+                var row = this.addRow(rows[i]);
+                this._rows.push(row);
+                row.render();
+                if (odd)
+                    row.elm().addClass('wb-odd');
+                odd = !odd;
+            }
+        },
+        /**
+         * @description Add row to table. Typically you should either add rows on the TableStore or use the newRow() 
+         * method to make a new row form.
+         * 
+         * @returns {$wb.ui.TableRow} A row
+         */
+        addRow:function(data) {
+            if (!data)
+                data = {};
+            var row = new $wb.ui.TableRow({table:this,data:data})
+            this._body.append(row.elm());
+            return row;
+        },
+        /**
+         * @description Add new row form to table. Destroy this form when you're done (and add the resulting data to
+         * the store)
+         * @returns {$wb.ui.TableRow} An editable row
+         */
+        newRow:function() {
+            return this.addRow().setIsNew(true).makeEditable(true);
+        }
+
+    }
+);
 
 /* Frame */
-$wb.ui.Frame = $wb.Class('Frame',{
-    __extends:[$wb.ui.Pane],
-    __construct:function(opts) {
-        if (!opts) opts = {};
-        opts = $.extend({
-            tmpl:$wb.template.frame,
-            target:'.wb-content',
-            frameHeader:'.wb-frame-header'
-        },opts);
+$wb.ui.Frame = $wb.Class('Frame',
+    /**
+     * Frame widget
+     * @lends $wb.ui.Frame.prototype
+     * @augments $wb.ui.Pane
+     */
+    {
+        __extends:[$wb.ui.Pane],
         
-        this.__super(opts);
-        
-        if (opts.title) {
-            this.title(opts.title);
-        } else {
-            this.header().hide();
-        }
-       
-        
-    },
-    title:function() {
-        if (arguments.length > 0) {
-            this.opts.title = arguments[0];
-            this.header().children('.wb-title').html(this.opts.title);
-            
-            if (this.opts.title)
-                this.header().show();
-            else
+        /**
+         * @constructs
+         * @param {Object} opts options
+         * @param {String} [opts.title] the frame title
+         * @param {String} [opts.frameHeader='.wb-frame-header'] The css selector for the frame header
+         * 
+         */
+        __construct:function(opts) {
+            if (!opts) opts = {};
+            opts = $.extend({
+                tmpl:$wb.template.frame,
+                target:'.wb-content',
+                frameHeader:'.wb-frame-header'
+            },opts);
+
+            this.__super(opts);
+
+            if (opts.title) {
+                this.title(opts.title);
+            } else {
                 this.header().hide();
-            
+            }
+
+
+        },
+        /**
+         * Get or set title
+         * @param {String} [title] If set - sets the title - otherwise gets it
+         * @returns {String|$wb.ui.Frame} if no argument is given - returns title - otherwise returns itself
+         */
+        title:function() {
+            if (arguments.length > 0) {
+                this.opts.title = arguments[0];
+                this.header().children('.wb-title').html(this.opts.title);
+
+                if (this.opts.title)
+                    this.header().show();
+                else
+                    this.header().hide();
+
+                return this;
+            }
+            return this.opts.title;
+        },
+        /**
+         * Get header elm
+         * @returns {jQueryElement}
+         */
+        header:function() {
+            return this.elm().children(this.opts.frameHeader);
+        },
+        /**
+         * Set main widget
+         * @param {$wb.ui.Widget} child
+         * @returns {$wb.ui.Frame} itself;
+         */
+        set:function(child) {
+            this.clear();
+            this.add(child);
             return this;
         }
-        return this.opts.title;
-    },
-    header:function() {
-        return this.elm().children(this.opts.frameHeader);
-    },
-    set:function(child) {
-        this.clear();
-        this.add(child);
-        return this;
     }
-});
+);
 
 
 
 /* Window */
-$wb.ui.Window = $wb.Class('Window',{
-    __extends:[$wb.ui.Frame],
-    __construct:function(opts) {
-        if (!opts) opts = {};
-        opts = $.extend({
-            tmpl:$wb.template.window,
-            modal:false,
-            moveable:true,
-            width:400,
-            layout:$wb.ui.layout.Fill
-        },opts);
-        
-        this.__super(opts);
-        
-        $wb.ui.Window._windows.push(this);
-        
-        if (opts.modal)
-            $wb.ui.Window._modalCount++;
-        
-        var doPosition = function() {
-            var parent = this.parent();
-            if (!parent) {
-                parent = $('body');
-            }
-            var self = this;
-            
-            var center = function() {
-                var el = self.elm();
-                
-                var availWidth = parent.innerWidth();
-                var availHeight = parent.innerHeight();
+$wb.ui.Window = $wb.Class('Window',
+    /**
+     * Window widget
+     * @lends $wb.ui.Window.prototype
+     * @augments $wb.ui.Frame
+     */
+    {
+        __extends:[$wb.ui.Frame],
+        /**
+         * @constructs
+         * @param {Object} opts options
+         * @param {String} [opts.title] the window title
+         * @param {Boolean} [opts.modal=false] Make window modal
+         * @param {Boolean} [opts.movable=true] Make window movable
+         * @param {int} [opts.width=400] window width
+         * @param {int} [opts.height="auto"] window height
+         */
+        __construct:function(opts) {
+            if (!opts) opts = {};
+            opts = $.extend({
+                tmpl:$wb.template.window,
+                modal:false,
+                moveable:true,
+                width:400,
+                layout:$wb.ui.layout.Fill
+            },opts);
 
-                
-                var width = el.outerWidth();
-                var height = el.outerHeight();
-                
-                var top = (availHeight-height)/2;
-                var left = (availWidth-width)/2;
-                
-                if (self.opts.modal) {
-                    $wb.ui.Window._modalShade.css({
-                        width:$(window).width(),
-                        height:$(window).height()
+            this.__super(opts);
+
+            $wb.ui.Window._windows.push(this);
+
+            if (opts.modal)
+                $wb.ui.Window._modalCount++;
+
+            var doPosition = function() {
+                var parent = this.parent();
+                if (!parent) {
+                    parent = $('body');
+                }
+                var self = this;
+
+                var center = function() {
+                    var el = self.elm();
+
+                    var availWidth = parent.innerWidth();
+                    var availHeight = parent.innerHeight();
+
+
+                    var width = el.outerWidth();
+                    var height = el.outerHeight();
+
+                    var top = (availHeight-height)/2;
+                    var left = (availWidth-width)/2;
+
+                    if (self.opts.modal) {
+                        $wb.ui.Window._modalShade.css({
+                            width:$(window).width(),
+                            height:$(window).height()
+                        });
+                    }
+
+                    var ix = $wb.ui.Window._windows.indexOf(self);
+                    left += 25*ix;
+                    top += 25*ix;
+
+                    while (height < availHeight && (top+height) > availHeight) {
+                        top -= (availHeight/2)-50;
+                    }
+                    while (width < availWidth && (left+width) > availWidth) {
+                        left -= availWidth/2;
+                    }
+
+                    el.css({
+                        position:'absolute',
+                        top:top,
+                        left:left
                     });
+
                 }
-                
-                var ix = $wb.ui.Window._windows.indexOf(self);
-                left += 25*ix;
-                top += 25*ix;
-                
-                while (height < availHeight && (top+height) > availHeight) {
-                    top -= (availHeight/2)-50;
+                center();
+                $(window).resize(center);
+            }
+
+            if (opts.moveable) {
+                this._makeMovable();
+            }
+            this.bind('beforelayout',function() {
+
+
+                if (this.opts.width) {
+                    this.elm().outerWidth(this.opts.width);
                 }
-                while (width < availWidth && (left+width) > availWidth) {
-                    left -= availWidth/2;
+                if (this.opts.height) {
+                    this.elm().outerHeight(this.opts.height);
+                    var availHeight = this.elm().innerHeight()-this.header().outerHeight();
+                    if (availHeight > 0)
+                        this.target().outerHeight(availHeight);
                 }
-                
-                el.css({
-                    position:'absolute',
-                    top:top,
-                    left:left
-                });
-                
-            }
-            center();
-            $(window).resize(center);
-        }
-        
-        if (opts.moveable) {
-            this._makeMovable();
-        }
-        this.bind('beforelayout',function() {
-            
-            
-            if (this.opts.width) {
-                this.elm().outerWidth(this.opts.width);
-            }
-            if (this.opts.height) {
-                this.elm().outerHeight(this.opts.height);
-            }
-            
-            var availHeight = this.elm().innerHeight()-this.header().outerHeight();
-            this.target().outerHeight(availHeight);
-        });
-        this.bind('afterlayout',doPosition);
-        this.bind('show',doPosition);
-        this.bind('render',function() {
-            var zIndex = 200+$wb.ui.Window._windows.length;
-            this.elm().css({
-                'z-index':zIndex
             });
-            
-            if (this.opts.modal) {
-                $('body').append($wb.ui.Window._modalShade);
-                $wb.ui.Window._modalShade.css('z-index',zIndex-1);
-            }
-        });
-        this.bind('close',function() {
-            var ix = $wb.ui.Window._windows.indexOf(this);
-            $wb.ui.Window._windows.splice(ix,1);
-            if (this.opts.modal) {
-                $wb.ui.Window._modalCount--;
-                if ($wb.ui.Window._modalCount == 0)
-                    $wb.ui.Window._modalShade.detach();
-                else {
-                    var zIndex = 200+$wb.ui.Window._windows.length;
+            this.bind('afterlayout',doPosition);
+            this.bind('show',doPosition);
+            this.bind('render',function() {
+                var zIndex = 200+$wb.ui.Window._windows.length;
+                this.elm().css({
+                    'z-index':zIndex
+                });
+
+                if (this.opts.modal) {
+                    $('body').append($wb.ui.Window._modalShade);
                     $wb.ui.Window._modalShade.css('z-index',zIndex-1);
                 }
-            }
-            this.destroy();
-        });
-        var self = this;
-        this.header().find('.wb-close').click(function(evt) {
-            evt.preventDefault();
-            evt.stopPropagation();
-            self.close();
-        });
-        
-    },
-    _makeMovable:function() {
-        var handler = this.header();
-        handler.css('cursor','move');
-        var moving = false;
-        var self = this;
-        var clickedOffset = {};
-        
-        var onMove = function(evt) {
-            if (moving) {
-                var offset = self.elm().offset();
-                var pos = {
-                    top:evt.pageY-clickedOffset.top,
-                    left:evt.pageX-clickedOffset.left
-                };
-                var limit = 10;
-                
-                if (pos.top < limit) {
-                    pos.top = limit;
-                } else if ((pos.top+self.elm().outerHeight()+limit) > $(window).height()) {
-                    pos.top = $(window).height()-limit-self.elm().outerHeight();
+            });
+            this.bind('close',function() {
+                var ix = $wb.ui.Window._windows.indexOf(this);
+                $wb.ui.Window._windows.splice(ix,1);
+                if (this.opts.modal) {
+                    $wb.ui.Window._modalCount--;
+                    if ($wb.ui.Window._modalCount == 0)
+                        $wb.ui.Window._modalShade.detach();
+                    else {
+                        var zIndex = 200+$wb.ui.Window._windows.length;
+                        $wb.ui.Window._modalShade.css('z-index',zIndex-1);
+                    }
                 }
-                
-                if (pos.left < limit) {
-                    pos.left = limit;
-                } else if ((pos.left+self.elm().outerWidth()+limit) > $(window).width()) {
-                    pos.left = $(window).width()-limit-self.elm().outerWidth();
-                }
-                
-                self.elm().css(pos);
-            }
-        }
-        
-        handler.mousedown(function(evt) {
-            evt.preventDefault();
-            evt.stopPropagation();
-            moving = true;
-            var offset = self.elm().offset();
-            clickedOffset = {
-                left:evt.pageX-offset.left,
-                top:evt.pageY-offset.top
-            }
-            $('body')
-            .mousemove(onMove)
-            .one('mouseup',function(evt) {
+                this.destroy();
+            });
+            var self = this;
+            this.header().find('.wb-close').click(function(evt) {
                 evt.preventDefault();
                 evt.stopPropagation();
-                moving = false;
+                self.close();
             });
-        });
-        
-        
-    },
-    close:function() {
-        this.trigger('close');
-        this.destroy(false);
-    },
-    set:function(child) {
-        this.clear();
-        this.add(child);
-        return this;
+
+        },
+        /**
+         * Make this window movable/draggable
+         * @private
+         */ 
+        _makeMovable:function() {
+            var handler = this.header();
+            handler.css('cursor','move');
+            var moving = false;
+            var self = this;
+            var clickedOffset = {};
+
+            var onMove = function(evt) {
+                if (moving) {
+                    var offset = self.elm().offset();
+                    var pos = {
+                        top:evt.pageY-clickedOffset.top,
+                        left:evt.pageX-clickedOffset.left
+                    };
+                    var limit = 10;
+
+                    if (pos.top < limit) {
+                        pos.top = limit;
+                    } else if ((pos.top+self.elm().outerHeight()+limit) > $(window).height()) {
+                        pos.top = $(window).height()-limit-self.elm().outerHeight();
+                    }
+
+                    if (pos.left < limit) {
+                        pos.left = limit;
+                    } else if ((pos.left+self.elm().outerWidth()+limit) > $(window).width()) {
+                        pos.left = $(window).width()-limit-self.elm().outerWidth();
+                    }
+
+                    self.elm().css(pos);
+                }
+            }
+
+            handler.mousedown(function(evt) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                moving = true;
+                var offset = self.elm().offset();
+                clickedOffset = {
+                    left:evt.pageX-offset.left,
+                    top:evt.pageY-offset.top
+                }
+                $('body')
+                .mousemove(onMove)
+                .one('mouseup',function(evt) {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    moving = false;
+                });
+            });
+        },
+        /**
+         * Close window. This destroys the window - if you need to reuse it - use hide();
+         */
+        close:function() {
+            this.trigger('close');
+            this.destroy(false);
+        }
     }
-});
+);
 //Static variable to keep track of modals
+
 $wb.ui.Window._windows = [];
 $wb.ui.Window._modalCount = 0;
 $wb.ui.Window._modalShade = $($wb.template.shade());
 
+/**
+ * Create modal window
+ * @static 
+ * @param {Object} opts Modal window options
+ * @param {$wb.ui.Widget} opts.content the window content
+ * @param {String} [opts.title] the window title
+ * @returns {$wb.ui.Widget} the window
+ */
 $wb.ui.Window.modal = function(opts)  {
     if (!opts) throw "Required argument 'opts' not valid";
     opts.modal = true;
     return $wb.ui.Window.open(opts);
 }
-
+/**
+ * Create window
+ * @static 
+ * @param {Object} opts Modal window options
+ * @param {$wb.ui.Widget} opts.content the window content
+ * @param {String} [opts.title] the window title
+ * @returns {$wb.ui.Widget} the window
+ */
 $wb.ui.Window.open = function(opts)  {
     if (!opts) throw "Required argument 'opts' not valid";
     if (!opts.content) throw "content is required to make window";
@@ -1666,6 +2045,20 @@ $wb.ui.Window.open = function(opts)  {
     
     return win;
 }
-//Shortcuts
+
+/**
+ * Create modal (shortcut)
+ * @param {Object} opts Modal window options
+ * @param {$wb.ui.Widget} opts.content the window content
+ * @param {String} [opts.title] the window title
+ * @returns {$wb.ui.Widget} the window
+ */
 $wb.createModal = $wb.ui.Window.modal;
+/**
+ * Create window (shortcut)
+ * @param {Object} opts Modal window options
+ * @param {$wb.ui.Widget} opts.content the window content
+ * @param {String} [opts.title] the window title
+ * @returns {$wb.ui.Widget} the window
+ */
 $wb.createWindow = $wb.ui.Window.open;

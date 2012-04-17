@@ -716,7 +716,7 @@ require($wbConfig.jQuery,function() {
                     out += this.host;
 
                     var defPort = $wb.Url.protocols[this.protocol];
-                    if (defPort && this.port && this.port != defPort) {
+                    if (!defPort || this.port && this.port != defPort) {
                         out += ":"+this.port;
                     }
                 }
@@ -768,6 +768,7 @@ require($wbConfig.jQuery,function() {
      * @namespace Core classes
      */
     $wb.core = {};
+    
     /**
      * @description Registry class used for name/value stores
      * @class
@@ -818,6 +819,48 @@ require($wbConfig.jQuery,function() {
              */
             unregister:function(key) {
                 delete this._data[key.toLowerCase()];
+            }
+        }
+    );
+        
+    
+    $wb.Error = $wb.Class('Error',
+        /**
+         * @description Error class 
+         * @lends $wb.core.Registry.prototype
+         * @augments $wb.Class
+         */
+        {
+            /**
+             * @description error message
+             * @private
+             * @type String
+             */
+            _msg:'',
+            /**
+             * @description error source
+             * @private
+             * @type Source
+             */
+            _src:'',
+            
+            /**
+             * @constructs
+             * @parem {String} msg - the error message
+             * @param {Object} [src=null] - the error source
+             */
+            __construct:function(msg,src) {
+                this._msg = msg;
+                this._src = src;
+            },
+            getMessage:function() {
+                return this._msg;
+            },
+            getSource:function() {
+                return this._src;
+            },
+            toString:function() {
+                return this._msg;
             }
         }
     );
@@ -879,11 +922,18 @@ require($wbConfig.jQuery,function() {
              * @throws String
              */
             require:function(obj) {
+                this.notEmpty(obj)
                 for(var i = 1; i < arguments.length;i++) {
                     var arg = arguments[i];
-                    if (typeof obj[arg] == 'undefined')
-                        throw "Missing argument: "+this._clz+": "+arg;
+                    if (typeof obj[arg] == 'undefined') {
+                        throw new $wb.Error(_("Missing argument: %s: %s",this._clz,arg),this);   
+                    }
                 }
+            },
+            notEmpty:function(obj,msg) {
+                if (!msg) msg = _("Required value was empty");
+                if (!obj) 
+                    throw new $wb.Error(msg,this);
             }
         }
     );
