@@ -114,16 +114,19 @@ $wb.template = {
             return '<form  class="wb-pane" />';
         },
         input:function(type) {
-            return '<div class="wb-input-container"><label><span class="wb-label" /><input class="wb-input wb-input-'+type+'" type="'+type+'" value="" /></label></div>';
+            return $wb.template.form.container('<input class="wb-input wb-input-'+type+'" type="'+type+'" value="" />');
+        },
+        container:function(contents) {
+            return '<div class="wb-input-container"><label><span class="wb-label" />'+contents+'</label></div>';
         },
         button:function(type) {
             return '<input class="wb-form-button" type="'+type+'" value="" />';
         },
         textarea:function() {
-            return '<div class="wb-input-container"><label><span class="wb-label" /><textarea class="wb-input wb-input-textarea" /></label></div>';
+            return $wb.template.form.container('<textarea class="wb-input wb-input-textarea" />');
         },
         select:function() {
-            return '<div class="wb-input-container"><label><span class="wb-label" /><select class="wb-input wb-input-select" /></label></div>';
+            return $wb.template.form.container('<select class="wb-input wb-input-select" />');
         },
         
         fieldset:function() {

@@ -88,7 +88,7 @@ var require = function(path,cb,async) {
     }
     if (requireAllIx > -1) {
         paths.splice(requireAllIx,0,
-                "utils","data","template","widget","form","localization");
+                "utils","localization","data","template","widget","form");
     }
     
     var oks = new Array(paths.length);
@@ -118,6 +118,7 @@ var require = function(path,cb,async) {
         script.onload = function() {
             oks[i] = true;
             $(script).detach();
+            //console.log("Loaded:"+path);
             check();
             if (buildCallback)
                 buildCallback();
@@ -1007,3 +1008,17 @@ require($wbConfig.jQuery,function() {
     }
     window.$wb = $wb;
 });
+
+/**
+ * @params {Any ...} arguments all arguments will be put into %s or $1,$2 ... within the string
+ */
+String.prototype.format = function() {
+    var out = this.toString();
+    if (!out)
+        throw "Missing text argument from translation method";
+    for(var i = 0;i < arguments.length;i++) {
+        out = out.replace('%s', arguments[i])
+                .replace('$'+i, arguments[i]);
+    }
+    return out;
+}

@@ -8,20 +8,23 @@
 
 $wb.ui.form = {};
 
+
 $wb.ui.form.Form = $wb.Class('Form',{
     __extends:[$wb.ui.Pane],
     __construct:function(opts) {
         if (!opts) opts = {};
         opts = $.extend({
-            tmpl:$wb.template.form.form
+            tmpl:$wb.template.form.form,
+            data:{},
         },opts);
         this.__super(opts);
         this.bind('render',function() {
+            this.setData(this.opts.data);
             this.find('.wb-input:eq(0)').focus();
         });
     },
     disable:function() {
-        var elms = this.elm().find('input,select,textarea');
+        var elms = this.elm().find('.wb-input');
         elms.each(function() {
             var el = $(this);
             if (el.attr('type') != 'button' && this.tagName != 'button') {
@@ -31,7 +34,7 @@ $wb.ui.form.Form = $wb.Class('Form',{
         });
     },
     enable:function() {
-        var elms = this.elm().find('input,select,textarea');
+        var elms = this.elm().find('.wb-input');
         elms.each(function() {
             var el = $(this);
             if (el.attr('type') != 'button' && this.tagName != 'button') {
@@ -41,8 +44,13 @@ $wb.ui.form.Form = $wb.Class('Form',{
     },
     reset:function() {
         this.elm()[0].reset();
+        var elms = this.elm().find('.wb-input');
+        elms.each(function() {
+            $wb(this).value(null);
+        });
     },
     setData:function(data) {
+        this.opts.data = data;
         for(var key in data) {
             var el = this.elm().find('[name="'+key+'"]');
             if (el.length == 0) 
@@ -70,17 +78,17 @@ $wb.ui.form.Form = $wb.Class('Form',{
                 }
             }
             
-            el.val(value);
+            el.widget().value(value);
         }
     },
     getData:function() {
-        var elms = this.elm().find('input,select,textarea');
+        var elms = this.elm().find('.wb-input');
         var out = {};
         elms.each(function() {
             var el = $(this);
             var name = el.attr('name');
             if (!name) return;
-            var value = el.val();
+            var value = el.widget().value();
             var tag = this.tagName.toLowerCase();
             if (el.attr('type'))
                 var type = el.attr('type').toLowerCase();
@@ -129,14 +137,63 @@ $wb.ui.form.Form = $wb.Class('Form',{
     }
 });
 
-$wb.ui.form.InputField = $wb.Class('InputField',{
+$wb.ui.form.AutoForm = $wb.Class('AutoForm',{
+    __extends:[$wb.ui.form.Form],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend(true,{
+            okTitle:_('Ok'),
+            cancelTitle:_('Cancel'),
+            resetTitle:_('Reset'),
+            showOk:true,
+            showCancel:true,
+            showReset:false,
+            showButtons:true
+        },opts)
+        this.__super(opts);
+        this.require(opts,'model');
+        
+        var fields = opts.model.getFields();
+        
+        for(var fieldId in fields) {
+            var field = fields[fieldId];
+            if (field.hidden)
+                continue;
+            var fieldType = $wb.ui.FieldType.type(field.valueType);
+            var fieldWidget = fieldType.getFormField(field,field.defaultValue);
+            this.add(fieldWidget);
+        }
+        
+        if (this.opts.showButtons) {
+            var btnPane = new $wb.ui.form.ButtonPane();
+            if (this.opts.showOk)
+                btnPane.add(new $wb.ui.form.SubmitButton({label:this.opts.okTitle,action:this._onOk.bind(this)}));
+            if (this.opts.showCancel)
+                btnPane.add(new $wb.ui.form.Button({label:this.opts.cancelTitle,action:this._onCancel.bind(this)}));
+            if (this.opts.showReset)
+                btnPane.add(new $wb.ui.form.Button({label:this.opts.resetTitle,action:this._onReset.bind(this)}));
+            this.add(btnPane);
+        }
+    },
+    _onOk:function() {
+        this.trigger('ok');
+    },
+    _onCancel:function() {
+        this.trigger('cancel');
+    },
+    _onReset:function() {
+        this.reset();
+        this.trigger('reset');
+    }
+});
+
+$wb.ui.form.BaseField = $wb.Class('BaseField',{
     __extends:[$wb.ui.Widget],
-    _type:null,
     _labelElm:null,
     _label:null,
-    _name:null,
     _labelPosition:null,
     _container:null,
+    _value:null,
     __construct:function(opts) {
         if (!opts) opts = {};
         opts = $.extend({
@@ -146,23 +203,24 @@ $wb.ui.form.InputField = $wb.Class('InputField',{
             labelPosition:'left',
             disabled:false,
             tmpl: function() {
-                return $wb.template.form.input.apply(this,[opts.type])
+                return $wb.template.form.container.apply(this,opts.inputTmpl)
             }
         },opts);
         
-        
         this.__super(opts);
-        this._type = opts.type;
+        
         this._label = opts.label;
         this._labelElm = opts.labelElm;
         this._name = opts.name;
         this._labelPosition = opts.labelPosition;
         this._container = this.elm().children('label');
-        this.bind('paint',function() {
-            if (this._name)
-                this.target().attr('name',this._name); 
-            else
-                this.target().removeAttr('name'); 
+        
+        this.target().bind('change',function() {
+            this.trigger('change');
+        }.bind(this));
+        
+        
+        this.bind('render',function() {
             this.label(this._label);
             var lblClass = "wb-label-"+this._labelPosition;
             this.elm()
@@ -170,6 +228,13 @@ $wb.ui.form.InputField = $wb.Class('InputField',{
                 .removeClass('wb-label-left')
                 .removeClass('wb-label-right')
                 .addClass(lblClass);
+                
+            if (this._name)
+                this.target().attr('name',this._name); 
+            else
+                this.target().removeAttr('name'); 
+            
+            this.target().val(this._value);
             
             if (this.opts.disabled)
                 this.disable();
@@ -198,7 +263,6 @@ $wb.ui.form.InputField = $wb.Class('InputField',{
                     
                     this.target().blur(function() {
                         if (self.value() == '') {
-                            console.log("Set label:"+self._label);
                             self.value(self._label);
                             $(this).addClass('wb-empty');
                         }
@@ -206,7 +270,6 @@ $wb.ui.form.InputField = $wb.Class('InputField',{
                     self.value(self._label);
                     this.target().addClass('wb-empty');
                     break;
-                        
             }
         });
     },
@@ -227,18 +290,56 @@ $wb.ui.form.InputField = $wb.Class('InputField',{
         this.target().removeClass('wb-readonly');
     },
     value:function(val) {
-        if (typeof val == 'undefined')
+        if (typeof val == 'undefined') {
+            this._value = this.target().val();
             return this.target().val();
-        else
-            return this.target().val(val);
+        } else {
+            this._value = val;
+            var out = this.target().val(val);
+            this.trigger('change');
+            return out;
+        }
     },
     labelElm:function() {
         return this.elm().find(this._labelElm);
     },
-    label:function(label) {
-        if (label)
-            this._label = label;
-        this.labelElm().html(label);
+    label:function() {
+        if (arguments.length > 0) {
+            this._label = arguments[0];
+            this.labelElm().html(this._label);
+        } else
+            return this._label;
+        return this;
+    },
+    container:function() {
+        return this._container;
+    }
+    
+})
+
+$wb.ui.form.InputField = $wb.Class('InputField',{
+    __extends:[$wb.ui.form.BaseField],
+    _type:null,
+    _labelElm:null,
+    _label:null,
+    _name:null,
+    _labelPosition:null,
+    _container:null,
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            target:'.wb-input',
+            type:'text',
+            labelElm:'.wb-label',
+            labelPosition:'left',
+            disabled:false,
+            tmpl: function() {
+                return $wb.template.form.input.apply(this,[opts.type])
+            }
+        },opts);
+        
+        this.__super(opts);
+        this._type = opts.type;
     }
 });
 
@@ -373,7 +474,7 @@ $wb.ui.form.SelectOption = $wb.Class('SelectOption',{
 });
 
 $wb.ui.form.Select = $wb.Class('Select',{
-    __extends:[$wb.ui.form.InputField],
+    __extends:[$wb.ui.form.BaseField],
     __construct:function(opts) {
         if (!opts) opts = {};
         opts = $.extend({
@@ -383,15 +484,25 @@ $wb.ui.form.Select = $wb.Class('Select',{
         this.__super(opts);
         
         if (opts.options) {
-            for(var i = 0; i < opts.options.length;i++) {
-                var option = opts.options[i];
-                if (!option) continue;
-                if (typeof option == 'string')
-                    this.add(option);
-                else
-                    this.add(option.value,option.name);
+            if ($.type(opts.options) == 'array') {
+                for(var i = 0; i < opts.options.length;i++) {
+                    var option = opts.options[i];
+                    if (!option) continue;
+                    if (typeof option == 'string')
+                        this.add(option);
+                    else
+                        this.add(option.value,option.name);
+                }
+            }
+            if ($.type(opts.options) == 'object') {
+                for(var value in opts.options) {
+                    this.add(value,opts.options[value]);
+                }
             }
         }
+    },
+    value:function(value) {
+        this.__super(value);
     },
     add:function(value,name) {
         var opt = new $wb.ui.form.SelectOption({name:name,value:value});
@@ -400,7 +511,7 @@ $wb.ui.form.Select = $wb.Class('Select',{
 });
 
 $wb.ui.form.TextArea = $wb.Class('TextArea',{
-    __extends:[$wb.ui.form.InputField],
+    __extends:[$wb.ui.form.BaseField],
     __construct:function(opts) {
         if (!opts) opts = {};
         opts = $.extend({
@@ -436,3 +547,44 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
         this._buttonPane.add(button);
     }
 });
+
+
+
+//Define basic field types
+(function() {
+    $wb.ui.FieldType._default = new $wb.ui.FieldType(
+        {
+            type:"string"
+        }
+    );
+    
+    new $wb.ui.FieldType({type:"text"});
+    new $wb.ui.FieldType({type:"json"});
+    
+    new $wb.ui.FieldType(
+        {
+            type:"timestamp",
+            format:function(opts,value) {
+                return new Date(parseInt(value)).toString();
+            }
+        }
+    );
+    
+    new $wb.ui.FieldType(
+        {
+            type:"enum",
+            format:function(opts,value) {
+                if ($.type(this.values) == 'array') {
+                    return value;
+                }
+                
+                return this.values[value];
+            },
+            formField:function(opts,value) {
+                var out = new $wb.ui.form.Select({label:opts.name,name:opts.id,options:this.values})
+                out.value(value);
+                return out;
+            }
+        }
+    );
+})()

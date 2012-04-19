@@ -547,6 +547,7 @@ input:focus,button:focus,select:focus,textarea:focus,a:focus {
 
 .wb-table .wb-table-cell {
     padding:2px 5px;
+    line-height:16px;
 }
 .wb-table .wb-table-row.wb-odd {
     background-color: white;
@@ -565,4 +566,17 @@ input:focus,button:focus,select:focus,textarea:focus,a:focus {
 }
 .wb-table-head .wb-table-cell:last-child {
     border-right:0px;
+}
+
+.wb-table .wb-input-container {
+    padding:0;
+}
+
+.wb-table .wb-input {
+    line-height:inherit;
+    border:0;
+    padding:0 5px;
+    margin:0;
+    width:80%;
+    background-color: #eee;
 }

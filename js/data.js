@@ -602,75 +602,16 @@ $wb.data.TableStore = $wb.Class('TableStore',{
     __extends:[$wb.data.ListStore],
     _cols:[],
     __construct:function(opts) {
+        this.require(opts,'model');
+        
         this.__super(opts);
-        if (this._model) {
-            
-            var fields = this._model.getFields();
-            
-            for(var id in fields) {
-                var f = fields[id];
-                if (!f.hidden)
-                    this._addColumn(f.id,f.shortName);
-            }
-            var self = this;
-            this._model.bind('added',function(id) {
-                var f = self._model.getField(id);
-                self._addColumn(f.id,f.shortName);
-            });
-        }
-    },
-    setColumns:function() {
-        this._clearColumns();
-        this._addColumns(arguments);
-        this.trigger('columns-changed');
-        this.trigger('change');
-        return this;
+        
+        this._model.bind('change',function() {
+            this.trigger('change');
+        }.bind(this));
     },
     getColumns:function() {
-        return this._cols;
-    },
-    clearColumns:function() {
-        this._clearColumns();
-        this.trigger('columns-changed');
-        this.trigger('change');
-        return this;
-        
-    },
-    addColumn:function(id,name) {
-        this._addColumn(id,name);
-        this.trigger('columns-changed');
-        this.trigger('change');
-        return this;
-    },
-    addColumns:function(columns) {
-        this._addColumns(columns);
-        this.trigger('columns-changed');
-        this.trigger('change');
-        return this;
-    },
-    _clearColumns:function() {
-        this._cols = [];
-        
-    },
-    _addColumn:function(id,name) {
-        if (!name)
-            name = id;
-        this._cols.push({id:id,name:name});
-    },
-    _addColumns:function(columns) {
-        
-        for(var i = 0;i < columns.length;i++) {
-            var col = columns[i];
-            if ($.type(col) == 'string')
-                col = {id:col};
-            
-            
-            if (!col || !col.id) continue;
-            if (!col.name)
-                col.name = col.id;
-            this._cols.push(col);
-        }
-        
+        return this._model.getFields();
     }
 });
 

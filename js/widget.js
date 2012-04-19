@@ -87,6 +87,85 @@ $wb.ui.layout.GridBag = function() {
     last.outerWidth(w);
 };
 
+
+//Field types
+
+
+$wb.ui.FieldType = $wb.Class('FieldType',
+    /**
+     * @lends $wb.ui.FieldType.prototype
+     * @augments $wb.core.Events
+     * @augments $wb.core.Utils
+     */
+    {
+        __extends:[$wb.core.Events,$wb.core.Utils],
+        
+        /**
+         * Options
+         * @private
+         */
+        _opts: {
+            format:function(opts,value) {
+                return "<span>%s</span>".format($wb.utils.htmlentities(value));
+            },
+            formField:function(opts,value) {
+                var field = new $wb.ui.form.TextField({name:opts.id,label:opts.name});
+                field.value(value);
+                return field;
+            },
+            tableField:function(opts,value) {
+                var out = this.formField(opts,value);
+                //Remove label element (in cells)
+                out.labelElm().detach();
+                return out;
+            }
+        },
+        /**
+         * @constructs
+         * @param {Object} opts Options
+         * @param {String} opts.type Type name
+         * @param {String} [opts.inherits] A type name of a field type this type should inherit
+         * @param {Function} [opts.format] A function returning a string for insertion into a table or similar. The function is called with 2 arguments: <pre>function({id:"fieldName",type:"fieldType"},value)</pre> 
+         * @param {Function} [opts.formField] A function returning a widget for insertion into a form. The function is called with 2 arguments: <pre>function({id:"fieldName",type:"fieldType"},value)</pre>
+         * @param {Function} [opts.tableField] A function returning a widget for insertion into a table row. The function is called with 2 arguments: <pre>function({id:"fieldName",type:"fieldType"},value)</pre> 
+         */
+        __construct:function(opts) {
+            var inherits = {};
+            if (opts && opts.inherits) {
+                inherits = $wb.ui.FieldType.type(opts.inherits)._opts;
+                delete opts.inherits;
+            }
+            this._opts = $.extend(true,this._opts,inherits,opts);
+            this.require(this._opts,'type','format','formField','tableField');
+            $wb.ui.FieldType._registry[opts.type] = this;
+        },
+        getFormField:function(opts,value) {
+            var out = this._opts.formField.apply(this._opts,[opts,value]);
+            out.render();
+            return out;
+        },
+        getTableField:function(opts,value) {
+            var out = this._opts.tableField.apply(this._opts,[opts,value]);
+            out.render();
+            return out;
+        },
+        format:function(opts,value) {
+            return this._opts.format.apply(this._opts,[opts,value]);
+        }
+    }
+);
+$wb.ui.FieldType._registry = {};
+$wb.ui.FieldType.type = function(name) {
+    if ($wb.ui.FieldType._registry[name]) 
+        return $wb.ui.FieldType._registry[name];
+    if (!$wb.ui.FieldType.defaultType) 
+        throw new $wb.Error(_('Unknown field type id: %s',name));
+    return $wb.ui.FieldType.defaultType;
+}
+
+
+
+
 //Widgets
 $wb.ui.Widget = $wb.Class('Widget',
     /**
@@ -306,7 +385,6 @@ $wb.ui.Widget = $wb.Class('Widget',
          * @paras {Boolean} recurse If true - destroys all children too (Defaults to just detaching them)
          */
         destroy:function(recurse) {
-
             while(this._children.length > 0) {
                 var child = this._children.pop();
                 if (recurse) 
@@ -326,9 +404,9 @@ $wb.ui.Widget = $wb.Class('Widget',
          * @returns {$wb.ui.Widget}
          */
         detach:function() {
-            while(this._children.length > 0) {
-                var child = this._children.pop();
-                child.detach();
+            for(var i = 0; i < this._children.length;i++) {
+                //Detach children but dont remove them from the widget
+                this._children[i].detach();
             }
             this.trigger('detach');
             this.elm().detach();
@@ -421,7 +499,7 @@ $wb.ui.Widget = $wb.Class('Widget',
 
                 var source = $(evt.target).widget();
                 if (typeof source == 'undefined') {
-                    console.log("Could not find widget for element");
+                    $wb.debug("Could not find widget for element");
                     return;
                 }
                 elm.addClass(ccontext_id);
@@ -1256,7 +1334,6 @@ $wb.ui.Tree = $wb.Class('Tree',{
         
         if ($wb.utils.isA(arg,'Tree')) {
             var elm = this._addSubTree(title,arg,data);
-            console.log(elm);
             this.children().push(elm);
             return title;
         }
@@ -1444,11 +1521,23 @@ $wb.ui.TableRow = $wb.Class('TableRow',
                 opts.tmpl = opts.table.option('rowTmpl')
             this.__super(opts);
             
+            this.elm().dblclick(function(evt) {
+                evt.preventDefault();
+                evt.stopPropagation();
+                this.toggleEditable();
+            }.bind(this));
+            
             this.bind('paint',function() {
                 if (this._editMode) {
                     this._editRow();
                 } else {
                     this._viewRow();
+                }
+                this.getTable()._layout();
+            });
+            this.bind('render',function() {
+                if (this._editMode) {
+                    this.elm().find('.wb-input:eq(0)').focus();
                 }
             });
         },
@@ -1470,6 +1559,11 @@ $wb.ui.TableRow = $wb.Class('TableRow',
             $wb.ui.form.Form.methods.setData.apply(this,[data]);
             return this;
         },
+        toggleEditable:function() {
+            this._editMode = !this._editMode;
+            this.render();
+            return this;
+        },
         makeEditable:function() {
             this._editMode = true;
             this.render();
@@ -1489,22 +1583,19 @@ $wb.ui.TableRow = $wb.Class('TableRow',
         },
         _editRow:function() {
             var row = this.target();
+            row.addClass('wb-editing');
+            
             row.html('');
             var cols = this.getStore().getColumns();
-            var cellEditors = this.getTable().option('celleditor');
             var bodyCellTmpl = this.getTable().option('bodyCellTmpl');
-            var bodyCellEditor = this.getTable().option('bodyCellEditor');
             
             for(var i in cols) {
                 var col = cols[i];
+                if (col.hidden) continue;
                 var value = $wb.utils.GetValue(this.getData(),col.id);
-                var editor = bodyCellEditor;
-                
-                if (cellEditors && cellEditors[col.type]) {
-                    editor = cellEditors[col.type];
-                }
+                var fieldType = $wb.ui.FieldType.type(col.valueType);
                 var cell = $(bodyCellTmpl());
-                cell.append(editor(col,value));
+                cell.append(fieldType.getTableField(col,value).elm());
                 row.append(cell);
             }
             
@@ -1538,7 +1629,7 @@ $wb.ui.TableRow = $wb.Class('TableRow',
                 }
                 row.append(actionCell);
             }
-            
+            this.getTable()._checkForEditing();
             return row;
         },
         remove:function() {
@@ -1551,15 +1642,20 @@ $wb.ui.TableRow = $wb.Class('TableRow',
         },
         _viewRow:function() {
             var row = this.target();
+            row.removeClass('wb-editing');
             row.html('');
             
             var bodyCellTmpl = this.getTable().option('bodyCellTmpl');
             var cols = this.getStore().getColumns();
             for(var i in cols) {
                 var col = cols[i];
+                if (col.hidden) continue;
                 var cell = $(bodyCellTmpl());
                 var value = $wb.utils.GetValue(this.getData(),col.id);
-                cell.html(value);
+                
+                var fieldType = $wb.ui.FieldType.type(col.valueType);
+                
+                cell.html(fieldType.format(col,value));
                 row.append(cell);
             }
             
@@ -1581,6 +1677,8 @@ $wb.ui.TableRow = $wb.Class('TableRow',
                 row.append(actionCell);
             }
             
+            this.getTable()._checkForEditing();
+            
             return row;
         }
     }
@@ -1597,22 +1695,19 @@ $wb.ui.Table = $wb.Class('Table',
         _footer:null,
         _body:null,
         _rows:[],
+        _autoUpdate:true,
+        dirty:false,
         /**
          * @constructs
          * @param {Object} opts Options
-         * @param {Boolean} [opts.editable] Make table editable
          * @param {Function} [opts.headerTmpl] Header template function
          * @param {Function} [opts.footerTmpl] Footer template function
          * @param {Function} [opts.bodyTmpl] Table body template function
          * @param {Function} [opts.rowTmpl] Default row renderer
          * @param {Function} [opts.bodyCellTmpl] Default cell renderer
-         * @param {$wb.ui.Widget} [opts.bodyCellEditor] Default cell editor
-         * @param {Function} [opts.heaerCellTmpl] Default header cell renderer
-         * @param {Map<Type,Function>} [opts.cellrenderer] Type specific cell renderers
+         * @param {Function} [opts.headerCellTmpl] Default header cell renderer
          * @param {Map<Type,Function>} [opts.rowActions] Map of row btn titles along with a callback function
          * @param {Map<Type,Function>} [opts.headerActions] Map of header btn titles along with a callback function
-         * @param {Map<Type,Function>} [opts.celleditor] Type specific cell editors
-         * @param {$wb.ui.Widget} [opts.roweditor] Row editor
          */
         __construct:function(opts) {
             if (!opts) opts = {};
@@ -1624,10 +1719,21 @@ $wb.ui.Table = $wb.Class('Table',
                 rowTmpl:$wb.template.table.row,
                 bodyCellTmpl:$wb.template.table.body_cell,
                 headerCellTmpl:$wb.template.table.header_cell,
-                bodyCellEditor:function(col,value) {
-                    var field = new $wb.ui.form.TextField({name:col.id});
-                    field.value(value);
-                    return field.render();
+                layout:function() {
+                    var cells = this._header.find('.wb-table-cell').not('.wb-actions');
+                    var availWidth = this.elm().innerWidth();
+                    
+                    var actionWidth = Math.max(availWidth/10,80);
+                    
+                    if (!isNaN(actionWidth) && actionWidth > 0) {
+                        this._header.find('.wb-actions').innerWidth(actionWidth);
+                        availWidth -= this._header.find('.wb-actions').outerWidth();
+                    }
+                    
+                    var cellWidth = Math.floor(availWidth/cells.length);
+                    var leftOvers = availWidth % cellWidth;
+                    cells.outerWidth(cellWidth);
+                    $(cells[0]).outerWidth(cellWidth+leftOvers);
                 }
             },opts));
 
@@ -1644,24 +1750,46 @@ $wb.ui.Table = $wb.Class('Table',
                 elm.append(this._header)
                 .append(this._footer)
                 .append(this._body);
-
                 this._paintHeader();
                 this._paintRows();
                 this._paintFooter();
-
             });
+            this.bind('render',function() {
+               this._dirty = false; 
+            });
+            
             this.opts.store.bind('change',function() {
-                this.render();
+                if (this._autoUpdate)
+                    this.render();
+                else {
+                    this._dirty = true;
+                    this.trigger('dirty');
+                }
             }.bind(this));
         },
         getStore:function() {
             return this.opts.store;
+        },
+        _checkForEditing:function() {
+            if (this.elm().find('.wb-editing').length > 0) {
+                this.setAutoUpdate(false);
+            } else {
+                this.setAutoUpdate(true);
+            }
         },
         getRow:function(key) {
             var i = this.getStore().getIndexByKey(key);
             if (i > -1)
                 return this._rows[i];
             return null;
+        },
+        setAutoUpdate:function(autoUpdate) {
+            if (this._autoUpdate == autoUpdate) 
+                return;
+            this._autoUpdate = autoUpdate;
+            if (autoUpdate && this._dirty) {
+                this.render();
+            }
         },
         _paintFooter:function() {
 
@@ -1671,8 +1799,9 @@ $wb.ui.Table = $wb.Class('Table',
             var row = $(this.opts.rowTmpl());
             this._header.append(row);
             var cols = this.opts.store.getColumns();
-            for(var i = 0;i < cols.length;i++) {
+            for(var i in cols) {
                 var col = cols[i];
+                if (col.hidden) continue;
                 var cell = $(this.opts.headerCellTmpl());
                 cell.attr('rel',col.id);
                 cell.html(col.name);
@@ -1941,6 +2070,12 @@ $wb.ui.Window = $wb.Class('Window',
                 evt.stopPropagation();
                 self.close();
             });
+            this.bind('render',function() {
+                if (!this.opts.height) {
+                    console.log('here');
+                    this.target().children().css('height','auto');
+                }
+            });
 
         },
         /**
@@ -2042,7 +2177,6 @@ $wb.ui.Window.open = function(opts)  {
     win.add(content);
     $('body').prepend(win.elm());
     win.render();
-    
     return win;
 }
 

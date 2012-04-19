@@ -25,6 +25,12 @@ $wb.utils = {
             return $.type(v);
         }
     ],
+    htmlentities:function(html) {
+        if (!html) return "";
+        html = html.replace(/</g,"&lt;");
+        html = html.replace(/>/g,"&gt;");
+        return html;
+    },
     /**
      * Get value using path on object
      * @param {Object} obj the object
@@ -249,7 +255,7 @@ $(function() {
                 +parseInt(el.css('margin-left'))
                 +parseInt(el.css('margin-right'));
         //Input fields has inner border
-        if (el[0].tagName.toLowerCase() != 'input')
+        if (el[0] && el[0].tagName.toLowerCase() != 'input')
             out += parseInt(el.css('border-left-width'))
                     +parseInt(el.css('border-right-width'))
     
@@ -263,7 +269,7 @@ $(function() {
                 +parseInt(el.css('margin-top'))
                 +parseInt(el.css('margin-bottom'));
         //Input fields has inner border
-        if (el[0].tagName.toLowerCase() != 'input')
+        if (el[0] && el[0].tagName.toLowerCase() != 'input')
             out += parseInt(el.css('border-top-width'))
                     +parseInt(el.css('border-bottom-width'));
             
@@ -276,7 +282,7 @@ $(function() {
                 +parseInt(el.css('padding-bottom'));
         
         //Input fields has inner border
-        if (el[0].tagName.toLowerCase() == 'input')
+        if (el[0] && el[0].tagName.toLowerCase() == 'input')
             out += parseInt(el.css('border-top-width'))
                     +parseInt(el.css('border-bottom-width'));
             
@@ -290,18 +296,34 @@ $(function() {
         var out = parseInt(el.css('padding-left'))
                 +parseInt(el.css('padding-right'));
         //Input fields has inner border
-        if (el[0].tagName.toLowerCase() == 'input')
+        if (el[0] && el[0].tagName.toLowerCase() == 'input')
             out += parseInt(el.css('border-left-width'))
                     +parseInt(el.css('border-right-width'))
     
         return out;
     };
     
+    jQuery.fn.totalOuterWidth = function() {
+        var out = 0;
+        $(this).each(function() {
+            out += $(this).outerWidth();
+        });
+        return out;
+    };
+    
+    jQuery.fn.totalOuterHeight = function() {
+        var out = 0;
+        $(this).each(function() {
+            out += $(this).outerHeight();
+        });
+        return out;
+    };
+    
     jQuery.fn.outerWidth = function(width) {
         var el = $(this)
-        if (typeof width == 'undefined')
+        if (typeof width == 'undefined') {
             return el.width()+el.outerEdgeWidth();
-        else {
+        } else {
             $(this).each(function() {
                 $(this).width(Math.max(0,width-$(this).outerEdgeWidth()));
             })

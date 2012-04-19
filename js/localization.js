@@ -16,10 +16,10 @@ var _ = function() {
     var out = arguments[0];
     if (!out)
         throw "Missing text argument from translation method";
+    var args = [];
     for(var i = 1;i < arguments.length;i++) {
-        out = out.replace('%s', arguments[i])
-                .replace('$'+i, arguments[i]);
+        args.push(arguments[i]);
     }
     
-    return out;
+    return String.prototype.format.apply(out,args);
 }
