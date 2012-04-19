@@ -5,7 +5,7 @@
 		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 		<meta name="generator" content="JsDoc Toolkit" />
 		
-		<title>JsDoc Reference - $wb.Array</title>
+		<title>JsDoc Reference - $wb.data.TreeStore</title>
 
 		<style type="text/css">
 			/* default.css */
@@ -244,7 +244,7 @@ ul.inheritsList
 <!-- ============================== class title ============================ -->
 			<h1 class="classTitle">
 				
-				Class $wb.Array
+				Class $wb.data.TreeStore
 			</h1>
 
 <!-- ============================== class summary ========================== -->			
@@ -255,13 +255,13 @@ ul.inheritsList
 				
 				
 				
-					<br /><i>Defined in: </i> <a href="../symbols/src/js_core.js.html">core.js</a>.
+					<br /><i>Defined in: </i> <a href="../symbols/src/js_data.js.html">data.js</a>.
 				
 			</p>
 
 <!-- ============================== constructor summary ==================== -->			
 			
-			<table class="summaryTable" cellspacing="0" summary="A summary of the constructor documented in the class $wb.Array.">
+			<table class="summaryTable" cellspacing="0" summary="A summary of the constructor documented in the class $wb.data.TreeStore.">
 				<caption>Class Summary</caption>
 				<thead>
 					<tr>
@@ -274,9 +274,9 @@ ul.inheritsList
 						<td class="attributes">&nbsp;</td>
 						<td class="nameDescription" >
 							<div class="fixedFont">
-								<b><a href="../symbols/%24wb.Array.html#constructor">$wb.Array</a></b>(arr)
+								<b><a href="../symbols/%24wb.data.TreeStore.html#constructor">$wb.data.TreeStore</a></b>(opts)
 							</div>
-							<div class="description">An array wrapper</div>
+							<div class="description"></div>
 						</td>
 					</tr>
 				</tbody>
@@ -285,40 +285,12 @@ ul.inheritsList
 
 <!-- ============================== properties summary ===================== -->
 			
-				
-				
-				<table class="summaryTable" cellspacing="0" summary="A summary of the fields documented in the class $wb.Array.">
-					<caption>Field Summary</caption>
-					<thead>
-						<tr>
-							<th scope="col">Field Attributes</th>
-							<th scope="col">Field Name and Description</th>
-						</tr>
-					</thead>
-					<tbody>
-					
-						<tr>
-							<td class="attributes">&lt;private&gt; &nbsp;</td>
-							<td class="nameDescription">
-								<div class="fixedFont">
-								<b><a href="../symbols/%24wb.Array.html#_clz">_clz</a></b>
-								</div>
-								<div class="description">Class name</div>
-							</td>
-						</tr>
-					
-					</tbody>
-				</table>
-				
-				
-				
-			
 
 <!-- ============================== methods summary ======================== -->
 			
 				
 				
-				<table class="summaryTable" cellspacing="0" summary="A summary of the methods documented in the class $wb.Array.">
+				<table class="summaryTable" cellspacing="0" summary="A summary of the methods documented in the class $wb.data.TreeStore.">
 					<caption>Method Summary</caption>
 					<thead>
 						<tr>
@@ -329,101 +301,110 @@ ul.inheritsList
 					<tbody>
 					
 						<tr>
-							<td class="attributes">&nbsp;</td>
+							<td class="attributes">&lt;private&gt; &nbsp;</td>
 							<td class="nameDescription">
-								<div class="fixedFont"><b><a href="../symbols/%24wb.Array.html#clear">clear</a></b>()
+								<div class="fixedFont"><b><a href="../symbols/%24wb.data.TreeStore.html#_add">_add</a></b>(row)
 								</div>
-								<div class="description">Empty the array</div>
+								<div class="description">Add row to store</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&lt;private&gt; &nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont"><b><a href="../symbols/%24wb.data.TreeStore.html#_getId">_getId</a></b>(row)
+								</div>
+								<div class="description">Get id from row</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&lt;private&gt; &nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont"><b><a href="../symbols/%24wb.data.TreeStore.html#_getName">_getName</a></b>(row)
+								</div>
+								<div class="description">Get name from row</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&lt;private&gt; &nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont"><b><a href="../symbols/%24wb.data.TreeStore.html#_getParentId">_getParentId</a></b>(row)
+								</div>
+								<div class="description">Get parent id from row</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&lt;private&gt; &nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont"><b><a href="../symbols/%24wb.data.TreeStore.html#_makeEntry">_makeEntry</a></b>(row)
+								</div>
+								<div class="description">Make tree entry from row</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&lt;private&gt; &nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont"><b><a href="../symbols/%24wb.data.TreeStore.html#_remove">_remove</a></b>(row)
+								</div>
+								<div class="description">Remove row from store</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&lt;private&gt; &nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont"><b><a href="../symbols/%24wb.data.TreeStore.html#_update">_update</a></b>(row)
+								</div>
+								<div class="description">Update row in store</div>
 							</td>
 						</tr>
 					
 						<tr>
 							<td class="attributes">&nbsp;</td>
 							<td class="nameDescription">
-								<div class="fixedFont"><b><a href="../symbols/%24wb.Array.html#each">each</a></b>(cb)
+								<div class="fixedFont"><b><a href="../symbols/%24wb.data.TreeStore.html#add">add</a></b>(row(s))
 								</div>
-								<div class="description">iterate through the array using a callback function</div>
+								<div class="description">Add row to store</div>
 							</td>
 						</tr>
 					
 						<tr>
 							<td class="attributes">&nbsp;</td>
 							<td class="nameDescription">
-								<div class="fixedFont"><b><a href="../symbols/%24wb.Array.html#find">find</a></b>(path, value)
+								<div class="fixedFont"><b><a href="../symbols/%24wb.data.TreeStore.html#getSubTree">getSubTree</a></b>(id)
 								</div>
-								<div class="description">Find an element in the array by path and value</div>
+								<div class="description">Get sub tree structure</div>
 							</td>
 						</tr>
 					
 						<tr>
 							<td class="attributes">&nbsp;</td>
 							<td class="nameDescription">
-								<div class="fixedFont"><b><a href="../symbols/%24wb.Array.html#get">get</a></b>(i)
+								<div class="fixedFont"><b><a href="../symbols/%24wb.data.TreeStore.html#getTree">getTree</a></b>()
 								</div>
-								<div class="description">Get element by index</div>
+								<div class="description">Get tree structure</div>
 							</td>
 						</tr>
 					
 						<tr>
 							<td class="attributes">&nbsp;</td>
 							<td class="nameDescription">
-								<div class="fixedFont"><b><a href="../symbols/%24wb.Array.html#length">length</a></b>()
+								<div class="fixedFont"><b><a href="../symbols/%24wb.data.TreeStore.html#remove">remove</a></b>(row(s))
 								</div>
-								<div class="description">get the length of the array</div>
+								<div class="description">Remove row from store</div>
 							</td>
 						</tr>
 					
 						<tr>
 							<td class="attributes">&nbsp;</td>
 							<td class="nameDescription">
-								<div class="fixedFont"><b><a href="../symbols/%24wb.Array.html#push">push</a></b>(elm)
+								<div class="fixedFont"><b><a href="../symbols/%24wb.data.TreeStore.html#update">update</a></b>(row(s))
 								</div>
-								<div class="description">Push element onto end</div>
-							</td>
-						</tr>
-					
-						<tr>
-							<td class="attributes">&nbsp;</td>
-							<td class="nameDescription">
-								<div class="fixedFont"><b><a href="../symbols/%24wb.Array.html#pushAll">pushAll</a></b>(elm)
-								</div>
-								<div class="description">Push several elements onto end</div>
-							</td>
-						</tr>
-					
-						<tr>
-							<td class="attributes">&nbsp;</td>
-							<td class="nameDescription">
-								<div class="fixedFont"><b><a href="../symbols/%24wb.Array.html#remove">remove</a></b>(i)
-								</div>
-								<div class="description">remove element at specified index</div>
-							</td>
-						</tr>
-					
-						<tr>
-							<td class="attributes">&nbsp;</td>
-							<td class="nameDescription">
-								<div class="fixedFont"><b><a href="../symbols/%24wb.Array.html#removeValue">removeValue</a></b>(value)
-								</div>
-								<div class="description">remove element from array</div>
-							</td>
-						</tr>
-					
-						<tr>
-							<td class="attributes">&nbsp;</td>
-							<td class="nameDescription">
-								<div class="fixedFont"><b><a href="../symbols/%24wb.Array.html#sort">sort</a></b>(compareFunction)
-								</div>
-								<div class="description">Sort the array</div>
-							</td>
-						</tr>
-					
-						<tr>
-							<td class="attributes">&nbsp;</td>
-							<td class="nameDescription">
-								<div class="fixedFont"><b><a href="../symbols/%24wb.Array.html#toArray">toArray</a></b>()
-								</div>
-								<div class="description">Get the internal std.</div>
+								<div class="description">Update row in store</div>
 							</td>
 						</tr>
 					
@@ -444,11 +425,11 @@ ul.inheritsList
 				</div>
 				
 				<div class="fixedFont">
-						<b>$wb.Array</b>(arr)
+						<b>$wb.data.TreeStore</b>(opts)
 				</div>
 				
 				<div class="description">
-					An array wrapper
+					
 					
 				</div>
 				
@@ -460,10 +441,28 @@ ul.inheritsList
 						<dt class="heading">Parameters:</dt>
 						
 							<dt>
-								 <b>arr</b>
+								<span class="light fixedFont">{Object}</span>  <b>opts</b>
 								
 							</dt>
-								<dd></dd>
+								<dd>Options</dd>
+						
+							<dt>
+								<span class="light fixedFont">{<a href="../symbols/String.html">String</a>}</span>  <b>opts.idField</b>
+								<i>Optional, Default: "id"</i>
+							</dt>
+								<dd>field that indicates which field contains the primary id</dd>
+						
+							<dt>
+								<span class="light fixedFont">{<a href="../symbols/String.html">String</a>}</span>  <b>opts.parentField</b>
+								<i>Optional, Default: "parentId"</i>
+							</dt>
+								<dd>field that indicates which parent a node belongs to</dd>
+						
+							<dt>
+								<span class="light fixedFont">{<a href="../symbols/String.html">String</a>}</span>  <b>opts.nameField</b>
+								<i>Optional, Default: "name"</i>
+							</dt>
+								<dd>field that indicates what a nodes name is</dd>
 						
 						</dl>
 					
@@ -479,33 +478,6 @@ ul.inheritsList
 
 <!-- ============================== field details ========================== -->		
 			
-				<div class="sectionTitle">
-					Field Detail
-				</div>
-				
-					<a name="_clz"> </a>
-					<div class="fixedFont">&lt;private&gt; 
-					
-					<span class="light">{<a href="../symbols/String.html">String</a>}</span>
-					<b>_clz</b>
-					
-					</div>
-					<div class="description">
-						Class name
-						
-						
-					</div>
-					
-					
-
-						
-						
-						
-						
-
-					
-				
-			
 
 <!-- ============================== method details ========================= -->		
 			
@@ -513,40 +485,15 @@ ul.inheritsList
 					Method Detail
 				</div>
 				
-					<a name="clear"> </a>
-					<div class="fixedFont">
+					<a name="_add"> </a>
+					<div class="fixedFont">&lt;private&gt; 
 					
-					
-					<b>clear</b>()
-					
-					</div>
-					<div class="description">
-						Empty the array
-						
-						
-					</div>
-					
-					
-					
-						
-						
-						
-						
-						
-						
-						
-
-					<hr />
-				
-					<a name="each"> </a>
-					<div class="fixedFont">
-					
-					
-					<b>each</b>(cb)
+					<span class="light">{<a href="../symbols/%24wb.data.TreeStore.html">$wb.data.TreeStore</a>}</span>
+					<b>_add</b>(row)
 					
 					</div>
 					<div class="description">
-						iterate through the array using a callback function
+						Add row to store
 						
 						
 					</div>
@@ -558,10 +505,53 @@ ul.inheritsList
 							<dt class="heading">Parameters:</dt>
 							
 								<dt>
-									<span class="light fixedFont">{Function}</span> <b>cb</b>
+									<span class="light fixedFont">{Object}</span> <b>row</b>
 									
 								</dt>
-								<dd>the callback function - is called with a single parameter - each entry.</dd>
+								<dd></dd>
+							
+							</dl>
+						
+						
+						
+						
+						
+							<dl class="detailList">
+							<dt class="heading">Returns:</dt>
+							
+								<dd><span class="light fixedFont">{<a href="../symbols/%24wb.data.TreeStore.html">$wb.data.TreeStore</a>}</span> itself</dd>
+							
+							</dl>
+						
+						
+						
+
+					<hr />
+				
+					<a name="_getId"> </a>
+					<div class="fixedFont">&lt;private&gt; 
+					
+					
+					<b>_getId</b>(row)
+					
+					</div>
+					<div class="description">
+						Get id from row
+						
+						
+					</div>
+					
+					
+					
+						
+							<dl class="detailList">
+							<dt class="heading">Parameters:</dt>
+							
+								<dt>
+									<b>row</b>
+									
+								</dt>
+								<dd></dd>
 							
 							</dl>
 						
@@ -574,15 +564,15 @@ ul.inheritsList
 
 					<hr />
 				
-					<a name="find"> </a>
-					<div class="fixedFont">
+					<a name="_getName"> </a>
+					<div class="fixedFont">&lt;private&gt; 
 					
-					<span class="light">{Object[] the entries matching the query}</span>
-					<b>find</b>(path, value)
+					
+					<b>_getName</b>(row)
 					
 					</div>
 					<div class="description">
-						Find an element in the array by path and value
+						Get name from row
 						
 						
 					</div>
@@ -594,16 +584,10 @@ ul.inheritsList
 							<dt class="heading">Parameters:</dt>
 							
 								<dt>
-									<span class="light fixedFont">{<a href="../symbols/String.html">String</a>}</span> <b>path</b>
+									<b>row</b>
 									
 								</dt>
-								<dd>the path to look for in each element</dd>
-							
-								<dt>
-									<span class="light fixedFont">{Object}</span> <b>value</b>
-									
-								</dt>
-								<dd>the value to look for in each path</dd>
+								<dd></dd>
 							
 							</dl>
 						
@@ -616,15 +600,223 @@ ul.inheritsList
 
 					<hr />
 				
-					<a name="get"> </a>
+					<a name="_getParentId"> </a>
+					<div class="fixedFont">&lt;private&gt; 
+					
+					
+					<b>_getParentId</b>(row)
+					
+					</div>
+					<div class="description">
+						Get parent id from row
+						
+						
+					</div>
+					
+					
+					
+						
+							<dl class="detailList">
+							<dt class="heading">Parameters:</dt>
+							
+								<dt>
+									<b>row</b>
+									
+								</dt>
+								<dd></dd>
+							
+							</dl>
+						
+						
+						
+						
+						
+						
+						
+
+					<hr />
+				
+					<a name="_makeEntry"> </a>
+					<div class="fixedFont">&lt;private&gt; 
+					
+					<span class="light">{Object}</span>
+					<b>_makeEntry</b>(row)
+					
+					</div>
+					<div class="description">
+						Make tree entry from row
+						
+						
+					</div>
+					
+					
+					
+						
+							<dl class="detailList">
+							<dt class="heading">Parameters:</dt>
+							
+								<dt>
+									<span class="light fixedFont">{Object}</span> <b>row</b>
+									
+								</dt>
+								<dd></dd>
+							
+							</dl>
+						
+						
+						
+						
+						
+							<dl class="detailList">
+							<dt class="heading">Returns:</dt>
+							
+								<dd><span class="light fixedFont">{Object}</span> entry</dd>
+							
+							</dl>
+						
+						
+						
+
+					<hr />
+				
+					<a name="_remove"> </a>
+					<div class="fixedFont">&lt;private&gt; 
+					
+					<span class="light">{<a href="../symbols/%24wb.data.TreeStore.html">$wb.data.TreeStore</a>}</span>
+					<b>_remove</b>(row)
+					
+					</div>
+					<div class="description">
+						Remove row from store
+						
+						
+					</div>
+					
+					
+					
+						
+							<dl class="detailList">
+							<dt class="heading">Parameters:</dt>
+							
+								<dt>
+									<span class="light fixedFont">{Object}</span> <b>row</b>
+									
+								</dt>
+								<dd></dd>
+							
+							</dl>
+						
+						
+						
+						
+						
+							<dl class="detailList">
+							<dt class="heading">Returns:</dt>
+							
+								<dd><span class="light fixedFont">{<a href="../symbols/%24wb.data.TreeStore.html">$wb.data.TreeStore</a>}</span> itself</dd>
+							
+							</dl>
+						
+						
+						
+
+					<hr />
+				
+					<a name="_update"> </a>
+					<div class="fixedFont">&lt;private&gt; 
+					
+					<span class="light">{<a href="../symbols/%24wb.data.TreeStore.html">$wb.data.TreeStore</a>}</span>
+					<b>_update</b>(row)
+					
+					</div>
+					<div class="description">
+						Update row in store
+						
+						
+					</div>
+					
+					
+					
+						
+							<dl class="detailList">
+							<dt class="heading">Parameters:</dt>
+							
+								<dt>
+									<span class="light fixedFont">{Object}</span> <b>row</b>
+									
+								</dt>
+								<dd></dd>
+							
+							</dl>
+						
+						
+						
+						
+						
+							<dl class="detailList">
+							<dt class="heading">Returns:</dt>
+							
+								<dd><span class="light fixedFont">{<a href="../symbols/%24wb.data.TreeStore.html">$wb.data.TreeStore</a>}</span> itself</dd>
+							
+							</dl>
+						
+						
+						
+
+					<hr />
+				
+					<a name="add"> </a>
+					<div class="fixedFont">
+					
+					<span class="light">{<a href="../symbols/%24wb.data.TreeStore.html">$wb.data.TreeStore</a>}</span>
+					<b>add</b>(row(s))
+					
+					</div>
+					<div class="description">
+						Add row to store
+						
+						
+					</div>
+					
+					
+					
+						
+							<dl class="detailList">
+							<dt class="heading">Parameters:</dt>
+							
+								<dt>
+									<span class="light fixedFont">{Object|Object[]}</span> <b>row(s)</b>
+									
+								</dt>
+								<dd></dd>
+							
+							</dl>
+						
+						
+						
+						
+						
+							<dl class="detailList">
+							<dt class="heading">Returns:</dt>
+							
+								<dd><span class="light fixedFont">{<a href="../symbols/%24wb.data.TreeStore.html">$wb.data.TreeStore</a>}</span> itself</dd>
+							
+							</dl>
+						
+						
+						
+
+					<hr />
+				
+					<a name="getSubTree"> </a>
 					<div class="fixedFont">
 					
 					<span class="light">{Object}</span>
-					<b>get</b>(i)
+					<b>getSubTree</b>(id)
 					
 					</div>
 					<div class="description">
-						Get element by index
+						Get sub tree structure
 						
 						
 					</div>
@@ -636,68 +828,7 @@ ul.inheritsList
 							<dt class="heading">Parameters:</dt>
 							
 								<dt>
-									<span class="light fixedFont">{int}</span> <b>i</b>
-									
-								</dt>
-								<dd>The index to get</dd>
-							
-							</dl>
-						
-						
-						
-						
-						
-						
-						
-
-					<hr />
-				
-					<a name="length"> </a>
-					<div class="fixedFont">
-					
-					<span class="light">{int}</span>
-					<b>length</b>()
-					
-					</div>
-					<div class="description">
-						get the length of the array
-						
-						
-					</div>
-					
-					
-					
-						
-						
-						
-						
-						
-						
-						
-
-					<hr />
-				
-					<a name="push"> </a>
-					<div class="fixedFont">
-					
-					
-					<b>push</b>(elm)
-					
-					</div>
-					<div class="description">
-						Push element onto end
-						
-						
-					</div>
-					
-					
-					
-						
-							<dl class="detailList">
-							<dt class="heading">Parameters:</dt>
-							
-								<dt>
-									<span class="light fixedFont">{Object}</span> <b>elm</b>
+									<b>id</b>
 									
 								</dt>
 								<dd></dd>
@@ -708,41 +839,44 @@ ul.inheritsList
 						
 						
 						
-						
-						
-
-					<hr />
-				
-					<a name="pushAll"> </a>
-					<div class="fixedFont">
-					
-					
-					<b>pushAll</b>(elm)
-					
-					</div>
-					<div class="description">
-						Push several elements onto end
-						
-						
-					</div>
-					
-					
-					
-						
 							<dl class="detailList">
-							<dt class="heading">Parameters:</dt>
+							<dt class="heading">Returns:</dt>
 							
-								<dt>
-									<span class="light fixedFont">{Object[]}</span> <b>elm</b>
-									
-								</dt>
-								<dd></dd>
+								<dd><span class="light fixedFont">{Object}</span> tree structure</dd>
 							
 							</dl>
 						
 						
 						
+
+					<hr />
+				
+					<a name="getTree"> </a>
+					<div class="fixedFont">
+					
+					<span class="light">{Object}</span>
+					<b>getTree</b>()
+					
+					</div>
+					<div class="description">
+						Get tree structure
 						
+						
+					</div>
+					
+					
+					
+						
+						
+						
+						
+						
+							<dl class="detailList">
+							<dt class="heading">Returns:</dt>
+							
+								<dd><span class="light fixedFont">{Object}</span> tree structure</dd>
+							
+							</dl>
 						
 						
 						
@@ -752,12 +886,12 @@ ul.inheritsList
 					<a name="remove"> </a>
 					<div class="fixedFont">
 					
-					
-					<b>remove</b>(i)
+					<span class="light">{<a href="../symbols/%24wb.data.TreeStore.html">$wb.data.TreeStore</a>}</span>
+					<b>remove</b>(row(s))
 					
 					</div>
 					<div class="description">
-						remove element at specified index
+						Remove row from store
 						
 						
 					</div>
@@ -769,10 +903,10 @@ ul.inheritsList
 							<dt class="heading">Parameters:</dt>
 							
 								<dt>
-									<span class="light fixedFont">{int}</span> <b>i</b>
+									<span class="light fixedFont">{Object|Object[]}</span> <b>row(s)</b>
 									
 								</dt>
-								<dd>the index to remove</dd>
+								<dd></dd>
 							
 							</dl>
 						
@@ -780,20 +914,27 @@ ul.inheritsList
 						
 						
 						
+							<dl class="detailList">
+							<dt class="heading">Returns:</dt>
+							
+								<dd><span class="light fixedFont">{<a href="../symbols/%24wb.data.TreeStore.html">$wb.data.TreeStore</a>}</span> itself</dd>
+							
+							</dl>
+						
 						
 						
 
 					<hr />
 				
-					<a name="removeValue"> </a>
+					<a name="update"> </a>
 					<div class="fixedFont">
 					
-					
-					<b>removeValue</b>(value)
+					<span class="light">{<a href="../symbols/%24wb.data.TreeStore.html">$wb.data.TreeStore</a>}</span>
+					<b>update</b>(row(s))
 					
 					</div>
 					<div class="description">
-						remove element from array
+						Update row in store
 						
 						
 					</div>
@@ -805,77 +946,23 @@ ul.inheritsList
 							<dt class="heading">Parameters:</dt>
 							
 								<dt>
-									<span class="light fixedFont">{Object}</span> <b>value</b>
+									<span class="light fixedFont">{Object|Object[]}</span> <b>row(s)</b>
 									
 								</dt>
-								<dd>the value to remove</dd>
+								<dd></dd>
 							
 							</dl>
 						
 						
 						
 						
-						
-						
-						
-
-					<hr />
-				
-					<a name="sort"> </a>
-					<div class="fixedFont">
-					
-					
-					<b>sort</b>(compareFunction)
-					
-					</div>
-					<div class="description">
-						Sort the array
-						
-						
-					</div>
-					
-					
-					
 						
 							<dl class="detailList">
-							<dt class="heading">Parameters:</dt>
+							<dt class="heading">Returns:</dt>
 							
-								<dt>
-									<span class="light fixedFont">{Function}</span> <b>compareFunction</b>
-									
-								</dt>
-								<dd>the sort function</dd>
+								<dd><span class="light fixedFont">{<a href="../symbols/%24wb.data.TreeStore.html">$wb.data.TreeStore</a>}</span> itself</dd>
 							
 							</dl>
-						
-						
-						
-						
-						
-						
-						
-
-					<hr />
-				
-					<a name="toArray"> </a>
-					<div class="fixedFont">
-					
-					<span class="light">{Object[]}</span>
-					<b>toArray</b>()
-					
-					</div>
-					<div class="description">
-						Get the internal std. js array
-						
-						
-					</div>
-					
-					
-					
-						
-						
-						
-						
 						
 						
 						

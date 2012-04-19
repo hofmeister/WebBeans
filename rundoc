@@ -1,0 +1,1 @@
+jsdoc -v -p -d=js/doc js/

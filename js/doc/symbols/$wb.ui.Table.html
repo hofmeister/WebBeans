@@ -5,7 +5,7 @@
 		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 		<meta name="generator" content="JsDoc Toolkit" />
 		
-		<title>JsDoc Reference - $wb.core</title>
+		<title>JsDoc Reference - $wb.ui.Table</title>
 
 		<style type="text/css">
 			/* default.css */
@@ -244,7 +244,7 @@ ul.inheritsList
 <!-- ============================== class title ============================ -->
 			<h1 class="classTitle">
 				
-				Namespace $wb.core
+				Class $wb.ui.Table
 			</h1>
 
 <!-- ============================== class summary ========================== -->			
@@ -252,17 +252,17 @@ ul.inheritsList
 				
 				
 			
-				Core classes
 				
 				
-					<br /><i>Defined in: </i> <a href="../symbols/src/js_core.js.html">core.js</a>.
+				
+					<br /><i>Defined in: </i> <a href="../symbols/src/js_widget.js.html">widget.js</a>.
 				
 			</p>
 
 <!-- ============================== constructor summary ==================== -->			
 			
-			<table class="summaryTable" cellspacing="0" summary="A summary of the constructor documented in the class $wb.core.">
-				<caption>Namespace Summary</caption>
+			<table class="summaryTable" cellspacing="0" summary="A summary of the constructor documented in the class $wb.ui.Table.">
+				<caption>Class Summary</caption>
 				<thead>
 					<tr>
 						<th scope="col">Constructor Attributes</th>
@@ -274,7 +274,7 @@ ul.inheritsList
 						<td class="attributes">&nbsp;</td>
 						<td class="nameDescription" >
 							<div class="fixedFont">
-								<b><a href="../symbols/%24wb.core.html#constructor">$wb.core</a></b>
+								<b><a href="../symbols/%24wb.ui.Table.html#constructor">$wb.ui.Table</a></b>(opts)
 							</div>
 							<div class="description"></div>
 						</td>
@@ -288,6 +288,42 @@ ul.inheritsList
 
 <!-- ============================== methods summary ======================== -->
 			
+				
+				
+				<table class="summaryTable" cellspacing="0" summary="A summary of the methods documented in the class $wb.ui.Table.">
+					<caption>Method Summary</caption>
+					<thead>
+						<tr>
+							<th scope="col">Method Attributes</th>
+							<th scope="col">Method Name and Description</th>
+						</tr>
+					</thead>
+					<tbody>
+					
+						<tr>
+							<td class="attributes">&nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont"><b><a href="../symbols/%24wb.ui.Table.html#addRow">addRow</a></b>(data)
+								</div>
+								<div class="description">Add row to table.</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont"><b><a href="../symbols/%24wb.ui.Table.html#newRow">newRow</a></b>()
+								</div>
+								<div class="description">Add new row form to table.</div>
+							</td>
+						</tr>
+					
+					</tbody>
+				</table>
+				
+				
+				
+			
 <!-- ============================== events summary ======================== -->
 			
 
@@ -295,11 +331,11 @@ ul.inheritsList
 			
 			<div class="details"><a name="constructor"> </a>
 				<div class="sectionTitle">
-					Namespace Detail
+					Class Detail
 				</div>
 				
 				<div class="fixedFont">
-						<b>$wb.core</b>
+						<b>$wb.ui.Table</b>(opts)
 				</div>
 				
 				<div class="description">
@@ -310,6 +346,65 @@ ul.inheritsList
 				
 				
 				
+					
+						<dl class="detailList">
+						<dt class="heading">Parameters:</dt>
+						
+							<dt>
+								<span class="light fixedFont">{Object}</span>  <b>opts</b>
+								
+							</dt>
+								<dd>Options</dd>
+						
+							<dt>
+								<span class="light fixedFont">{Function}</span>  <b>opts.headerTmpl</b>
+								<i>Optional</i>
+							</dt>
+								<dd>Header template function</dd>
+						
+							<dt>
+								<span class="light fixedFont">{Function}</span>  <b>opts.footerTmpl</b>
+								<i>Optional</i>
+							</dt>
+								<dd>Footer template function</dd>
+						
+							<dt>
+								<span class="light fixedFont">{Function}</span>  <b>opts.bodyTmpl</b>
+								<i>Optional</i>
+							</dt>
+								<dd>Table body template function</dd>
+						
+							<dt>
+								<span class="light fixedFont">{Function}</span>  <b>opts.rowTmpl</b>
+								<i>Optional</i>
+							</dt>
+								<dd>Default row renderer</dd>
+						
+							<dt>
+								<span class="light fixedFont">{Function}</span>  <b>opts.bodyCellTmpl</b>
+								<i>Optional</i>
+							</dt>
+								<dd>Default cell renderer</dd>
+						
+							<dt>
+								<span class="light fixedFont">{Function}</span>  <b>opts.headerCellTmpl</b>
+								<i>Optional</i>
+							</dt>
+								<dd>Default header cell renderer</dd>
+						
+							<dt>
+								<span class="light fixedFont">{Map<Type|Function>}</span>  <b>opts.rowActions</b>
+								<i>Optional</i>
+							</dt>
+								<dd>Map of row btn titles along with a callback function</dd>
+						
+							<dt>
+								<span class="light fixedFont">{Map<Type|Function>}</span>  <b>opts.headerActions</b>
+								<i>Optional</i>
+							</dt>
+								<dd>Map of header btn titles along with a callback function</dd>
+						
+						</dl>
 					
 					
 					
@@ -325,6 +420,88 @@ ul.inheritsList
 			
 
 <!-- ============================== method details ========================= -->		
+			
+				<div class="sectionTitle">
+					Method Detail
+				</div>
+				
+					<a name="addRow"> </a>
+					<div class="fixedFont">
+					
+					<span class="light">{$wb.ui.TableRow}</span>
+					<b>addRow</b>(data)
+					
+					</div>
+					<div class="description">
+						Add row to table. Typically you should either add rows on the TableStore or use the newRow() 
+method to make a new row form.
+						
+						
+					</div>
+					
+					
+					
+						
+							<dl class="detailList">
+							<dt class="heading">Parameters:</dt>
+							
+								<dt>
+									<b>data</b>
+									
+								</dt>
+								<dd></dd>
+							
+							</dl>
+						
+						
+						
+						
+						
+							<dl class="detailList">
+							<dt class="heading">Returns:</dt>
+							
+								<dd><span class="light fixedFont">{$wb.ui.TableRow}</span> A row</dd>
+							
+							</dl>
+						
+						
+						
+
+					<hr />
+				
+					<a name="newRow"> </a>
+					<div class="fixedFont">
+					
+					<span class="light">{$wb.ui.TableRow}</span>
+					<b>newRow</b>()
+					
+					</div>
+					<div class="description">
+						Add new row form to table. Destroy this form when you're done (and add the resulting data to
+the store)
+						
+						
+					</div>
+					
+					
+					
+						
+						
+						
+						
+						
+							<dl class="detailList">
+							<dt class="heading">Returns:</dt>
+							
+								<dd><span class="light fixedFont">{$wb.ui.TableRow}</span> An editable row</dd>
+							
+							</dl>
+						
+						
+						
+
+					
+				
 			
 			
 <!-- ============================== event details ========================= -->		

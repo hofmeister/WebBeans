@@ -828,7 +828,7 @@ require($wbConfig.jQuery,function() {
     $wb.Error = $wb.Class('Error',
         /**
          * @description Error class 
-         * @lends $wb.core.Registry.prototype
+         * @lends $wb.core.Error.prototype
          * @augments $wb.Class
          */
         {

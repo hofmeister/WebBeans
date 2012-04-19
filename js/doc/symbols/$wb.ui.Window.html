@@ -5,7 +5,7 @@
 		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 		<meta name="generator" content="JsDoc Toolkit" />
 		
-		<title>JsDoc Reference - $wb.core</title>
+		<title>JsDoc Reference - $wb.ui.Window</title>
 
 		<style type="text/css">
 			/* default.css */
@@ -244,7 +244,7 @@ ul.inheritsList
 <!-- ============================== class title ============================ -->
 			<h1 class="classTitle">
 				
-				Namespace $wb.core
+				Class $wb.ui.Window
 			</h1>
 
 <!-- ============================== class summary ========================== -->			
@@ -252,17 +252,17 @@ ul.inheritsList
 				
 				
 			
-				Core classes
 				
 				
-					<br /><i>Defined in: </i> <a href="../symbols/src/js_core.js.html">core.js</a>.
+				
+					<br /><i>Defined in: </i> <a href="../symbols/src/js_widget.js.html">widget.js</a>.
 				
 			</p>
 
 <!-- ============================== constructor summary ==================== -->			
 			
-			<table class="summaryTable" cellspacing="0" summary="A summary of the constructor documented in the class $wb.core.">
-				<caption>Namespace Summary</caption>
+			<table class="summaryTable" cellspacing="0" summary="A summary of the constructor documented in the class $wb.ui.Window.">
+				<caption>Class Summary</caption>
 				<thead>
 					<tr>
 						<th scope="col">Constructor Attributes</th>
@@ -274,7 +274,7 @@ ul.inheritsList
 						<td class="attributes">&nbsp;</td>
 						<td class="nameDescription" >
 							<div class="fixedFont">
-								<b><a href="../symbols/%24wb.core.html#constructor">$wb.core</a></b>
+								<b><a href="../symbols/%24wb.ui.Window.html#constructor">$wb.ui.Window</a></b>(opts)
 							</div>
 							<div class="description"></div>
 						</td>
@@ -288,6 +288,60 @@ ul.inheritsList
 
 <!-- ============================== methods summary ======================== -->
 			
+				
+				
+				<table class="summaryTable" cellspacing="0" summary="A summary of the methods documented in the class $wb.ui.Window.">
+					<caption>Method Summary</caption>
+					<thead>
+						<tr>
+							<th scope="col">Method Attributes</th>
+							<th scope="col">Method Name and Description</th>
+						</tr>
+					</thead>
+					<tbody>
+					
+						<tr>
+							<td class="attributes">&lt;private&gt; &nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont"><b><a href="../symbols/%24wb.ui.Window.html#_makeMovable">_makeMovable</a></b>()
+								</div>
+								<div class="description">Make this window movable/draggable</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont"><b><a href="../symbols/%24wb.ui.Window.html#close">close</a></b>()
+								</div>
+								<div class="description">Close window.</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&lt;static&gt; &nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont">$wb.ui.Window.<b><a href="../symbols/%24wb.ui.Window.html#.modal">modal</a></b>(opts)
+								</div>
+								<div class="description">Create modal window</div>
+							</td>
+						</tr>
+					
+						<tr>
+							<td class="attributes">&lt;static&gt; &nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont">$wb.ui.Window.<b><a href="../symbols/%24wb.ui.Window.html#.open">open</a></b>(opts)
+								</div>
+								<div class="description">Create window</div>
+							</td>
+						</tr>
+					
+					</tbody>
+				</table>
+				
+				
+				
+			
 <!-- ============================== events summary ======================== -->
 			
 
@@ -295,11 +349,11 @@ ul.inheritsList
 			
 			<div class="details"><a name="constructor"> </a>
 				<div class="sectionTitle">
-					Namespace Detail
+					Class Detail
 				</div>
 				
 				<div class="fixedFont">
-						<b>$wb.core</b>
+						<b>$wb.ui.Window</b>(opts)
 				</div>
 				
 				<div class="description">
@@ -310,6 +364,47 @@ ul.inheritsList
 				
 				
 				
+					
+						<dl class="detailList">
+						<dt class="heading">Parameters:</dt>
+						
+							<dt>
+								<span class="light fixedFont">{Object}</span>  <b>opts</b>
+								
+							</dt>
+								<dd>options</dd>
+						
+							<dt>
+								<span class="light fixedFont">{<a href="../symbols/String.html">String</a>}</span>  <b>opts.title</b>
+								<i>Optional</i>
+							</dt>
+								<dd>the window title</dd>
+						
+							<dt>
+								<span class="light fixedFont">{Boolean}</span>  <b>opts.modal</b>
+								<i>Optional, Default: false</i>
+							</dt>
+								<dd>Make window modal</dd>
+						
+							<dt>
+								<span class="light fixedFont">{Boolean}</span>  <b>opts.movable</b>
+								<i>Optional, Default: true</i>
+							</dt>
+								<dd>Make window movable</dd>
+						
+							<dt>
+								<span class="light fixedFont">{int}</span>  <b>opts.width</b>
+								<i>Optional, Default: 400</i>
+							</dt>
+								<dd>window width</dd>
+						
+							<dt>
+								<span class="light fixedFont">{int}</span>  <b>opts.height</b>
+								<i>Optional, Default: "auto"</i>
+							</dt>
+								<dd>window height</dd>
+						
+						</dl>
 					
 					
 					
@@ -325,6 +420,171 @@ ul.inheritsList
 			
 
 <!-- ============================== method details ========================= -->		
+			
+				<div class="sectionTitle">
+					Method Detail
+				</div>
+				
+					<a name="_makeMovable"> </a>
+					<div class="fixedFont">&lt;private&gt; 
+					
+					
+					<b>_makeMovable</b>()
+					
+					</div>
+					<div class="description">
+						Make this window movable/draggable
+						
+						
+					</div>
+					
+					
+					
+						
+						
+						
+						
+						
+						
+						
+
+					<hr />
+				
+					<a name="close"> </a>
+					<div class="fixedFont">
+					
+					
+					<b>close</b>()
+					
+					</div>
+					<div class="description">
+						Close window. This destroys the window - if you need to reuse it - use hide();
+						
+						
+					</div>
+					
+					
+					
+						
+						
+						
+						
+						
+						
+						
+
+					<hr />
+				
+					<a name=".modal"> </a>
+					<div class="fixedFont">&lt;static&gt; 
+					
+					<span class="light">{<a href="../symbols/%24wb.ui.Widget.html">$wb.ui.Widget</a>}</span>
+					<span class="light">$wb.ui.Window.</span><b>modal</b>(opts)
+					
+					</div>
+					<div class="description">
+						Create modal window
+						
+						
+					</div>
+					
+					
+					
+						
+							<dl class="detailList">
+							<dt class="heading">Parameters:</dt>
+							
+								<dt>
+									<span class="light fixedFont">{Object}</span> <b>opts</b>
+									
+								</dt>
+								<dd>Modal window options</dd>
+							
+								<dt>
+									<span class="light fixedFont">{<a href="../symbols/%24wb.ui.Widget.html">$wb.ui.Widget</a>}</span> <b>opts.content</b>
+									
+								</dt>
+								<dd>the window content</dd>
+							
+								<dt>
+									<span class="light fixedFont">{<a href="../symbols/String.html">String</a>}</span> <b>opts.title</b>
+									<i>Optional</i>
+								</dt>
+								<dd>the window title</dd>
+							
+							</dl>
+						
+						
+						
+						
+						
+							<dl class="detailList">
+							<dt class="heading">Returns:</dt>
+							
+								<dd><span class="light fixedFont">{<a href="../symbols/%24wb.ui.Widget.html">$wb.ui.Widget</a>}</span> the window</dd>
+							
+							</dl>
+						
+						
+						
+
+					<hr />
+				
+					<a name=".open"> </a>
+					<div class="fixedFont">&lt;static&gt; 
+					
+					<span class="light">{<a href="../symbols/%24wb.ui.Widget.html">$wb.ui.Widget</a>}</span>
+					<span class="light">$wb.ui.Window.</span><b>open</b>(opts)
+					
+					</div>
+					<div class="description">
+						Create window
+						
+						
+					</div>
+					
+					
+					
+						
+							<dl class="detailList">
+							<dt class="heading">Parameters:</dt>
+							
+								<dt>
+									<span class="light fixedFont">{Object}</span> <b>opts</b>
+									
+								</dt>
+								<dd>Modal window options</dd>
+							
+								<dt>
+									<span class="light fixedFont">{<a href="../symbols/%24wb.ui.Widget.html">$wb.ui.Widget</a>}</span> <b>opts.content</b>
+									
+								</dt>
+								<dd>the window content</dd>
+							
+								<dt>
+									<span class="light fixedFont">{<a href="../symbols/String.html">String</a>}</span> <b>opts.title</b>
+									<i>Optional</i>
+								</dt>
+								<dd>the window title</dd>
+							
+							</dl>
+						
+						
+						
+						
+						
+							<dl class="detailList">
+							<dt class="heading">Returns:</dt>
+							
+								<dd><span class="light fixedFont">{<a href="../symbols/%24wb.ui.Widget.html">$wb.ui.Widget</a>}</span> the window</dd>
+							
+							</dl>
+						
+						
+						
+
+					
+				
 			
 			
 <!-- ============================== event details ========================= -->		

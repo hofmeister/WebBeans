@@ -5,7 +5,9 @@
  * @version 1.0
  */
 
-
+/**
+ * @namespace Data stores, models etc.
+ */
 $wb.data = {};
 
 $wb.data.Model = $wb.Class('Model',{
@@ -168,6 +170,7 @@ $wb.data.Service = $wb.Class('Service',{
             this._remover.apply(this,[ids]);
     }
 });
+
 $wb.data.JsonSocket = $wb.Class('JsonSocket',{
     __extends:[$wb.core.Events,$wb.core.Utils],
     _url:null,
@@ -327,7 +330,7 @@ $wb.data.JsonService = $wb.Class('JsonService',{
 
 $wb.data.Store = $wb.Class('Store',
     /**
-     * @lends $wb.data.TreeStore.prototype
+     * @lends $wb.data.Store.prototype
      * @augments $wb.data.Events
      * @augments $wb.core.Utils
      */

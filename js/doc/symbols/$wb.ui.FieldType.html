@@ -5,7 +5,7 @@
 		<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 		<meta name="generator" content="JsDoc Toolkit" />
 		
-		<title>JsDoc Reference - $wb.core</title>
+		<title>JsDoc Reference - $wb.ui.FieldType</title>
 
 		<style type="text/css">
 			/* default.css */
@@ -244,7 +244,7 @@ ul.inheritsList
 <!-- ============================== class title ============================ -->
 			<h1 class="classTitle">
 				
-				Namespace $wb.core
+				Class $wb.ui.FieldType
 			</h1>
 
 <!-- ============================== class summary ========================== -->			
@@ -252,17 +252,17 @@ ul.inheritsList
 				
 				
 			
-				Core classes
 				
 				
-					<br /><i>Defined in: </i> <a href="../symbols/src/js_core.js.html">core.js</a>.
+				
+					<br /><i>Defined in: </i> <a href="../symbols/src/js_widget.js.html">widget.js</a>.
 				
 			</p>
 
 <!-- ============================== constructor summary ==================== -->			
 			
-			<table class="summaryTable" cellspacing="0" summary="A summary of the constructor documented in the class $wb.core.">
-				<caption>Namespace Summary</caption>
+			<table class="summaryTable" cellspacing="0" summary="A summary of the constructor documented in the class $wb.ui.FieldType.">
+				<caption>Class Summary</caption>
 				<thead>
 					<tr>
 						<th scope="col">Constructor Attributes</th>
@@ -274,7 +274,7 @@ ul.inheritsList
 						<td class="attributes">&nbsp;</td>
 						<td class="nameDescription" >
 							<div class="fixedFont">
-								<b><a href="../symbols/%24wb.core.html#constructor">$wb.core</a></b>
+								<b><a href="../symbols/%24wb.ui.FieldType.html#constructor">$wb.ui.FieldType</a></b>(opts)
 							</div>
 							<div class="description"></div>
 						</td>
@@ -284,6 +284,34 @@ ul.inheritsList
 			
 
 <!-- ============================== properties summary ===================== -->
+			
+				
+				
+				<table class="summaryTable" cellspacing="0" summary="A summary of the fields documented in the class $wb.ui.FieldType.">
+					<caption>Field Summary</caption>
+					<thead>
+						<tr>
+							<th scope="col">Field Attributes</th>
+							<th scope="col">Field Name and Description</th>
+						</tr>
+					</thead>
+					<tbody>
+					
+						<tr>
+							<td class="attributes">&lt;private&gt; &nbsp;</td>
+							<td class="nameDescription">
+								<div class="fixedFont">
+								<b><a href="../symbols/%24wb.ui.FieldType.html#_opts">_opts</a></b>
+								</div>
+								<div class="description">Options</div>
+							</td>
+						</tr>
+					
+					</tbody>
+				</table>
+				
+				
+				
 			
 
 <!-- ============================== methods summary ======================== -->
@@ -295,11 +323,11 @@ ul.inheritsList
 			
 			<div class="details"><a name="constructor"> </a>
 				<div class="sectionTitle">
-					Namespace Detail
+					Class Detail
 				</div>
 				
 				<div class="fixedFont">
-						<b>$wb.core</b>
+						<b>$wb.ui.FieldType</b>(opts)
 				</div>
 				
 				<div class="description">
@@ -310,6 +338,47 @@ ul.inheritsList
 				
 				
 				
+					
+						<dl class="detailList">
+						<dt class="heading">Parameters:</dt>
+						
+							<dt>
+								<span class="light fixedFont">{Object}</span>  <b>opts</b>
+								
+							</dt>
+								<dd>Options</dd>
+						
+							<dt>
+								<span class="light fixedFont">{<a href="../symbols/String.html">String</a>}</span>  <b>opts.type</b>
+								
+							</dt>
+								<dd>Type name</dd>
+						
+							<dt>
+								<span class="light fixedFont">{<a href="../symbols/String.html">String</a>}</span>  <b>opts.inherits</b>
+								<i>Optional</i>
+							</dt>
+								<dd>A type name of a field type this type should inherit</dd>
+						
+							<dt>
+								<span class="light fixedFont">{Function}</span>  <b>opts.format</b>
+								<i>Optional</i>
+							</dt>
+								<dd>A function returning a string for insertion into a table or similar. The function is called with 2 arguments: <pre>function({id:"fieldName",type:"fieldType"},value)</pre></dd>
+						
+							<dt>
+								<span class="light fixedFont">{Function}</span>  <b>opts.formField</b>
+								<i>Optional</i>
+							</dt>
+								<dd>A function returning a widget for insertion into a form. The function is called with 2 arguments: <pre>function({id:"fieldName",type:"fieldType"},value)</pre></dd>
+						
+							<dt>
+								<span class="light fixedFont">{Function}</span>  <b>opts.tableField</b>
+								<i>Optional</i>
+							</dt>
+								<dd>A function returning a widget for insertion into a table row. The function is called with 2 arguments: <pre>function({id:"fieldName",type:"fieldType"},value)</pre></dd>
+						
+						</dl>
 					
 					
 					
@@ -322,6 +391,33 @@ ul.inheritsList
 			
 
 <!-- ============================== field details ========================== -->		
+			
+				<div class="sectionTitle">
+					Field Detail
+				</div>
+				
+					<a name="_opts"> </a>
+					<div class="fixedFont">&lt;private&gt; 
+					
+					
+					<b>_opts</b>
+					
+					</div>
+					<div class="description">
+						Options
+						
+						
+					</div>
+					
+					
+
+						
+						
+						
+						
+
+					
+				
 			
 
 <!-- ============================== method details ========================= -->		
