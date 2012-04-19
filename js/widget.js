@@ -1629,7 +1629,6 @@ $wb.ui.TableRow = $wb.Class('TableRow',
                 }
                 row.append(actionCell);
             }
-            this.getTable()._checkForEditing();
             return row;
         },
         remove:function() {
@@ -1677,8 +1676,6 @@ $wb.ui.TableRow = $wb.Class('TableRow',
                 row.append(actionCell);
             }
             
-            this.getTable()._checkForEditing();
-            
             return row;
         }
     }
@@ -1700,6 +1697,8 @@ $wb.ui.Table = $wb.Class('Table',
         /**
          * @constructs
          * @param {Object} opts Options
+         * @param {Boolean} [opts.header=true] Show header
+         * @param {Boolean} [opts.footer=true] Show footer
          * @param {Function} [opts.headerTmpl] Header template function
          * @param {Function} [opts.footerTmpl] Footer template function
          * @param {Function} [opts.bodyTmpl] Table body template function
@@ -1719,6 +1718,8 @@ $wb.ui.Table = $wb.Class('Table',
                 rowTmpl:$wb.template.table.row,
                 bodyCellTmpl:$wb.template.table.body_cell,
                 headerCellTmpl:$wb.template.table.header_cell,
+                header:true,
+                footer:true,
                 layout:function() {
                     var cells = this._header.find('.wb-table-cell').not('.wb-actions');
                     var availWidth = this.elm().innerWidth();
@@ -1750,18 +1751,21 @@ $wb.ui.Table = $wb.Class('Table',
                 elm.append(this._header)
                 .append(this._footer)
                 .append(this._body);
-                this._paintHeader();
+                if (this.opts.header)
+                    this._paintHeader();
                 this._paintRows();
-                this._paintFooter();
+                if (this.opts.footer)
+                    this._paintFooter();
             });
             this.bind('render',function() {
                this._dirty = false; 
             });
             
             this.opts.store.bind('change',function() {
-                if (this._autoUpdate)
+                this._checkForEditing();
+                if (this._autoUpdate) {
                     this.render();
-                else {
+                } else {
                     this._dirty = true;
                     this.trigger('dirty');
                 }
@@ -2072,7 +2076,6 @@ $wb.ui.Window = $wb.Class('Window',
             });
             this.bind('render',function() {
                 if (!this.opts.height) {
-                    console.log('here');
                     this.target().children().css('height','auto');
                 }
             });

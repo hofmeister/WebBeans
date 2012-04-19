@@ -122,6 +122,9 @@ $wb.template = {
         button:function(type) {
             return '<input class="wb-form-button" type="'+type+'" value="" />';
         },
+        text:function(type) {
+            return '<div class="wb-target" />';
+        },
         textarea:function() {
             return $wb.template.form.container('<textarea class="wb-input wb-input-textarea" />');
         },

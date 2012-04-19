@@ -15,7 +15,7 @@ $wb.ui.form.Form = $wb.Class('Form',{
         if (!opts) opts = {};
         opts = $.extend({
             tmpl:$wb.template.form.form,
-            data:{},
+            data:{}
         },opts);
         this.__super(opts);
         this.bind('render',function() {
@@ -48,6 +48,10 @@ $wb.ui.form.Form = $wb.Class('Form',{
         elms.each(function() {
             $wb(this).value(null);
         });
+    },
+    getField:function(name) {
+        var el = this.elm().find('[name="'+name+'"]');
+        return el.widget();
     },
     setData:function(data) {
         this.opts.data = data;
@@ -172,7 +176,11 @@ $wb.ui.form.AutoForm = $wb.Class('AutoForm',{
                 btnPane.add(new $wb.ui.form.Button({label:this.opts.cancelTitle,action:this._onCancel.bind(this)}));
             if (this.opts.showReset)
                 btnPane.add(new $wb.ui.form.Button({label:this.opts.resetTitle,action:this._onReset.bind(this)}));
-            this.add(btnPane);
+            
+            this.bind('before-paint',function() {
+                this.remove(btnPane);
+                this.add(btnPane);
+            });
         }
     },
     _onOk:function() {
@@ -203,7 +211,7 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
             labelPosition:'left',
             disabled:false,
             tmpl: function() {
-                return $wb.template.form.container.apply(this,opts.inputTmpl)
+                return $wb.template.form.container.apply(this,[opts.inputTmpl()])
             }
         },opts);
         
@@ -315,7 +323,35 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
         return this._container;
     }
     
-})
+});
+
+$wb.ui.form.Text = $wb.Class('Text',{
+    __extends:[$wb.ui.form.BaseField],
+    _html:"",
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            target:'.wb-target',
+            inputTmpl:function() {
+                return '<div class="wb-target" />';
+            }
+        },opts);
+        this.__super(opts);
+        
+        this.bind('render',function() {
+            this.html(this._html);
+        });
+    },
+    value:function(val) {
+        throw _("Form texts are informational - value is invalid");
+    },
+    html:function(html) {
+        if (typeof html != 'undefined') {
+            this._html = html;
+        }
+        return this.__super(html);
+    }
+});
 
 $wb.ui.form.InputField = $wb.Class('InputField',{
     __extends:[$wb.ui.form.BaseField],
@@ -328,11 +364,7 @@ $wb.ui.form.InputField = $wb.Class('InputField',{
     __construct:function(opts) {
         if (!opts) opts = {};
         opts = $.extend({
-            target:'.wb-input',
             type:'text',
-            labelElm:'.wb-label',
-            labelPosition:'left',
-            disabled:false,
             tmpl: function() {
                 return $wb.template.form.input.apply(this,[opts.type])
             }
@@ -501,9 +533,6 @@ $wb.ui.form.Select = $wb.Class('Select',{
             }
         }
     },
-    value:function(value) {
-        this.__super(value);
-    },
     add:function(value,name) {
         var opt = new $wb.ui.form.SelectOption({name:name,value:value});
         this.children().push(opt);
@@ -515,10 +544,107 @@ $wb.ui.form.TextArea = $wb.Class('TextArea',{
     __construct:function(opts) {
         if (!opts) opts = {};
         opts = $.extend({
-            type:'select',
             tmpl:$wb.template.form.textarea
         },opts);
         this.__super(opts);
+    }
+});
+
+
+$wb.ui.form.TextEditor = $wb.Class('TextEditor',{
+    __extends:[$wb.ui.form.TextArea],
+    _codemirror:null,
+    _copyMethods:[  
+        'getSelection','replaceSelection','focus','scrollTo','setOption','getOption','cursorCoords',
+        'charCoords','coordsChar','undo','redo','historySize','clearHistory','indentLine','getTokenAt',
+        'markText','setBookmark','findMarksAt','setMarker','clearMarker','setLineClass','hideLine',
+        'showLine','onDeleteLine','lineInfo','getLineHandle','addWidget','matchBrackets','lineCount',
+        'getCursor','somethingSelected','setCursor','setSelection','getLine','setLine','removeLine',
+        ,'getRange','replaceRange','posFromIndex','indexFromPos'
+    ],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        
+        opts = $.extend({
+            mode:null,
+            indentUnit:4,
+            lineWrapping:true,
+            lineNumbers:true,
+            onFocus:function() {
+                this._codeMirrorElm().addClass('wb-focus');
+            }.bind(this),
+            onBlur:function() {
+                this._codeMirrorElm().removeClass('wb-focus');
+                
+            }.bind(this),
+            codemirrorBase:$wbConfig.base+"js/3rdparty/codemirror/"
+        },opts);
+        
+        this.__super(opts);
+        
+        this._loadCodeMirror();
+    },
+    _codeMirrorElm:function() {
+        return this.elm().find('.CodeMirror-scroll');
+    },
+    _loadCodeMirror:function() {
+        if (typeof CodeMirror == 'undefined') {
+            loadCSS(this.opts.codemirrorBase+"codemirror.css");
+            var required = [
+                this.opts.codemirrorBase+"codemirror.js"
+            ]
+            require(required,this._loadMode.bind(this));
+        } else {
+            this._loadMode();
+        }
+        
+    },
+    _loadMode:function() {
+        if (typeof CodeMirror.modes[this.opts.mode] == 'undefined') {
+            //Load mode
+            var jsFile = this.opts.codemirrorBase+"mode/"+this.opts.mode+"/"+this.opts.mode+".js";
+            //var cssFile = this.opts.codemirrorBase+"mode/"+this.opts.mode+"/"+this.opts.mode+".css";
+            require(jsFile,this._init.bind(this));
+        } else {
+            this._init();
+        }
+    },
+    _init:function() {
+        var destroyIt = function() {
+            this.elm().find('.CodeMirror').detach();
+            delete this._codemirror;
+            this._codemirror = null;
+        }.bind(this);
+        this.bind('detach',function() {
+            destroyIt();
+        });
+        this.bind('render',function() {
+            destroyIt();
+            this._codemirror = CodeMirror.fromTextArea(this.target()[0],this.opts);
+            this._codeMirrorElm().addClass('wb-input');
+            
+            //Copy most of the code mirror methods directly onto this widget
+            for(var i in this._copyMethods) {
+                var m = this._copyMethods[i];
+                this[m] = this._codemirror[m].bind(this._codemirror);
+            }
+        });
+    },
+    value:function() {
+        if (arguments.length > 0) {
+            this.__super(arguments[0]);
+            this.target().trigger('change');
+            
+            if (this._codemirror) {
+                this._codemirror.setValue(arguments[0]);
+            }
+            return this;
+        } else {
+            if (this._codemirror) {
+                this._codemirror.save()
+            }
+            return this.__super();
+        }
     }
 });
 

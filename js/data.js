@@ -83,6 +83,16 @@ $wb.data.Model = $wb.Class('Model',{
         }
         return key.join(",");
     },
+    hasKey:function() {
+        
+        for(var id in this._fields) {
+            var f = this._fields[id];
+            if (f.primary) {
+                return true;
+            }
+        }
+        return false;
+    },
     validate:function(row) {
         for(var id in row) {
             if (!this._fields[id])
@@ -212,7 +222,21 @@ $wb.data.JsonSocket = $wb.Class('JsonSocket',{
     send:function(data) {
         var self = this;
         this.open(function() {
-            self._ws.send(JSON.stringify(data));
+            try {
+                self._ws.send(JSON.stringify(data));
+            } catch(e) {
+                //Connection error?
+                this._opened = false;
+                try {
+                    self.open(function() {
+                        self._ws.send(JSON.stringify(data));
+                    })
+                } catch(e) {
+                    //Nope
+                    throw new $wb.Error('Failed to contact server',{socket:this,error:e});
+                }
+            }
+            
         });
     }
 });
@@ -409,12 +433,17 @@ $wb.data.ListStore = $wb.Class('ListStore',{
     _limit:0,
     _offset:0,
     _data:null,
+    _hasKey:false,
+    _autoKey:"_listId",
     __construct:function(opts) {
         this.__super(opts);
         this._data = {
             rows:new $wb.Array(),
             total:0
         };
+        if (opts.model) {
+            this._hasKey = opts.model.hasKey();
+        }
     },
     add:function(row) {
         this.addAll([row]);
@@ -424,14 +453,19 @@ $wb.data.ListStore = $wb.Class('ListStore',{
             if (this._model)
                 rows[i] = this._model.create(rows[i]);
             var found = false;
-            if (this._model) {
-                var key = this._model.getKey(rows[i]);
+            
+            var key = this.getKey(rows[i]);
+            if (key) {
                 var oldRow = this.getByKey(key);
                 if (oldRow) {
                     $.extend(oldRow,rows[i]);
                     found = true;
                 }
             }
+            if (!this._hasKey) {
+                rows[i][this._autoKey] = this._data.rows.length();
+            }
+            
             if (!found)
                 this._data.rows.push(rows[i]);
         }
@@ -475,12 +509,19 @@ $wb.data.ListStore = $wb.Class('ListStore',{
             key = key.join(',');
         }
         var i = this.getIndexByMethod(key,function(row) {
-            return this.getModel().getKey(row);
+            return this.getKey(row);
         }.bind(this));
         return i;
     },
+    getKey:function(row) {
+        if (this._hasKey) {
+            return this.getModel().getKey(row);
+        } else {
+            return row[this._autoKey];
+        }
+    },
     indexOf:function(row) {
-        var key = this.getModel().getKey(row);
+        var key = this.getKey(row);
         return this.getIndexByKey(key);
     },
     get:function(ix) {
@@ -492,7 +533,7 @@ $wb.data.ListStore = $wb.Class('ListStore',{
     removeAll:function(ixs) {
          for(var i = 0; i < ixs.length;i++) {
             var ix = ixs[i];
-            if (this._model && $.type(ix) == 'object') {
+            if ($.type(ix) == 'object') {
                 ix = this.indexOf(ix);
                 if (ix > -1)
                     this._data.rows.remove(ix);
