@@ -554,6 +554,7 @@ $wb.ui.form.TextArea = $wb.Class('TextArea',{
 $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
     __extends:[$wb.ui.form.TextArea],
     _codemirror:null,
+    _rendered:false,
     _copyMethods:[  
         'getSelection','replaceSelection','focus','scrollTo','setOption','getOption','cursorCoords',
         'charCoords','coordsChar','undo','redo','historySize','clearHistory','indentLine','getTokenAt',
@@ -575,12 +576,22 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
             }.bind(this),
             onBlur:function() {
                 this._codeMirrorElm().removeClass('wb-focus');
-                
             }.bind(this),
+            extraKeys: {
+                "Ctrl-Space": function(cm) {
+                    if (opts.mode != 'javascript') 
+                        return;
+                    CodeMirror.simpleHint(cm, CodeMirror.javascriptHint);
+                }
+            },
             codemirrorBase:$wbConfig.base+"js/3rdparty/codemirror/"
         },opts);
         
         this.__super(opts);
+        
+        this.bind('render',function() {
+            this._rendered = true;
+        });
         
         this._loadCodeMirror();
     },
@@ -603,8 +614,14 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
         if (typeof CodeMirror.modes[this.opts.mode] == 'undefined') {
             //Load mode
             var jsFile = this.opts.codemirrorBase+"mode/"+this.opts.mode+"/"+this.opts.mode+".js";
+            var required = [jsFile];
+            if (this.opts.mode == 'javascript') {
+                required.push(this.opts.codemirrorBase+"util/simple-hint.js");
+                required.push(this.opts.codemirrorBase+"util/javascript-hint.js");
+                loadCSS(this.opts.codemirrorBase+"util/simple-hint.css");
+            }
             //var cssFile = this.opts.codemirrorBase+"mode/"+this.opts.mode+"/"+this.opts.mode+".css";
-            require(jsFile,this._init.bind(this));
+            require(required,this._init.bind(this));
         } else {
             this._init();
         }
@@ -628,7 +645,16 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
                 var m = this._copyMethods[i];
                 this[m] = this._codemirror[m].bind(this._codemirror);
             }
+            this._rendered = false;
         });
+        
+        /**
+         * If the widget had time to render before we got the whole thing loaded
+         * trigger render event manually to ensure we get code mirror setup
+         */
+        if (this._rendered) {
+            this.trigger('render');
+        }
     },
     value:function() {
         if (arguments.length > 0) {
