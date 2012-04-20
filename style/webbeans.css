@@ -273,6 +273,13 @@ body {
     .wb-table-body {
     width:100%;
 }
+.wb-table {
+    table-layout: fixed;
+}
+
+.wb-table .wb-table-cell {
+    overflow:hidden;
+}
 
 .wb-html {
     white-space: normal;

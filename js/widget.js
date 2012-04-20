@@ -1721,14 +1721,25 @@ $wb.ui.Table = $wb.Class('Table',
                 header:true,
                 footer:true,
                 layout:function() {
-                    var cells = this._header.find('.wb-table-cell').not('.wb-actions');
+                    var cells = null;
+                    if (this.opts.header) {
+                        cells = this._header.find('.wb-table-cell').not('.wb-actions');
+                    } else {
+                        cells = this._body.find('.wb-table-row:eq(0) .wb-table-cell').not('.wb-actions');
+                    }
                     var availWidth = this.elm().innerWidth();
                     
-                    var actionWidth = Math.max(availWidth/10,80);
+                    var actionWidth = Math.max(availWidth/10,120);
                     
                     if (!isNaN(actionWidth) && actionWidth > 0) {
-                        this._header.find('.wb-actions').innerWidth(actionWidth);
-                        availWidth -= this._header.find('.wb-actions').outerWidth();
+                        var actionCell = null;
+                        if (this.opts.header) {
+                            actionCell = this._header.find('.wb-actions');
+                        } else {
+                            actionCell = this._body.find('.wb-table-row:eq(0) .wb-actions');
+                        }
+                        actionCell.innerWidth(actionWidth);
+                        availWidth -= actionCell.outerWidth();
                     }
                     
                     var cellWidth = Math.floor(availWidth/cells.length);
