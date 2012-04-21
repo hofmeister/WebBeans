@@ -186,6 +186,8 @@ $wb.data.JsonSocket = $wb.Class('JsonSocket',{
     _url:null,
     _ws:null,
     _opened:false,
+    _opening:false,
+    _waitModal:null,
     __construct:function(url) {
         this._url = new $wb.Url(url,$wb.location);
         this._url.protocol = 'ws';
@@ -198,18 +200,41 @@ $wb.data.JsonSocket = $wb.Class('JsonSocket',{
                 callback();
             return;
         }
-        this._opened = true;
+        this._opening = true;
+        
         this._ws = new WebSocket(this._url.toString());
         this._ws.onopen = function() {
+            this._opened = true;
+            this._opening = false;
+            if (this._waitModal) {
+                var info = $wb(this._waitModal.find('.wb-pane'));
+                info.html('<b>Connection reestablished!</b><br/>Reloading the application in 5 seconds.<br/><br/><a href="javascript:location.reload();">Reload now</a>');
+                setTimeout(function() {
+                    //Force a reload of the page - many things might have changed.
+                    location.reload();
+                },5000);
+                
+            }
             this.trigger('open');
             if (callback)
                 callback();
         }.bind(this);
         
         this._ws.onmessage = this._onMessage.bind(this);
-        this._ws.onclose = function() {
+        this._ws.onclose = function(evt) {
             this._opened = false;
+            this._opening = false;
             this.trigger('close');
+            if (!evt.wasClean) {
+                if (!this._waitModal) {
+                    var info = new $wb.ui.Pane();
+                    info.html('<b>The connection to the server was lost</b>. <br/>Please wait while attempting to reconnect. <br/><br/>Note: If this takes more than a couple of minutes please<br/> try reloading the application.');
+                    this._waitModal = $wb.createModal({title:'Server connection lost',content:info,closable:false});
+                }
+                setTimeout(function() {
+                    this.open();
+                }.bind(this),1000);
+            }
         }.bind(this);
     },
     isOpened:function() {
@@ -225,18 +250,8 @@ $wb.data.JsonSocket = $wb.Class('JsonSocket',{
             try {
                 self._ws.send(JSON.stringify(data));
             } catch(e) {
-                //Connection error?
-                this._opened = false;
-                try {
-                    self.open(function() {
-                        self._ws.send(JSON.stringify(data));
-                    })
-                } catch(e) {
-                    //Nope
-                    throw new $wb.Error('Failed to contact server',{socket:this,error:e});
-                }
+                throw new $wb.Error('Failed to contact server',{socket:this,error:e});
             }
-            
         });
     }
 });

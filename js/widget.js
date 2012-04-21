@@ -1976,6 +1976,7 @@ $wb.ui.Window = $wb.Class('Window',
                 tmpl:$wb.template.window,
                 modal:false,
                 moveable:true,
+                closable:true,
                 width:400,
                 layout:$wb.ui.layout.Fill
             },opts);
@@ -2080,11 +2081,16 @@ $wb.ui.Window = $wb.Class('Window',
                 this.destroy();
             });
             var self = this;
-            this.header().find('.wb-close').click(function(evt) {
-                evt.preventDefault();
-                evt.stopPropagation();
-                self.close();
-            });
+            if (opts.closable) {
+                this.header().find('.wb-close').click(function(evt) {
+                    evt.preventDefault();
+                    evt.stopPropagation();
+                    self.close();
+                });
+            } else {
+                this.header().find('.wb-close').detach();
+            }
+            
             this.bind('render',function() {
                 if (!this.opts.height) {
                     this.target().children().css('height','auto');
