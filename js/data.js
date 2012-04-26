@@ -662,7 +662,6 @@ $wb.data.TableStore = $wb.Class('TableStore',{
     _cols:[],
     __construct:function(opts) {
         this.require(opts,'model');
-        
         this.__super(opts);
         
         this._model.bind('change',function() {
@@ -670,7 +669,16 @@ $wb.data.TableStore = $wb.Class('TableStore',{
         }.bind(this));
     },
     getColumns:function() {
-        return this._model.getFields();
+        var fields = this._model.getFields();
+        if (!this.opts.columns)
+            return fields;
+        var out = {};
+        for(var i in this.opts.columns) {
+            var colId = this.opts.columns[i];
+            if (fields[colId])
+                out[colId] = fields[colId];
+        }
+        return out;
     }
 });
 

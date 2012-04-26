@@ -255,7 +255,7 @@ $(function() {
                 +parseInt(el.css('margin-left'))
                 +parseInt(el.css('margin-right'));
         //Input fields has inner border
-        if (el[0] && el[0].tagName.toLowerCase() != 'input')
+        if (el[0] && el[0].tagName && el[0].tagName.toLowerCase() != 'input')
             out += parseInt(el.css('border-left-width'))
                     +parseInt(el.css('border-right-width'))
     
@@ -269,7 +269,7 @@ $(function() {
                 +parseInt(el.css('margin-top'))
                 +parseInt(el.css('margin-bottom'));
         //Input fields has inner border
-        if (el[0] && el[0].tagName.toLowerCase() != 'input')
+        if (el[0] && el[0].tagName && el[0].tagName.toLowerCase() != 'input')
             out += parseInt(el.css('border-top-width'))
                     +parseInt(el.css('border-bottom-width'));
             
@@ -282,7 +282,7 @@ $(function() {
                 +parseInt(el.css('padding-bottom'));
         
         //Input fields has inner border
-        if (el[0] && el[0].tagName.toLowerCase() == 'input')
+        if (el[0] && el[0].tagName && el[0].tagName.toLowerCase() == 'input')
             out += parseInt(el.css('border-top-width'))
                     +parseInt(el.css('border-bottom-width'));
             
@@ -296,7 +296,7 @@ $(function() {
         var out = parseInt(el.css('padding-left'))
                 +parseInt(el.css('padding-right'));
         //Input fields has inner border
-        if (el[0] && el[0].tagName.toLowerCase() == 'input')
+        if (el[0] && el[0].tagName && el[0].tagName.toLowerCase() == 'input')
             out += parseInt(el.css('border-left-width'))
                     +parseInt(el.css('border-right-width'))
     
@@ -379,18 +379,6 @@ $(function() {
         return $(this);
     };
     
-    jQuery.fn.disableMarking = function() {
-        $(this).css({
-            '-webkit-touch-callout': 'none',
-            '-webkit-user-select': 'none',
-            '-khtml-user-select': 'none',
-            '-moz-user-select': 'none',
-            '-ms-user-select': 'none',
-            '-o-user-select': 'none',
-            'user-select': 'none'
-        });
-        $(this).attr('unselectable','true');
-    };
     
     jQuery.fn.keyboardNavigation = function() {
         var elm = $(this);
@@ -419,8 +407,21 @@ $(function() {
         
     };
     
-    jQuery.fn.enableMarking = function(textOnly) {
-        var val = textOnly ? 'text' : 'auto';
+    jQuery.fn.disableMarking = function() {
+        $(this).css({
+            '-webkit-touch-callout': 'none',
+            '-webkit-user-select': 'none',
+            '-khtml-user-select': 'none',
+            '-moz-user-select': 'none',
+            '-ms-user-select': 'none',
+            '-o-user-select': 'none',
+            'user-select': 'none'
+        });
+        //$(this).attr('unselectable','true');
+    };
+    
+    jQuery.fn.enableMarking = function() {
+        var val = 'auto';
         $(this).css({
             '-webkit-touch-callout': val,
             '-webkit-user-select': val,
@@ -430,7 +431,6 @@ $(function() {
             '-o-user-select':val,
             'user-select':val
         });
-        $(this).removeAttr('unselectable');
     };
     jQuery.fn.rotate = function(degrees) {
         var val = 'rotate('+degrees+'deg)'
@@ -451,7 +451,7 @@ $(function() {
     }
     
     jQuery.fn.clear = function() {
-        $(this).html('');
+        $(this).children().detach();
     };
     
     jQuery.fn.bindOnce = function(evt,handler) {

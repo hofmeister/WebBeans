@@ -253,8 +253,8 @@ body {
     text-align:left;
     display:inline;
 }
-.wb-input-container .wb-input {
-    display: table-cell; display:block;*zoom:1;float:none;_position:relative;
+.wb-input-container .wb-input:after {
+    clear:both;
 }
 
 /* buttons */

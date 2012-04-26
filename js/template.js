@@ -114,10 +114,16 @@ $wb.template = {
             return '<form  class="wb-pane" />';
         },
         input:function(type) {
-            return $wb.template.form.container('<input class="wb-input wb-input-'+type+'" type="'+type+'" value="" />');
+            return $wb.template.form.container(type,'<input class="wb-input" type="'+type+'" value="" />');
         },
-        container:function(contents) {
-            return '<div class="wb-input-container"><label><span class="wb-label" />'+contents+'</label></div>';
+        color:function() {
+            return $wb.template.form.container("color",'#<input class="wb-input" type="text" value="" />');
+        },
+        date:function() {
+            return $wb.template.form.container("date",'<input class="wb-input" type="text" value="" />');
+        },
+        container:function(type,contents) {
+            return '<div class="wb-input-container wb-input-'+type+'"><label><span class="wb-label" />'+contents+'</label></div>';
         },
         button:function(type) {
             return '<input class="wb-form-button" type="'+type+'" value="" />';
@@ -126,10 +132,10 @@ $wb.template = {
             return '<div class="wb-target" />';
         },
         textarea:function() {
-            return $wb.template.form.container('<textarea class="wb-input wb-input-textarea" />');
+            return $wb.template.form.container('textarea','<textarea class="wb-input wb-input-textarea" />');
         },
         select:function() {
-            return $wb.template.form.container('<select class="wb-input wb-input-select" />');
+            return $wb.template.form.container('select','<select class="wb-input wb-input-select" />');
         },
         
         fieldset:function() {

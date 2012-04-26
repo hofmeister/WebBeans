@@ -470,55 +470,11 @@ $wb.ui.Widget = $wb.Class('Widget',
          * @param {$wb.ui.Context} w context menu
          */
         setContextMenu:function(w) {
-            var ccontext_id = '-wb-state-current-context';
-            var elm = w.elm();
-
-            var onHide = function(evt) {
-                evt.stopPropagation();
-                elm.detach();
-                $('body').unbind('click',onHide);
-                elm.unbind('click',onHide);
-                elm.unbind('contextmenu',onHide);
-            };
-
-            var onContext = function(evt) {
-                evt.preventDefault();
-                evt.stopPropagation();
-
-                //Remove all others
-                $('.'+ccontext_id).detach();
-
-                $('body').append(elm);
-
-                elm.css({
-                    position:'absolute',
-                    left:evt.pageX,
-                    top:evt.pageY,
-                    zIndex:9999
-                });
-
-                var source = $(evt.target).widget();
-                if (typeof source == 'undefined') {
-                    $wb.debug("Could not find widget for element");
-                    return;
-                }
-                elm.addClass(ccontext_id);
-                w.source(source);
-                w.render();
-
-                elm.bindOnce('click',onHide);
-                $('body').bindOnce('click',onHide);
-                $('body').bindOnce('contextmenu',onHide);
-            };
-
-            var onExit = function() {
-                $('.'+ccontext_id).detach();
-            };
-
-
+            
+            w.setElement(this.elm());
+            
             this.bind('paint',function() {
-                this.elm().bindOnce('contextmenu',onContext);
-                this.elm().bindOnce('click',onExit);
+                this.elm().bindOnce('contextmenu',w.render.bind(w));
             });
             return this;
         },
@@ -779,6 +735,7 @@ $wb.ui.TopBar = $wb.Class('TopBar',{
 $wb.ui.ContextMenu = $wb.Class('ContextMenu',{
     __extends:[$wb.ui.Menu],
     _source:null,
+    _element:null,
     __construct:function(opts) {
         if (!opts) opts = {};
         $.extend(opts,{
@@ -789,6 +746,15 @@ $wb.ui.ContextMenu = $wb.Class('ContextMenu',{
         this.elm().bind('contextmenu',function(evt) {
             evt.preventDefault();
         });
+        $wb.ui.ContextMenu.init();
+        this.bind('detach',function() {
+            if (this._element) {
+                this._element.unbind('click',$wb.ui.ContextMenu.hide);
+            }
+        });
+    },
+    setElement:function(element) {
+        this._element = element;
     },
     source:function() {
         if (arguments.length > 0) {
@@ -797,8 +763,55 @@ $wb.ui.ContextMenu = $wb.Class('ContextMenu',{
         } else {
             return this._source;
         }
+    },
+    render:function(evt) {
+        evt.preventDefault();
+        evt.stopPropagation();
+        if (!evt) throw _("ContextMenu requires first argument to render to be an event");
+        $wb.ui.ContextMenu.hide();
+        var elm = this.elm();
+        elm.addClass($wb.ui.ContextMenu.id);
+        $('body').append(elm);
+        elm.html('');
+        
+        var source = $(evt.target).widget();
+        if (typeof source == 'undefined') {
+            $wb.debug("Could not find widget for element");
+            return;
+        }
+        
+        this.source(source);
+        
+        elm.css({
+            position:'absolute',
+            left:evt.pageX,
+            top:evt.pageY,
+            zIndex:9999
+        });
+        elm.bindOnce('click',$wb.ui.ContextMenu.hide);
+        
+        if (this._element) {
+            this._element.bindOnce('click',$wb.ui.ContextMenu.hide);
+        }
+            
+        this.__super();
     }
 });
+$wb.ui.ContextMenu.id = '-wb-state-current-context';
+$wb.ui.ContextMenu.init = function() {
+    if ($wb.ui.ContextMenu._done) return;
+    $('body').bindOnce('click',$wb.ui.ContextMenu.hide);
+    $('body').bindOnce('contextmenu',$wb.ui.ContextMenu.hide);
+    $wb.ui.ContextMenu._done = true;
+}
+$wb.ui.ContextMenu._done = false;
+
+$wb.ui.ContextMenu.hide = function() {
+    var id = $wb.ui.ContextMenu.id;
+    var w = $wb('.'+id);
+    if (w)
+        w.detach();
+}
 
 $wb.ui.Header = $wb.Class('Header',{
     __extends:[$wb.ui.Menu],
