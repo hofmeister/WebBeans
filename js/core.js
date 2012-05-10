@@ -265,6 +265,7 @@ require($wbConfig.jQuery,function() {
             "    }"+
                 //Call the constructor - this method is actually not the defined constructor but a placeholder. 
                 //See further down
+            "    this.__initArgs = arguments;"+
             "    this.__construct.apply(this,arguments);"+
             "};")();
     
@@ -272,6 +273,8 @@ require($wbConfig.jQuery,function() {
         //Make sure we have a constructor
         if (!opts.__construct)
             opts.__construct = function() {};
+        //Holds the arguments passed to the constructor - used for cloning
+        opts.__initArgs = [];
 
         //Compile a list of unique parent classes    
         var parents = new $wb.Set();
@@ -358,6 +361,15 @@ require($wbConfig.jQuery,function() {
         }
         //Extend the prototype with opts and fixed
         $.extend(true,clz.prototype,opts,fixed);
+        
+        clz.prototype.clone = function() {
+            var func = new Function("return function "+this._clz+"() {}")();
+            func.prototype = clz.prototype;
+            var out = new func();
+            clz.apply(out,this.__initArgs);
+            
+            return out;
+        };
         
         //Extends contains a unique array of all directly inherited classes (Note: NOT entire hierarchy)
         clz.__extends = parents.toArray();
@@ -885,14 +897,18 @@ require($wbConfig.jQuery,function() {
              * @description Trigger event with optional arguments
              * @param {String} evt the event name
              * @param {Object[]} [args] Optional arguments to send as parms to event handlers
+             * @return {Boolean} returns true unless a handler specifically returns false (which stops execution)
              */
             trigger:function(evt,args) {
                 if (this._bindings[evt]) {
                     for(var i in this._bindings[evt]) {
                         var handler = this._bindings[evt][i];
-                        handler.apply(this,args);
+                        var out = handler.apply(this,args);
+                        if (out === false)
+                            return false;
                     }
                 }
+                return true;
             },
             /**
              * @description Bind handler to event
