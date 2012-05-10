@@ -292,6 +292,13 @@ $wb.data.JsonService = $wb.Class('JsonService',{
                 for(var methodName in controller.methods) {
                     (function() {
                         var method = controller.methods[methodName][0];
+                        var bodyArgs = 0;
+                        for(var i = 0; i < method.args.length;i++) {
+                            var arg = method.args[i];
+                            if (arg.transport == 'BODY')
+                                bodyArgs++;
+                        }
+                        
                         self[controllerName][methodName] = function(args,callback) {
                             var url = baseUrl+method.url;
                             var data = null;
@@ -302,6 +309,8 @@ $wb.data.JsonService = $wb.Class('JsonService',{
                             if (typeof args == 'function') {
                                 callback = args;
                                 args = null;
+                            } else {
+                                args = $.extend(true,{},args);
                             }
 
                             if (method.args) {
@@ -313,6 +322,10 @@ $wb.data.JsonService = $wb.Class('JsonService',{
                                     for(var i = 0; i < method.args.length;i++) {
                                         var arg = method.args[i];
                                         var value = args != null ? args[arg.name] : undefined;
+                                        if (args && args[arg.name]) {
+                                            args[arg.name] = null;
+                                        }
+                                        
                                         if (arg.required && (typeof value == "undefined")) {
                                             throw "Required argument missing: "+arg.name;
                                         }
@@ -326,7 +339,15 @@ $wb.data.JsonService = $wb.Class('JsonService',{
                                                 url += arg.name + "=" + encodeURIComponent(value);
                                                 break;
                                             case 'BODY':
-                                                data = value;
+                                                if (bodyArgs > 1) {
+                                                    if (!data) {
+                                                        data = {};
+                                                    }
+                                                    data[arg.name] = value;
+                                                } else {
+                                                    data = value;
+                                                }
+                                                
                                                 bodyType = arg.type;
                                                 break;
                                         }
@@ -337,6 +358,11 @@ $wb.data.JsonService = $wb.Class('JsonService',{
                                         }
                                     }
                                 }
+                            }
+                            for(var key in args) {
+                                if (!args[key]) continue;
+                                url += (url.indexOf('?') > -1) ? "&" : "?";
+                                url += key + "=" + encodeURIComponent(args[key]);
                             }
                         
                             if (data) {
