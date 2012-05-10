@@ -76,7 +76,7 @@ $wb.template = {
     },
     table: {
         base:function() {
-            return '<table class="wb-component wb-table"></table>';
+            return '<table  cellspacing="0" cellpadding="0" class="wb-component wb-table"></table>';
         },
         header:function() {
             return '<thead class="wb-table-head"></thead>';
@@ -85,7 +85,7 @@ $wb.template = {
             return '<tfoot class="wb-table-foot"></tfoot>';
         },
         body:function() {
-            return '<tbody class="wb-table-body"></tbody>';
+            return '<tbody class="wb-table-body"><td class="wb-inner-table-container"><div class="wb-table-body-scroll"><table  cellspacing="0" cellpadding="0"><tbody class="wb-inner-table" /></table></div></td></tbody>';
         },
         row:function() {
             return '<tr class="wb-table-row" />';
@@ -94,7 +94,18 @@ $wb.template = {
             return '<td class="wb-table-cell" />';
         },
         header_cell:function() {
-            return '<th class="wb-table-cell" />';
+            return '<th class="wb-table-cell" ><div class="wb-icon wb-sort"/><span class="wb-title" /><div class="wb-icon wb-filter"/></th>';
+        }
+    },
+    paging:{
+        base:function() {
+            return '<ul class="wb-paging line"></ul>';
+        },
+        count:function() {
+            return '<li class="wb-count">%s</li>'.format(_("Page %s/%s",this.opts.currentPage+1,this.opts.totalPages));
+        },
+        entry:function(name) {
+            return '<li><a href="#">'+name+'</a></ul>';
         }
     },
     tree: {

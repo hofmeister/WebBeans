@@ -592,18 +592,20 @@ $wb.ui.Link = $wb.Class('Link',{
     __construct:function(opts) {
         if (!opts) opts = {};
         opts = $.extend({
-            tmpl:$wb.template.link
+            tmpl:$wb.template.link,
+            context:this
         },opts);
         
         this.require(opts,'title');
         
         this.__super(opts);
         
+        
         var self = this;
         this.elm().click(function(evt) {
             evt.preventDefault();
             if (self.opts.action) {
-                self.opts.action(evt);
+                self.opts.action.apply(self.opts.context,[evt]);
             }
         });
         
@@ -1553,16 +1555,20 @@ $wb.ui.TableRow = $wb.Class('TableRow',
         __extends:[$wb.ui.Widget],
         _editMode:false,
         __construct:function(opts) {
-            if (!opts) opts = {};
             this.require(opts,'table');
-            if (!opts.tmpl)
-                opts.tmpl = opts.table.option('rowTmpl')
-            this.__super(opts);
+            opts = $.extend({
+                editable:false,
+                tmpl:opts.table.option('rowTmpl'),
+                data:{}
+            },opts)
             
+            this.__super(opts);
+            var self = this;
             this.elm().dblclick(function(evt) {
+                if (!self.opts.editable) return;
                 evt.preventDefault();
                 evt.stopPropagation();
-                this.toggleEditable();
+                this.makeEditable();
             }.bind(this));
             
             this.bind('paint',function() {
@@ -1598,11 +1604,13 @@ $wb.ui.TableRow = $wb.Class('TableRow',
             return this;
         },
         toggleEditable:function() {
+            if (!this.opts.editable) return;
             this._editMode = !this._editMode;
             this.render();
             return this;
         },
         makeEditable:function() {
+            if (!this.opts.editable || this._editMode) return;
             this._editMode = true;
             this.render();
             return this;
@@ -1637,31 +1645,30 @@ $wb.ui.TableRow = $wb.Class('TableRow',
                 row.append(cell);
             }
             
-            var headerActions = this.getTable().option('headerActions');
-            var rowActions = this.getTable().option('rowActions');
             var editActions = this.getTable().option('rowEditActions');
             
-            if (headerActions || rowActions) {
+            if (this.getTable().hasActions()) {
                 var actionCell = $(bodyCellTmpl());
                 actionCell.addClass('wb-actions');
-                var action = new $wb.ui.Link({
-                    title:_('Cancel'),
-                    action:function() {
+                var action = new $wb.ui.Action('cancel',function() {
                         if (this.isNew()) {
                             this.destroy();
                         } else {
                             this.makeStatic();
                         }
                     }.bind(this)
-                });
+                );
                 actionCell.append(action.render());
                 
                 if (editActions) {
                     for(var name in editActions) {
-                        var action = new $wb.ui.Link({
-                            title:name,
-                            action:editActions[name].bind(this)
-                        });
+                        var action;
+                        if (typeof editActions[name] == 'function') {
+                            action = new $wb.ui.Action(name,editActions[name],this);
+                        } else {
+                            action = editActions[name].clone().setContext(this);
+                        }
+                        
                         actionCell.append(action.render());
                     }
                 }
@@ -1696,18 +1703,20 @@ $wb.ui.TableRow = $wb.Class('TableRow',
                 row.append(cell);
             }
             
-            var headerActions = this.getTable().option('headerActions');
             var rowActions = this.getTable().option('rowActions');
             
-            if (headerActions || rowActions) {
+            if (this.getTable().hasActions()) {
                 var actionCell = $(bodyCellTmpl());
                 actionCell.addClass('wb-actions');
                 if (rowActions) {
                     for(var name in rowActions) {
-                        var action = new $wb.ui.Link({
-                            title:name,
-                            action:rowActions[name].bind(this)
-                        });
+                        var action;
+                        if (typeof rowActions[name] == 'function') {
+                            action = new $wb.ui.Action(name,rowActions[name],this);
+                        } else {
+                            action = rowActions[name].clone().setContext(this);
+                        }
+                        
                         actionCell.append(action.render());
                     }
                 }
@@ -1718,6 +1727,108 @@ $wb.ui.TableRow = $wb.Class('TableRow',
         }
     }
 );
+    
+$wb.ui.Paging = $wb.Class('Paging',
+    /**
+     * @lends $wb.ui.Paging.prototype
+     * @augments $wb.ui.Widget
+     */
+    {
+    
+    __extends:[$wb.ui.Widget],
+    
+    __construct:function(opts) {
+        this.require(opts,'totalPages');
+        
+        this.__super($.extend({
+            tmpl:$wb.template.paging.base,
+            entryTmpl:$wb.template.paging.entry,
+            countTmpl:$wb.template.paging.count,
+            maxPages:5,
+            currentPage:0,
+            prevName:'&laquo;',
+            nextName:'&raquo;',
+            activeClass:'wb-active',
+            nextClass:'wb-next',
+            prevClass:'wb-prev',
+            pageFormat:'%s'
+        },opts));
+        
+        this.elm().bind('click',function(evt) {
+            evt.preventDefault();
+            var elm = $(evt.target);
+            if (!elm.attr('href')) 
+                return;
+            var entry = elm.closest('li');
+            if (entry.hasClass('wb-disabled') 
+                || entry.hasClass('wb-active')) {
+                return;
+            }
+            
+            var page = parseInt(elm.attr('href').substr(1));
+            this.setPage(page);
+        }.bind(this))
+        
+        this.bind('paint',function() {
+            this.target().clear();
+            
+            var prevBtn = this._makeEntry(this.opts.prevName,this.opts.currentPage-1)
+                            .addClass(this.opts.prevClass);
+            if (this.opts.currentPage == 0) {
+                prevBtn.addClass('wb-disabled');
+            }
+            
+            if (this.opts.maxPages > 0 && this.opts.totalPages) {
+                var half = Math.floor(this.opts.maxPages/2);
+                var start = Math.max(0,this.opts.currentPage-half);
+                var end = Math.min(start+this.opts.maxPages,this.opts.totalPages);
+                if (end == this.opts.totalPages) {
+                    start = Math.max(0,end-this.opts.maxPages);
+                }
+            
+                for(var i = start;i < end;i++) {
+                    var entry = this._makeEntry(this.opts.pageFormat.format(i+1),i);
+                    if (i == this.opts.currentPage) {
+                        entry.addClass(this.opts.activeClass);
+                    }
+                }
+            }
+            
+            var nextBtn = this._makeEntry(this.opts.nextName,this.opts.currentPage+1)
+                            .addClass(this.opts.nextClass);
+                            
+            if (this.opts.currentPage == (this.opts.totalPages-1)) {
+                nextBtn.addClass('wb-disabled');
+            }
+            
+            var countElm = $(this.opts.countTmpl.apply(this));
+            this.target().append(countElm);
+        });
+    },
+    setTotalPages:function(total) {
+        this.opts.totalPages = total;
+        this.render();
+    },
+    setPage:function(page) {
+        if (this.opts.currentPage == page || page < 0) 
+            return;
+        this.opts.currentPage = page;
+        this.trigger('change',[page]);
+        this.render();
+    },
+    _makeEntry:function(name,page) {
+        var elm = $(this.opts.entryTmpl.apply(this,[name]));
+        elm.find('a').attr('href','#'+page);
+        this.target().append(elm);
+        return elm;
+    },
+    getPage:function() {
+        return this.opts.currentPage;
+    },
+    add:function() {
+        throw new $wb.Error('Cannot add children to paging');
+    }
+});
 
 $wb.ui.Table = $wb.Class('Table',
     /**
@@ -1729,6 +1840,10 @@ $wb.ui.Table = $wb.Class('Table',
         _header:null,
         _footer:null,
         _body:null,
+        _sortColumns:{},
+        _filterColumns:{},
+        _filterRow:null,
+        _paging:null,
         _rows:[],
         _autoUpdate:true,
         dirty:false,
@@ -1749,6 +1864,7 @@ $wb.ui.Table = $wb.Class('Table',
         __construct:function(opts) {
             if (!opts) opts = {};
             this.__super($.extend({
+                target:'.wb-inner-table',
                 tmpl:$wb.template.table.base,
                 headerTmpl:$wb.template.table.header,
                 footerTmpl:$wb.template.table.footer,
@@ -1756,34 +1872,55 @@ $wb.ui.Table = $wb.Class('Table',
                 rowTmpl:$wb.template.table.row,
                 bodyCellTmpl:$wb.template.table.body_cell,
                 headerCellTmpl:$wb.template.table.header_cell,
+                editable:false,
+                paging:{
+                    currentPage:0,
+                    totalPages:1
+                },
+                filters:[],
                 header:true,
                 footer:true,
                 layout:function() {
+                    var availWidth = this.elm().innerWidth();
+                    if (availWidth < 1) return;
+                    var isHeader = false;
+                    
                     var cells = null;
                     if (this.opts.header) {
+                        isHeader = true;
                         cells = this._header.find('.wb-table-cell').not('.wb-actions');
                     } else {
                         cells = this._body.find('.wb-table-row:eq(0) .wb-table-cell').not('.wb-actions');
                     }
-                    var availWidth = this.elm().innerWidth();
                     
-                    var actionWidth = Math.max(availWidth/10,120);
+                    if (this._hasActionColumn()) {
+                        var actionWidth = Math.floor(Math.max(availWidth/10,120));
                     
-                    if (!isNaN(actionWidth) && actionWidth > 0) {
-                        var actionCell = null;
-                        if (this.opts.header) {
-                            actionCell = this._header.find('.wb-actions');
-                        } else {
-                            actionCell = this._body.find('.wb-table-row:eq(0) .wb-actions');
+                        if (!isNaN(actionWidth) && actionWidth > 0) {
+                            availWidth -= actionWidth;
                         }
-                        actionCell.innerWidth(actionWidth);
-                        availWidth -= actionCell.outerWidth();
                     }
                     
                     var cellWidth = Math.floor(availWidth/cells.length);
-                    var leftOvers = availWidth % cellWidth;
-                    cells.outerWidth(cellWidth);
-                    $(cells[0]).outerWidth(cellWidth+leftOvers);
+                    
+                    if (isHeader) {
+                        cells.outerWidth(cellWidth);
+                    }
+                    
+                    var innerCells = this.elm().find('.wb-inner-table .wb-table-row:eq(0) .wb-table-cell').not('.wb-actions');
+                    if (innerCells.length > 0) {
+                        innerCells.width(cellWidth);
+                    }
+                    var parent = this.elm().parent();
+                    if (parent && parent.innerHeight() > 0) {
+                        var tblHeight = parent.innerHeight();
+                        if (this.opts.header)
+                            tblHeight -= this._header.outerHeight();
+                        if (this.opts.footer)
+                            tblHeight -= this._footer.outerHeight();
+                        
+                        this.elm().find('.wb-table-body-scroll').outerHeight(tblHeight-1);
+                    }
                 }
             },opts));
 
@@ -1796,7 +1933,7 @@ $wb.ui.Table = $wb.Class('Table',
             this._body = $(this.opts.bodyTmpl());
 
             this.bind('paint',function() {
-                var elm = this.target();
+                var elm = this.elm();
                 elm.append(this._header)
                 .append(this._footer)
                 .append(this._body);
@@ -1805,20 +1942,23 @@ $wb.ui.Table = $wb.Class('Table',
                 this._paintRows();
                 if (this.opts.footer)
                     this._paintFooter();
-            });
-            this.bind('render',function() {
-               this._dirty = false; 
+                
+                var totalCellCount = this._getColumnCount();
+                this.elm().find('.wb-inner-table-container').attr('colspan',totalCellCount);
             });
             
             this.opts.store.bind('change',function() {
                 this._checkForEditing();
                 if (this._autoUpdate) {
-                    this.render();
+                    this.repaintRows();
                 } else {
                     this._dirty = true;
                     this.trigger('dirty');
                 }
             }.bind(this));
+        },
+        _hasActionColumn:function() {
+            return this.elm().find('.wb-actions').length > 0
         },
         getStore:function() {
             return this.opts.store;
@@ -1841,42 +1981,256 @@ $wb.ui.Table = $wb.Class('Table',
                 return;
             this._autoUpdate = autoUpdate;
             if (autoUpdate && this._dirty) {
-                this.render();
+                this.repaintRows();
             }
         },
+        repaintRows:function() {
+            this._paintRows();
+            this._layout();
+        },
+        _getColumnCount:function() {
+            var out = 0;
+            for(var i in this.opts.store.getColumns()) {
+                out++;
+            }
+            if (this.hasActions())
+                out++;
+            
+            return out;
+        },
         _paintFooter:function() {
-
+            this._footer.clear();
+            var row = $(this.opts.rowTmpl());
+            this._footer.append(row);
+            if (!this._paging) {
+                this._paging = new $wb.ui.Paging(this.opts.paging);
+                this._paging.bind('change',function(page) {
+                    this.trigger('page-change',[page]);
+                }.bind(this));
+            }
+            
+            var col = $('<td class="wb-paging-container"/>');
+            col.append(this._paging.render());
+            row.append(col);
+            col.attr('colspan',this._getColumnCount());
+        },
+        getPaging:function() {
+            return this._paging;
+        },
+        toggleSort:function(field,ascending) {
+            var cell = this._sortColumns[field];
+            if (!cell) return this;
+            if (typeof ascending == 'undefined') {
+                cell.click();
+            } else {
+                var isAscending = cell.hasClass('wb-asc');
+                if (isAscending != ascending)
+                    cell.click();
+            }
+            return this;
+        },
+        toggleFilter:function(field,activate) {
+            var cell = this._filterColumns[field];
+            if (!cell) return this;
+            
+            if (typeof activate == 'undefined') {
+                cell.find('.wb-filter').click();
+            } else {
+                var isActive = cell.hasClass('wb-active');
+                if (isActive != activate) {
+                    cell.find('.wb-filter').click();
+                }
+            }
+            return this;
+        },
+        toggleFilterRow:function(show) {
+            if (!this._filterRow) 
+                return this;
+            var isVisible = this._filterRow.elm().is(':visible');
+            
+            if (typeof show == 'undefined') {
+                if (isVisible) {
+                    this._filterRow.elm().hide();
+                } else {    
+                    this._filterRow.elm().show();
+                }
+                    
+            } else {
+                if (isVisible != show) {
+                    return this.toggleFilterRow();
+                }
+            }
+            this._layout();
+            return this;
+        },
+        setPage:function(page) {
+            if (!this._paging) return this;
+            this._paging.setPage(page);
+            return this;
         },
         _paintHeader:function() {
             this._header.clear();
             var row = $(this.opts.rowTmpl());
             this._header.append(row);
+            var self = this;
             var cols = this.opts.store.getColumns();
+            
+            //Filter row contains any filter options that may exist
+            if (!this._filterRow) {
+                this._filterRow = new $wb.ui.TableRow({table:this});
+                //Hack - to make it think its editing
+                this._filterRow._editMode = true;
+                this._filterRow.elm()
+                    .addClass('wb-filter-row')
+                    .bind('keypress',function(evt) {
+                        if (evt.keyCode == 13) { //On enter
+                            this.trigger('filter-apply',[this._filterRow.getData()]);
+                        }
+                            
+                    }.bind(this));
+            }
+            this._filterRow.elm().clear();
+            this._header.append(this._filterRow.elm());
+            
             for(var i in cols) {
                 var col = cols[i];
                 if (col.hidden) continue;
+                
                 var cell = $(this.opts.headerCellTmpl());
+                if (col.sortable) {
+                    this._sortColumns[col.id] = cell;
+                    cell.addClass('wb-sortable');
+                    cell.find('.wb-title,.wb-sort').bind('click',function(evt) {
+                        evt.preventDefault();
+                        var elm = this.elm;
+                        row.find('.wb-desc,.wb-asc')
+                            .not(elm)
+                            .removeClass('wb-desc')
+                            .removeClass('wb-asc');
+
+                        if (elm.hasClass('wb-desc')) {
+                            if (self.trigger('sort',['ASC',this.col])) {
+                                elm.addClass('wb-asc').removeClass('wb-desc');
+                            }
+                        } else {
+                            if (self.trigger('sort',['DESC',this.col])) {
+                                elm.addClass('wb-desc').removeClass('wb-asc');
+                            }
+                        }
+                    }.bind({col:col,elm:cell}));
+                }
+                
+                if (this.opts.filters.indexOf(col.id) > -1) {
+                    this._filterColumns[col.id] = cell;
+                    
+                    //Make filter field
+                    var fieldType = $wb.ui.FieldType.type(col.valueType);
+                    var filterCell = $('<td/>');
+                    var filterField = fieldType.getTableField(col,'');
+                    filterField.disable();
+                    filterCell.append(filterField.elm());
+                    this._filterRow.elm().append(filterCell);
+                    
+                    cell.addClass('wb-filtered');
+                    cell.find('.wb-filter').click(function(evt) {
+                        evt.preventDefault();
+                        evt.stopPropagation();
+                        if (this.elm.hasClass('wb-active')) {
+                            if (!self._filterRow.elm().is(':visible')) {
+                                self.toggleFilterRow(true);
+                                return;
+                            }
+                            if (self.trigger('filter-disable',[this.col])) {
+                                this.elm.removeClass('wb-active');
+                                this.field.disable();
+                                if (row.find('.wb-filtered.wb-active').length == 0) {
+                                    self.toggleFilterRow(false);
+                                }
+                                    
+                            }
+                            
+                        } else {
+                            if (self.trigger('filter-enable',[this.col])) {
+                                this.elm.addClass('wb-active');
+                                this.field.enable();
+                                self.toggleFilterRow(true);
+                            }
+                        }
+                        
+                    }.bind({col:col,elm:cell,field:filterField}));
+                    
+                } else {
+                    //Add empty cell
+                    this._filterRow.elm().append('<td class="wb-empty" />');
+                }
+                
+                    
+                
                 cell.attr('rel',col.id);
-                cell.html(col.name);
+                cell.find('.wb-title').html(col.name);
                 row.append(cell);
             }
-            if (this.opts.headerActions || this.opts.rowActions) {
+            if (this.hasActions()) {
                 var actionCell = $(this.opts.headerCellTmpl());
                 actionCell.addClass('wb-actions');
                 if (this.opts.headerActions) {
                     for(var name in this.opts.headerActions) {
-                        var action = new $wb.ui.Link({
-                            title:name,
-                            action:this.opts.headerActions[name].bind(this)
-                        });
+                        
+                        var action;
+                        if (typeof this.opts.headerActions[name] == 'function') {
+                            action = new $wb.ui.Action(name,this.opts.headerActions[name],this);
+                        } else {
+                            action = this.opts.headerActions[name].clone().setContext(this);
+                        }
+                        
                         actionCell.append(action.render());
                     }
                 }
                 row.append(actionCell);
+                
+                if (this.opts.filters.length > 0) {
+                    
+                    var filterActionCell = $('<td class="wb-actions" />');
+                    
+                    var applyBtn = new $wb.ui.Action('apply',function() {
+                            this.trigger('filter-apply',[this._filterRow.getData()]);
+                        },this
+                    );
+                    
+                    filterActionCell.append(applyBtn.render());
+                    
+                    var hideBtn = new $wb.ui.Action('hide',function() {
+                            this.toggleFilterRow(false);
+                        },this
+                    );
+                    
+                    filterActionCell.append(hideBtn.render());
+                    
+                    var clearBtn = new $wb.ui.Action('clear',function() {
+                            var elms = this._filterRow.elm().find('.wb-input');
+                            for(var i = 0; i < elms.length;i++) {
+                                var elm = elms[i];
+                                $(elm).widget().value('');
+                                this.toggleFilter($(elm).attr('name'),false);
+                            }
+                            this.trigger('filter-apply',[{}]);
+                        },this
+                    );
+                    
+                    filterActionCell.append(clearBtn.render());
+                    this._filterRow.elm().append(filterActionCell);
+                }
             }
         },
+        hasActions:function() {
+            return (this.opts.headerActions 
+                    || this.opts.rowActions
+                    || this.opts.filters.length > 0);
+        },
         _paintRows:function() {
-            this._body.clear();
+            this.elm().putAway();
+            this.elm().find('.wb-inner-table').clear();
+            //this.target().clear();
             var rows = this.opts.store.getRows().toArray();
             var odd = true;
             this._rows = [];
@@ -1888,6 +2242,8 @@ $wb.ui.Table = $wb.Class('Table',
                     row.elm().addClass('wb-odd');
                 odd = !odd;
             }
+            this._dirty = false; 
+            this.elm().putBack();
         },
         /**
          * @description Add row to table. Typically you should either add rows on the TableStore or use the newRow() 
@@ -1895,11 +2251,15 @@ $wb.ui.Table = $wb.Class('Table',
          * 
          * @returns {$wb.ui.TableRow} A row
          */
-        addRow:function(data) {
+        addRow:function(data,prepend) {
+            var target = this.elm().find('.wb-inner-table');
             if (!data)
                 data = {};
-            var row = new $wb.ui.TableRow({table:this,data:data})
-            this._body.append(row.elm());
+            var row = new $wb.ui.TableRow({table:this,data:data,editable:this.opts.editable})
+            if (prepend)
+                target.prepend(row.elm());
+            else
+                target.append(row.elm());
             return row;
         },
         /**
@@ -1908,7 +2268,7 @@ $wb.ui.Table = $wb.Class('Table',
          * @returns {$wb.ui.TableRow} An editable row
          */
         newRow:function() {
-            return this.addRow().setIsNew(true).makeEditable(true);
+            return this.addRow(null,true).setIsNew(true).makeEditable(true);
         }
 
     }
