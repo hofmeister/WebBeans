@@ -684,9 +684,10 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
     _loadMode:function() {
         if (typeof CodeMirror.modes[this.opts.mode] == 'undefined') {
             //Load mode
-            var jsFile = this.opts.codemirrorBase+"mode/"+this.opts.mode+"/"+this.opts.mode+".js";
+            var modeName = $.type(this.opts.mode) == 'string' ? this.opts.mode : this.opts.mode.name;
+            var jsFile = this.opts.codemirrorBase+"mode/"+modeName+"/"+modeName+".js";
             var required = [jsFile];
-            if (this.opts.mode == 'javascript') {
+            if (modeName == 'javascript') {
                 required.push(this.opts.codemirrorBase+"util/simple-hint.js");
                 required.push(this.opts.codemirrorBase+"util/javascript-hint.js");
                 loadCSS(this.opts.codemirrorBase+"util/simple-hint.css");
