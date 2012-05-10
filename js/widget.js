@@ -454,12 +454,13 @@ $wb.ui.Widget = $wb.Class('Widget',
         render: function(container) {
             if (this._paint() === false) 
                 return false;
-            this._place(container);
-
+            
             this._layout();
 
             this._renderChildren();
 
+            this._place(container);
+            
             this._layout();
 
             this.trigger('render');
@@ -520,9 +521,14 @@ $wb.ui.Widget = $wb.Class('Widget',
         */
         _renderChildren: function() {
             this.trigger('beforerenderchildren');
+            
+            this.elm().putAway();
+                
             for(var i in this._children) {
                 this._children[i].render();
             }
+            
+            this.elm().putBack();
         },
         /**
         * @private

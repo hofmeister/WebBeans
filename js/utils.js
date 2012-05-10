@@ -46,10 +46,16 @@ $wb.utils = {
         var parts = path.split('.');
         var cur = obj;
         for(var i in parts) {
-            var p = parts[i];
-            cur = cur[p];
-            if (!cur)
+            
+            try {
+                var p = parts[i];
+                cur = cur[p];
+                if (!cur)
+                    break;
+            } catch(e) {
                 break;
+            }
+            
         }
         return cur;
     },
@@ -207,10 +213,10 @@ $wb.utils = {
     }
 };
 //jQuery util methods
-$(function() {
+(function($) {
     
     
-    jQuery.fn.widget = function(widget) {
+    $.fn.widget = function(widget) {
         var clz = '-wb-state-widget';
         var elm = $(this);
         if (widget) {
@@ -223,87 +229,113 @@ $(function() {
         }
     };
     
-    jQuery.fn.fullSize = function() {
+    $.fn.fullSize = function() {
         return $wb.utils.fullSize(this);
     };
     
-    jQuery.fn.makeFullScreen = function(listenForResize) {
+    $.fn.makeFullScreen = function(listenForResize) {
         return $wb.utils.makeFullScreen(this, listenForResize);
     };
     
-    jQuery.fn.fillContainer = function(listenForResize) {
+    $.fn.fillContainer = function(listenForResize) {
         return $wb.utils.fillContainer(this, listenForResize);
     };
     
-    jQuery.fn.paddingHeight= function() {
+    $.fn.paddingHeight= function() {
         var el = $(this);
         return parseInt(el.css('padding-top'))
         +parseInt(el.css('padding-bottom'));
     };
     
-    jQuery.fn.paddingWidth= function() {
+    $.fn.paddingWidth= function() {
         var el = $(this);
         return parseInt(el.css('padding-left'))
         +parseInt(el.css('padding-right'));
     };
     
-    jQuery.fn.outerEdgeWidth = function() {
+    $.fn.outerEdgeWidth = function() {
         var el = $(this);
         
         var out = parseInt(el.css('padding-left'))
                 +parseInt(el.css('padding-right'))
                 +parseInt(el.css('margin-left'))
                 +parseInt(el.css('margin-right'));
+                
         //Input fields has inner border
-        if (el[0] && el[0].tagName && el[0].tagName.toLowerCase() != 'input')
-            out += parseInt(el.css('border-left-width'))
-                    +parseInt(el.css('border-right-width'))
+        if (el[0] && el[0].tagName) {
+            switch(el[0].tagName.toLowerCase()) {
+                case 'input':
+                case 'th': //Padding and border is part of width
+                    return parseInt(el.css('margin-left'))
+                            +parseInt(el.css('margin-right'));
+                    break;
+            }
+        }
     
         return out;
     };
     
-    jQuery.fn.outerEdgeHeight = function() {
+    $.fn.outerEdgeHeight = function() {
         var el = $(this);
         var out = parseInt(el.css('padding-bottom'))
                 +parseInt(el.css('padding-top'))
                 +parseInt(el.css('margin-top'))
                 +parseInt(el.css('margin-bottom'));
-        //Input fields has inner border
-        if (el[0] && el[0].tagName && el[0].tagName.toLowerCase() != 'input')
-            out += parseInt(el.css('border-top-width'))
-                    +parseInt(el.css('border-bottom-width'));
+                
+        
+        if (el[0] && el[0].tagName) {
+            switch(el[0].tagName.toLowerCase()) {
+                case 'input':
+                case 'th': //Padding and border is part of width
+                    return parseInt(el.css('margin-top'))
+                            +parseInt(el.css('margin-width'));
+                    break;
+            }
+        }
             
             
         return out;
     };
-    jQuery.fn.innerEdgeHeight = function() {
+    $.fn.innerEdgeHeight = function() {
         var el = $(this);
         var out = parseInt(el.css('padding-top'))
                 +parseInt(el.css('padding-bottom'));
         
         //Input fields has inner border
-        if (el[0] && el[0].tagName && el[0].tagName.toLowerCase() == 'input')
-            out += parseInt(el.css('border-top-width'))
-                    +parseInt(el.css('border-bottom-width'));
+        if (el[0] && el[0].tagName) {
+            switch(el[0].tagName.toLowerCase()) {
+                case 'input':
+                case 'th':
+                    out += parseInt(el.css('border-top-width'))
+                        +parseInt(el.css('border-bottom-width'));
+                    break;
+            }
+        }
             
             
         return out;
     };
     
-    jQuery.fn.innerEdgeWidth = function() {
+    $.fn.innerEdgeWidth = function() {
         var el = $(this);
         
         var out = parseInt(el.css('padding-left'))
                 +parseInt(el.css('padding-right'));
         //Input fields has inner border
-        if (el[0] && el[0].tagName && el[0].tagName.toLowerCase() == 'input')
-            out += parseInt(el.css('border-left-width'))
-                    +parseInt(el.css('border-right-width'))
+        if (el[0] && el[0].tagName) {
+            switch(el[0].tagName.toLowerCase()) {
+                case 'input':
+                case 'th':
+                    out += parseInt(el.css('border-left-width'))
+                        +parseInt(el.css('border-right-width'))
+                    break;
+            }
+        }    
     
         return out;
     };
     
-    jQuery.fn.totalOuterWidth = function() {
+    $.fn.totalOuterWidth = function() {
         var out = 0;
         $(this).each(function() {
             out += $(this).outerWidth();
@@ -311,7 +343,7 @@ $(function() {
         return out;
     };
     
-    jQuery.fn.totalOuterHeight = function() {
+    $.fn.totalOuterHeight = function() {
         var out = 0;
         $(this).each(function() {
             out += $(this).outerHeight();
@@ -319,7 +351,7 @@ $(function() {
         return out;
     };
     
-    jQuery.fn.outerWidth = function(width) {
+    $.fn.outerWidth = function(width) {
         var el = $(this)
         if (typeof width == 'undefined') {
             return el.width()+el.outerEdgeWidth();
@@ -331,7 +363,7 @@ $(function() {
         return $(this);
     };
     
-    jQuery.fn.outerHeight= function(height) {
+    $.fn.outerHeight= function(height) {
         var el = $(this)
         if (typeof height == 'undefined')
             return el.height()+el.outerEdgeHeight();
@@ -343,31 +375,31 @@ $(function() {
         return $(this);
     };
     
-    jQuery.fn.innerWidth = function(width) {
+    $.fn.innerWidth = function(width) {
         var el = $(this)
         if (typeof width == 'undefined')
-            return el.width();
+            return el.width()-el.innerEdgeWidth();
         else {
             $(this).each(function() {
-                $(this).width(width);
+                $(this).width(width+el.innerEdgeWidth());
             })
         }
         return $(this);
     };
     
-    jQuery.fn.innerHeight= function(height) {
+    $.fn.innerHeight= function(height) {
         var el = $(this)
         if (typeof height == 'undefined')
-            return el.height();
+            return el.height()-el.innerEdgeHeight();
         else {
             $(this).each(function() {
-                $(this).height(height); 
+                $(this).height(height+el.innerEdgeHeight()); 
             });
         }
         return $(this);
     };
     
-    jQuery.fn.outerMinHeight= function(height) {
+    $.fn.outerMinHeight= function(height) {
         var el = $(this)
         if (typeof height == 'undefined')
             return el.height()+el.edgeHeight();
@@ -380,7 +412,7 @@ $(function() {
     };
     
     
-    jQuery.fn.keyboardNavigation = function() {
+    $.fn.keyboardNavigation = function() {
         var elm = $(this);
         
         if (elm.children('input.wb-keynav-input').length > 0) 
@@ -407,7 +439,7 @@ $(function() {
         
     };
     
-    jQuery.fn.disableMarking = function() {
+    $.fn.disableMarking = function() {
         $(this).css({
             '-webkit-touch-callout': 'none',
             '-webkit-user-select': 'none',
@@ -420,7 +452,7 @@ $(function() {
         //$(this).attr('unselectable','true');
     };
     
-    jQuery.fn.enableMarking = function() {
+    $.fn.enableMarking = function() {
         var val = 'auto';
         $(this).css({
             '-webkit-touch-callout': val,
@@ -432,7 +464,7 @@ $(function() {
             'user-select':val
         });
     };
-    jQuery.fn.rotate = function(degrees) {
+    $.fn.rotate = function(degrees) {
         var val = 'rotate('+degrees+'deg)'
         $(this).css({
             '-webkit-transform': val,
@@ -443,22 +475,102 @@ $(function() {
             'zoom': 1
         });
     };
-    jQuery.fn.offscreen = function() {
+    $.fn.offscreen = function() {
         $(this).addClass('wb-offscreen');
     }
-    jQuery.fn.onscreen = function() {
+    $.fn.onscreen = function() {
         $(this).removeClass('wb-offscreen');
     }
     
-    jQuery.fn.clear = function() {
+    $.fn.clear = function() {
         $(this).children().detach();
     };
     
-    jQuery.fn.bindOnce = function(evt,handler) {
+    $.fn.bindOnce = function(evt,handler) {
         $(this).unbind(evt,handler).bind(evt,handler);
     };
     
-    jQuery.fn.contains = function(elms) {
+    $.fn.contains = function(elms) {
         return $(this).has(elms).length > 0;
     };
-})
+    
+    $.fn.boundingBox = function(relative) {
+        var elm = $(this[0]);
+        var out = {};
+        if (relative)
+            out = elm.position();
+        else
+            out = elm.offset();
+        out.right = out.left+elm.outerWidth();
+        out.bottom = out.top+elm.outerHeight();
+        return out;
+    };
+    
+    //Temporarily detach element to reduce dom changes when doing alot of manipulating. Reintroduce it into the dom 
+    //using "putBack"
+    $.fn.putAway = function() {
+        var elm = $(this[0]);
+        if (elm.closest('body').length == 0) return;//Already removed from dom
+        elm.data('parent',elm.parent())
+            .data('prev',elm.prev());
+        elm.detach();
+    };
+    
+    $.fn.putBack = function() {
+        var elm = $(this[0]);
+        if (elm.closest('body').length > 0) return;//Already in dom
+        
+        var parent = elm.data('parent');
+        var prev = elm.data('prev');
+        if (!parent) return; //Not detached using putAway
+        if (!prev || prev.length == 0) {
+            parent.prepend(elm);
+        } else {
+            prev.after(elm);    
+        }
+        
+        elm.data('parent',null);
+        elm.data('prev',null);
+    };
+    
+    $.fn.hitTest = function(x,y) {
+        var out = [];
+        $(this).each(function() {
+            var bbox = $(this).boundingBox();
+            if (bbox.left <= x 
+                    && bbox.right >= x
+                    && bbox.top <= y 
+                    && bbox.bottom >= y) {
+
+                if (out.indexOf(this) == -1) 
+                    out.push(this);   
+            }
+        });
+        return $(out);
+    };
+    
+    $.fn.elementAt = function(x,y) {
+        var out = [];
+        $(this).each(function() {
+            $(this).children().each(function() {
+                var elm = $(this);
+                var bbox = elm.boundingBox();
+                if (bbox.left <= x 
+                        && bbox.right >= x
+                        && bbox.top <= y 
+                        && bbox.bottom >= y) {
+
+                    if (out.indexOf(this) == -1) 
+                        out.push(this);   
+                }
+
+                elm.elementAt(x,y).each(function() {
+                        if (out.indexOf(this) == -1) 
+                            out.push(this);
+                });
+            });
+        });
+        return $(out);
+    };
+    
+})(jQuery);

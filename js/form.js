@@ -115,6 +115,7 @@ $wb.ui.form.Form = $wb.Class('Form',{
                             return;
                 }
             }
+            
             var obj = out;
             var isArray = (name.substr(-2) == '[]');
             var parts = name.split('[');
