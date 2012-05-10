@@ -153,6 +153,80 @@ $wb.template = {
     },
     link:function() {
         return '<a href="#" />'
+    },
+    actions:{
+        custom:function(title) {
+            return '<a href="#" class="wb-action" title="'+title+'" />'
+        },
+        base:function(type,title) {
+            return '<a href="#" class="wb-action icon-'+type+'" title="'+title+'" />'
+        },
+        hide:function() {
+            return $wb.template.actions.base.apply(this,['eye-close',_('Hide')]);
+        },
+        show:function() {
+            return $wb.template.actions.base.apply(this,['eye-open',_('Show')]);
+        },
+        refresh:function() {
+            return $wb.template.actions.base.apply(this,['refresh',_('Refresh')]);
+        },
+        openFolder:function() {
+            return $wb.template.actions.base.apply(this,['folder-open',_('Open')]);
+        },
+        closeFolder:function() {
+            return $wb.template.actions.base.apply(this,['folder-close',_('Close')]);
+        },
+        comment:function() {
+            return $wb.template.actions.base.apply(this,['comment',_('Comment')]);
+        },
+        search:function() {
+            return $wb.template.actions.base.apply(this,['search',_('Search')]);
+        },
+        user:function() {
+            return $wb.template.actions.base.apply(this,['user',_('User')]);
+        },
+        upload:function() {
+            return $wb.template.actions.base.apply(this,['upload-at',_('Upload')]);
+        },
+        download:function() {
+            return $wb.template.actions.base.apply(this,['download-alt',_('Download')]);
+        },
+        close:function() {
+            return $wb.template.actions.base.apply(this,['remove',_('Close')]);
+        },
+        edit:function() {
+            return $wb.template.actions.base.apply(this,['edit',_('Edit')]);
+        },
+        apply:function() {
+            return $wb.template.actions.base.apply(this,['ok-sign',_('Apply')]);
+        },
+        save:function() {
+            return $wb.template.actions.apply.apply(this);
+        },
+        cancel:function() {
+            return $wb.template.actions.base.apply(this,['ban-circle',_('Cancel')]);
+        },
+        remove:function() {
+            return $wb.template.actions.base.apply(this,['remove-sign',_('Remove')]);
+        },
+        add:function() {
+            return $wb.template.actions.base.apply(this,['plus-sign',_('Add')]);
+        },
+        open:function() {
+            return $wb.template.actions.base.apply(this,['folder-open',_('Open')]);
+        },
+        share:function() {
+            return $wb.template.actions.base.apply(this,['share',_('Share')]);
+        },
+        clear:function() {
+            return $wb.template.actions.base.apply(this,['remove',_('Clear')]);
+        },
+        prev:function() {
+            return $wb.template.actions.base.apply(this,['chevron-left',_('Previous')]);
+        },
+        next:function() {
+            return $wb.template.actions.base.apply(this,['chevron-right',_('Next')]);
+        }
     }
 
 };

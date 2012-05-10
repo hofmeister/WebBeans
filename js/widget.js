@@ -611,6 +611,25 @@ $wb.ui.Link = $wb.Class('Link',{
             return this;
         }
         return this.elm().html();
+    },
+    setContext:function(ctxt) {
+        this.opts.context = ctxt;
+        return this;
+    }
+});
+
+$wb.ui.Action = $wb.Class('Action',{
+    __extends:[$wb.ui.Link],
+    __construct:function(type,callback,ctxt) {
+        var tmpl = type;
+        if (typeof tmpl == 'string') {
+            tmpl = $wb.template.actions[type];
+        }
+        
+        if (tmpl)
+            this.__super({tmpl:tmpl,title:"",action:callback,context:ctxt});
+        else
+            this.__super({title:type,action:callback,context:ctxt});
     }
 });
 
