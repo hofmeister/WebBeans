@@ -93,6 +93,11 @@ $wb.ui.form.Form = $wb.Class('Form',{
             var el = $(this);
             var name = el.attr('name');
             if (!name) return;
+            if (el.widget().isDisabled()) {
+                out[name] = null;
+                return;
+            }
+            
             var value = el.widget().value();
             var tag = this.tagName.toLowerCase();
             if (el.attr('type'))
@@ -296,6 +301,9 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
         this.opts.disabled = true;
         this.target().attr('disabled','disabled');
         this.target().addClass('wb-disabled');
+    },
+    isDisabled:function() {
+        return this.opts.disabled;
     },
     editable:function() {
         this.opts.readonly = false;
