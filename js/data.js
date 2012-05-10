@@ -510,12 +510,15 @@ $wb.data.ListStore = $wb.Class('ListStore',{
             if (!found)
                 this._data.rows.push(rows[i]);
         }
+
+        this._makeDirty();
+        this.trigger('change');
+        this.trigger('added',[rows]);
         
-        if (rows.length > 0) {
-            this._makeDirty();
-            this.trigger('change');
-            this.trigger('added',[rows]);
-        }
+    },
+    setRows:function(rows) {
+        this.clear();
+        this.addAll(rows);
     },
     update:function(row) {
         var i = this.indexOf(row);
