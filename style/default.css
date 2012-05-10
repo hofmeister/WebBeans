@@ -376,7 +376,7 @@ input:focus,button:focus,select:focus,textarea:focus,a:focus {
     background-image: url(../images/default/16x16-globe.png);
 }
 .wb-tree li > .wb-handle {
-    background-image: url(../images/default/tree-node-closed.png);
+    background-image: url(../images/default/tree-node-open.png);
 }
 .wb-tree-node > .wb-title {
     padding:1px 3px;
@@ -492,7 +492,7 @@ input:focus,button:focus,select:focus,textarea:focus,a:focus {
 .wb-input.wb-disabled { 
     font-style: italic;
     color:#999;
-    
+    opacity: .5;
 }
 /* buttons */
 .wb-form-button {
@@ -544,6 +544,38 @@ input:focus,button:focus,select:focus,textarea:focus,a:focus {
     height:20px;
 }
 
+/* paging */
+.wb-paging {
+    padding:0px 10px;
+}
+.wb-paging li {
+    margin-right:5px;
+}
+
+.wb-paging li a {
+    font-weight:inherit;
+    text-decoration: none;
+    line-height:20px;
+    display:block;
+    height:20px;
+    width:20px;
+    text-align: center;
+}
+
+.wb-paging .wb-active { 
+    font-weight:bold;
+}
+
+.wb-paging .wb-active a {  
+    color:black;
+    cursor: default;
+}
+
+.wb-paging .wb-disabled a { 
+    color:#ccc;
+    cursor: default;
+}
+
 /* table */
 
 .wb-table .wb-table-cell {
@@ -568,6 +600,49 @@ input:focus,button:focus,select:focus,textarea:focus,a:focus {
 .wb-table-head .wb-table-cell:last-child {
     border-right:0px;
 }
+.wb-table-head .wb-sortable .wb-title,
+    .wb-table-head .wb-sortable .wb-sort {
+    font-weight: bold;
+    cursor: pointer;
+}
+.wb-table-head .wb-icon {
+    display:none;
+    width:16px;
+    height:16px;
+    float:left;
+    background-repeat: no-repeat;
+    background-position: middle center ;
+}
+
+.wb-table-head .wb-sortable.wb-asc > .wb-sort,
+    .wb-table-head .wb-sortable.wb-desc > .wb-sort {
+    background-image: url(../images/default/tree-node-open.png);
+    display:block;
+    width:10px;
+    height:10px;
+    margin-right:3px;
+    margin-top:3px;
+}
+
+.wb-table-head .wb-filtered > .wb-filter {
+    background-image: url(../images/default/icon-filter.png);
+    display:block;
+    width:8px;
+    height:10px;
+    margin-right:3px;
+    margin-top:3px;
+    float:right;
+    opacity: .5;
+    cursor: pointer;
+}
+
+.wb-table-head .wb-filtered > .wb-filter:hover,
+    .wb-table-head .wb-filtered.wb-active > .wb-filter {
+    opacity: 1;
+}
+
+
+
 
 .wb-table .wb-input-container {
     padding:0;
@@ -580,4 +655,17 @@ input:focus,button:focus,select:focus,textarea:focus,a:focus {
     margin:0;
     width:80%;
     background-color: #eee;
+}
+
+/* icons */
+.icon-plus-sign,.icon-ok,.icon-ok-circle,.icon-ok-sign {
+    color:#97d679 !important;
+}
+
+.icon-edit {
+    color:#87b2f0 !important;
+}
+
+.icon-remove-sign,.icon-remove-circle,.icon-remove,.icon-ban-circle {
+    color:#ffb5b5 !important;
 }

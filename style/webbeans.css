@@ -10,7 +10,7 @@ html{color:#000;background:#FFF;}body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pr
 body{font:13px/1.231 arial,helvetica,clean,sans-serif;*font-size:small;*font:x-small;}select,input,button,textarea{font:99% arial,helvetica,clean,sans-serif;}table{font-size:inherit;font:100%;}pre,code,kbd,samp,tt{font-family:monospace;*font-size:108%;line-height:100%;}
 
 /* oocss */
-.line:after{content: ".";display: block;height: 0;clear: both;visibility: hidden;}
+.line:after{content: ".";display: block;height: 0;clear: both;visibility: hidden;overflow:hidden;}
 .lastUnit:after{content: " . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . ";visibility:hidden; clear:both;height:0 !important;display:block;line-height:0;}
 .line{*zoom:1;}
 .unit{float:left;}
@@ -164,7 +164,9 @@ body {
     display:block !important;
     padding-left:0;
 }
-
+.wb-tree .wb-tree-node {
+    overflow:hidden;
+}
 .wb-tree .wb-tree-node > .wb-icon {
     width:16px;
     height:16px;
@@ -173,34 +175,37 @@ body {
     float:left;
 }
 .wb-tree li > .wb-handle {
-    width:16px;
-    height:16px;
+    width:20px;
+    height:20px;
     float:left;
     background-repeat: no-repeat;
-    background-position: 4px 3px;
-    margin-right: 6px;
+    background-position: 7px 6px;
+    -webkit-transform: rotate(-90deg);  /* Saf3.1+, Chrome */
+     -moz-transform: rotate(-90deg);  /* FF3.5+ */
+      -ms-transform: rotate(-90deg);  /* IE9 */
+       -o-transform: rotate(-90deg);  /* Opera 10.5 */
+          transform: rotate(-90deg);
 }
 
 .wb-tree li.wb-open > .wb-handle {
-    -webkit-transform: rotate(90deg);  /* Saf3.1+, Chrome */
-     -moz-transform: rotate(90deg);  /* FF3.5+ */
-      -ms-transform: rotate(90deg);  /* IE9 */
-       -o-transform: rotate(90deg);  /* Opera 10.5 */
-          transform: rotate(90deg);
+    -webkit-transform: rotate(0deg);  /* Saf3.1+, Chrome */
+     -moz-transform: rotate(0deg);  /* FF3.5+ */
+      -ms-transform: rotate(0deg);  /* IE9 */
+       -o-transform: rotate(0deg);  /* Opera 10.5 */
+          transform: rotate(0deg);
 }
 .wb-tree li.wb-leaf > .wb-handle {
     background-image: none;
     display:none;
 }
-.wb-tree li.wb-leaf {
-    margin-left:19px;
-}
+
 .wb-tree-sub {
     padding-left:21px;
     display:none;
 }
 .wb-open > .wb-tree-sub {
     display:block;
+    overflow:hidden;
 }
 .wb-tree-node {
     padding:2px 0;
@@ -264,22 +269,49 @@ body {
 .wb-button-pane > a {
     display:block;
 }
+/* paging */
 
+.wb-paging li {
+    float:left;
+}
+.wb-paging li.wb-count {
+    float:right;
+}
 /* table */
 
 .wb-table, 
     .wb-table-head,
     .wb-table-foot,
-    .wb-table-body {
+    .wb-table-body,
+    .wb-table-body-scroll > table {
     width:100%;
 }
-.wb-table {
+.wb-table,
+    .wb-table-body-scroll > table {
     table-layout: fixed;
 }
+
+
+.wb-table-head .wb-sortable.wb-asc > .wb-sort {
+    -webkit-transform: rotate(-180deg);  /* Saf3.1+, Chrome */
+     -moz-transform: rotate(-180deg);  /* FF3.5+ */
+      -ms-transform: rotate(-180deg);  /* IE9 */
+       -o-transform: rotate(-180deg);  /* Opera 10.5 */
+          transform: rotate(-180deg);
+}
+.wb-table-head .wb-filter-row {
+    display:none;
+}
+
 
 .wb-table .wb-table-cell {
     overflow:hidden;
 }
+.wb-table-body-scroll {
+    overflow: auto;
+}
+
+
 
 .wb-html {
     white-space: normal;
@@ -293,3 +325,4 @@ body {
     width:100%;
     height:600px;
 }
+
