@@ -1152,6 +1152,43 @@ $wb.ui.TreeNode = $wb.Class('TreeNode',{
         if (opts.data) {
             this._data = opts.data;
         }
+        this.bind('paint',function() {
+            var handleOpen = function(evt) {
+                evt.preventDefault();
+                this.toggleOpen();
+            }.bind(this);
+            
+            var handleSelect = function(evt) {
+                evt.preventDefault();
+                //evt.stopPropagation();
+                this.select();
+            }.bind(this);
+            
+            this.elm().find('.wb-handle,.wb-title,.wb-icon').unbind();
+            this.elm().find('.wb-handle').bind('click',handleOpen);
+            this.elm().find('.wb-title,.wb-icon').bind('click',handleSelect);
+            
+            this.elm().find('.wb-title,.wb-icon').bind('dblclick',function(evt) {
+                evt.preventDefault();
+                this.fireAction();
+            }.bind(this));
+        });
+    },
+    toggleOpen:function(open) {
+        if (open === this.isOpen()) 
+            return;
+        
+        var parent = this.elm();
+        if (!parent.is('.wb-open')) {
+            parent.children('.wb-tree-sub').slideDown('fast');
+        } else {
+            parent.children('.wb-tree-sub').slideUp('fast',function() {
+                if (parent.find('.wb-active').length > 0) {
+                    parent.find('.wb-title:eq(0)').click();
+                }
+            });
+        }
+        parent.toggleClass('wb-open');
     },
     getRoot:function() {
         return this.opts.root;
@@ -1164,14 +1201,41 @@ $wb.ui.TreeNode = $wb.Class('TreeNode',{
         return this;
     },
     select:function() {
-        this.trigger('select');
+        this.elm().closest('.wb-tree').find('.wb-active').removeClass('wb-active');
+        this.elm().addClass('wb-active');
+        this.elm().focus();
+
+        this.trigger('selected');
+        this.getRoot().trigger('selected',[this]);
         return this;
     },
     isOpen:function() {
         return this.elm().is('.wb-open');
     },
+    isVisible:function() {
+        return this.elm().children('.wb-title').is(':visible');
+    },
+    isLeaf:function() {
+        return this.elm().is('.wb-leaf');
+    },
     isActive:function() {
         return this.elm().is('.wb-active');
+    },
+    /**
+     * Fire nodes main action
+     */
+    fireAction:function() {
+        if (!this.isLeaf()) {
+            this.toggleOpen();
+            if (!this.isOpen()) {
+                return;
+            }
+        }
+        
+        
+        this.trigger('action',[this]);
+        //Trigger on element to allow it to propagate up the dom tree
+        this.elm().trigger('action',[this]);
     }
 });
 
@@ -1211,6 +1275,11 @@ $wb.ui.Tree = $wb.Class('Tree',{
             
             this._bindKeyNav();
         }
+        
+        //Propagate action event
+        this.elm().bind('action',function(evt,node) {
+            this.trigger('action',[node]);
+        }.bind(this));
         
         if (opts.store) {
             this.setStore(opts.store);
@@ -1299,8 +1368,8 @@ $wb.ui.Tree = $wb.Class('Tree',{
             if (!parent.children('.wb-title').is(':visible'))
                 parent = null;
             
-            var isOpen = active.is('.wb-open');
-            var isLeaf = active.is('.wb-leaf');
+            var isOpen = $wb(active).isOpen();
+            var isLeaf = $wb(active).isLeaf();
             
             var next = active.next();
             var prev = active.prev();
@@ -1331,34 +1400,34 @@ $wb.ui.Tree = $wb.Class('Tree',{
             
             switch(evt.keyCode) {
                 case 38://UP
-                    if (prev.children('.wb-title').is(':visible'))
-                        prev.children('.wb-title').click();   
+                    if ($wb(prev) && $wb(prev).isVisible())
+                        $wb(prev).select();
                     break;
                 case 40://DOWN
-                    if (next.children('.wb-title').is(':visible'))
-                        next.children('.wb-title').click();
+                    if ($wb(next) && $wb(next).isVisible())
+                        $wb(next).select();
                     break;
                 case 39://RIGHT
                     
                     if (!isLeaf && !isOpen) {
-                        active.children('.wb-title').dblclick();
-                    } else {
-                        next.children('.wb-title').click();
+                        $wb(active).toggleOpen(true);
+                    } else if ($wb(next)) {
+                        $wb(next).select();
                     }
                     break;
                 case 37://LEFT
                     if (isOpen) {
-                        active.children('.wb-title').dblclick();
+                        $wb(active).toggleOpen(false);
                     } else {
-                        if (parent && parent.length > 0)
-                            parent.children('.wb-title').click();
-                        else if (prev.children('.wb-title').is(':visible'))
-                            prev.children('.wb-title').click();
+                        if ($wb(parent))
+                            $wb(parent).select();
+                        else if ($wb(prev) && $wb(prev).isVisible())
+                            $wb(prev).select();
                     }
                     break;
                 case 13://Enter
                 case 32://Space
-                    active.children('.wb-title').click();
+                    $wb(active).fireAction();
                     break;
             }
         });
@@ -1398,53 +1467,10 @@ $wb.ui.Tree = $wb.Class('Tree',{
             id:id
         });
         
-        var select = function(evt) {
-            if (evt)
-                evt.preventDefault();
-            //evt.stopPropagation();
-            $(this).closest('.wb-tree').find('.wb-active').removeClass('wb-active');
-            $(this).parent().addClass('wb-active');
-            $(this).parent().focus();
-            if (callback)
-                callback.apply(this);
-            btn.trigger('selected');
-            btn.getRoot().trigger('selected',[btn]);    
-        };
-        
-        var toggleOpen = function(evt) {
-            evt.preventDefault();
-            //evt.stopPropagation();
-            var parent = $(this).parent();
-            if (!parent.is('.wb-open')) {
-                parent.children('.wb-tree-sub').slideDown('fast');
-            } else {
-                parent.children('.wb-tree-sub').slideUp('fast',function() {
-                    if (parent.find('.wb-active').length > 0) {
-                        parent.find('.wb-title:eq(0)').click();
-                    }
-                });
-            }
-            parent.toggleClass('wb-open');
-        };
+        if (callback)
+            btn.bind('action',callback);
         
         btn.title(title);
-
-        btn.bind('paint',function() {
-            this.elm().find('.wb-handle,.wb-title,.wb-icon').unbind();
-            this.elm().find('.wb-handle').bind('click',toggleOpen);
-            this.elm().find('.wb-title,.wb-icon').bind('dblclick',toggleOpen);
-            this.elm().find('.wb-title,.wb-icon').bind('click',select);
-        });
-        
-        btn.bind('click',function() {
-            btn.elm().find('.wb-title:eq(0)').click();
-        });
-        btn.bind('select',function() {
-            select.apply(btn.elm().find('.wb-title:eq(0)'));
-        });
-        btn.bind('dblclick',function() {
-            btn.elm().find('.wb-handle:eq(0)').click();
-        });
 
         return btn;
     },
