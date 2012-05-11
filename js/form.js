@@ -735,6 +735,8 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
             this.target().trigger('change');
             
             if (this._codemirror) {
+                if (!arguments[0])
+                    arguments[0] = "";
                 this._codemirror.setValue(arguments[0]);
             }
             return this;
