@@ -241,7 +241,7 @@ require($wbConfig.jQuery,function() {
      * var instance = new MySubClass("hello");
      * instance.emit(); // Emits hello world in the console.
      */
-    var Class;
+    $wb.Object = null;
     $wb.Class = function (name,opts) {
         /**
          * @description Base class
@@ -296,12 +296,10 @@ require($wbConfig.jQuery,function() {
                 parents.add(parent.prototype);
             }
         } else {
-            if (Class)
-                clz.prototype = new Class();
+            if ($wb.Object)
+                clz.prototype = new $wb.Object();
         }
         clz.prototype.constructor = clz;
-        
-        
         
         //Clean up
         delete opts.__extends;
@@ -592,7 +590,7 @@ require($wbConfig.jQuery,function() {
     };
     
     
-    Class = $wb.Class('Class',{});
+    $wb.Object = $wb.Class('Object',{});
     
     // Heavily inspired by:
     // parseUri 1.2.2

@@ -12,13 +12,13 @@
 $wb.utils = {
     _typeResolvers:[
         function(v) {
-            if ($wb.utils.isClass(v))
-                return v.clz;
+            if ($wb.utils.isA(v,$wb.data.Model))
+                return "Model/"+v.getType();
             return null;
         },
         function(v) {
-            if ($wb.utils.isA(v,'Model'))
-                return "Model/"+v.getType();
+            if ($wb.utils.isClass(v))
+                return $wb.utils.getClassName(v);
             return null;
         },
         function(v) {
@@ -171,9 +171,19 @@ $wb.utils = {
      * @param {Object} obj The instance
      * @type String
      */
-    getClass:function(obj) {
+    getClassName:function(obj) {
         if (this.isClass(obj))
             return obj._clz;
+        return null;
+    },
+    /**
+     * Get class of instance (created with $wb.Class)
+     * @param {Object} obj The instance
+     * @type String
+     */
+    getClass:function(obj) {
+        if (this.isClass(obj))
+            return obj.__proto__.constructor;
         return null;
     },
     /**
@@ -182,10 +192,12 @@ $wb.utils = {
      * @type Boolean
      */
     isClass:function(obj) {
-        return obj && (typeof obj._clz != 'undefined');
+        if (obj && (obj instanceof $wb.Object))
+            return true;
+        return false;
     },
     /**
-     * Determine if an object is an instance of class. Does not yet check for inheritance.
+     * Determine if an object is an instance of class. 
      * @param {Object} obj The instance
      * @param {Class} clz The class
      * @type Boolean
@@ -193,7 +205,7 @@ $wb.utils = {
     isA:function(obj,clz) {
         if (!this.isClass(obj)) 
             return false;
-        return obj._clz == clz;
+        return obj instanceof clz;
     },
     /**
      * Type resolving of value
@@ -201,11 +213,11 @@ $wb.utils = {
      * @type String
      */
     type:function(v) {
-        if (v) {
+        if (typeof v != 'undefined') {
             for(var i = 0; i < this._typeResolvers.length;i++) {
                 var func = this._typeResolvers[i];
                 var type = func(v);
-                if (type != null)
+                if (type !== null)
                     return type;
             }
         }

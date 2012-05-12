@@ -421,7 +421,7 @@ $wb.data.Store = $wb.Class('Store',
             if (!opts) opts = {};
             this.__super(opts);
             if (opts && opts.model) {
-                if (!$wb.utils.isA(opts.model, "Model"))
+                if (!(opts.model instanceof $wb.data.Model))
                     throw "'model' argument must be instance of Model";
                 this._model = opts.model;
             }

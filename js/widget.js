@@ -1286,7 +1286,7 @@ $wb.ui.Tree = $wb.Class('Tree',{
         }
     },
     setStore:function(store) {
-        if (store && !$wb.utils.isA(store, "TreeStore"))
+        if (store && !$wb.utils.isA(store,$wb.data.TreeStore))
             throw new $wb.Error(_("store option must be an instance of TreeStore",this));
         this.opts.store = store;
         if (store) {
@@ -1433,7 +1433,7 @@ $wb.ui.Tree = $wb.Class('Tree',{
         });
     },
     add:function(title,arg,data,id) {
-        if ($wb.utils.isA(title,'TreeNode')) {
+        if ($wb.utils.isA(title,$wb.ui.TreeNode)) {
             title.elm().addClass('wb-leaf');
             this.children().push(title);
             if (title.opts.id)
@@ -1441,7 +1441,7 @@ $wb.ui.Tree = $wb.Class('Tree',{
             return title;
         }
         
-        if ($wb.utils.isA(arg,'Tree')) {
+        if ($wb.utils.isA(arg,$wb.ui.Tree)) {
             var elm = this._addSubTree(title,arg,data);
             this.children().push(elm);
             return title;
@@ -1951,7 +1951,7 @@ $wb.ui.Table = $wb.Class('Table',
             },opts));
 
             this.require(this.opts,'store');
-            if (!$wb.utils.isA(this.opts.store,'TableStore'))
+            if (!$wb.utils.isA(this.opts.store,$wb.data.TableStore))
                 throw "Table widget requires TableStore or descending";
 
             this._header = $(this.opts.headerTmpl());
