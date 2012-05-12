@@ -282,6 +282,10 @@ require($wbConfig.jQuery,function() {
         //Compile a list of unique parent classes    
         var parents = new $wb.Set();
         
+        var defaults = {};
+        if ((!opts.__extends || opts.__extends.length == 0) && $wb.Object) {
+            opts.__extends = [$wb.Object];
+        }
         if (opts.__extends) {
             var firstExtend = opts.__extends[0];
             if (firstExtend)
@@ -290,19 +294,24 @@ require($wbConfig.jQuery,function() {
             for(var i in opts.__extends) {
                 var parent = opts.__extends[i];
                 //Extend the prototype with all inherited prototypes
+                if (!parent || !parent.prototype) {
+                    throw _("Non-existing class added as parent to %s",name);
+                }
                 $.extend(true,clz.prototype,parent.prototype);
                 
                 //Add to set
                 parents.add(parent.prototype);
             }
-        } else {
-            if ($wb.Object)
-                clz.prototype = new $wb.Object();
         }
+        
+        clz.__defaults = opts.__defaults;
+        opts.__defaults = null;
+        
         clz.prototype.constructor = clz;
         
         //Clean up
         delete opts.__extends;
+        
         delete clz.prototype.__extends;
         
         //Sets the super context and calls method. 
@@ -373,6 +382,42 @@ require($wbConfig.jQuery,function() {
         //Extend the prototype with opts and fixed
         $.extend(true,clz.prototype,opts,fixed);
         
+        
+        /**
+         * @description Allows to override the defaults set by the definition
+         * @static
+         * @memberOf $wb.Object
+         */
+        clz.setDefault = function(name,value) {
+            if (!clz.__defaults) {
+                clz.__defaults = {};
+            }
+            clz.__defaults[name] = value;
+        }
+        clz.setDefaults = function(defaults) {
+            clz.__defaults = defaults;
+        }
+        
+        clz.getDefaults = clz.prototype.getDefaults = function(opts) {
+            var defaults = {};
+            if (!opts || !opts.__defaultInited) {
+                for(var i in clz.__extends) {
+                    var parent = clz.__extends[i];
+                    defaults = $.extend(true,defaults,parent.constructor.__defaults);
+                }
+            }
+            
+            return $.extend(true,defaults,clz.__defaults,opts,{__defaultInited:true});
+        }.bind(clz);
+        
+        clz.getDefault = clz.prototype.getDefault = function(name) {
+            var defaults = clz.getDefaults();
+            
+            if (typeof defaults[name] == 'undefined')
+                return null;
+            return defaults[name];
+        }.bind(clz);
+        
         clz.prototype.clone = function() {
             var func = new Function("return function "+this._clz+"() {}")();
             func.prototype = clz.prototype;
@@ -388,7 +433,7 @@ require($wbConfig.jQuery,function() {
         /**
          * @description The super method is a class specific method that is used to call overridden methods.
          * It is injected into the "this" scope whenever you call a method (through the placeholder __callMethod)
-         * @memberOf $wb.Class
+         * @memberOf $wb.Object
          */
         clz.__super = function(name,args) {
             var m = clz.__getParentMethod(name);
@@ -590,7 +635,11 @@ require($wbConfig.jQuery,function() {
     };
     
     
-    $wb.Object = $wb.Class('Object',{});
+    $wb.Object = $wb.Class('Object',{
+        __defaults:{
+            something:true
+        }
+    });
     
     // Heavily inspired by:
     // parseUri 1.2.2
@@ -602,7 +651,7 @@ require($wbConfig.jQuery,function() {
          * @augments $wb.Class
          */
         {
-            opts:{
+            __defaults:{
                 strictMode: false,
                 key: ["source","protocol","authority","userInfo","username","password","host","port","relative","path","directory","file","query","anchor"],
                 q:   {
@@ -614,6 +663,7 @@ require($wbConfig.jQuery,function() {
                     loose:  /^(?:(?![^:@]+:[^:@\/]*@)([^:\/?#.]+):)?(?:\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?([^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/
                 }
             },
+            opts:null,
             anchor:"",
             authority:"",
             directory:"",
@@ -635,6 +685,7 @@ require($wbConfig.jQuery,function() {
              * @param {String|Object} [ref] Optional argument to indicate the reference. Is used to set default values
              */
             __construct:function(arg,ref) {
+                this.opts = this.getDefaults();
                 if (ref) {
                     if (typeof ref == 'string') {
                         this.fromString(ref);

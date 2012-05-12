@@ -20,7 +20,7 @@ $wb.ui.form.Form = $wb.Class('Form',{
         this.__super(opts);
         this.bind('render',function() {
             this.setData(this.opts.data);
-            this.find('.wb-input:eq(0)').focus();
+            $wb(this.find('.wb-input:eq(0)')).focus();
         });
     },
     disable:function() {
@@ -321,6 +321,9 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
             this.trigger('change');
             return out;
         }
+    },
+    focus:function() {
+        this.target().focus();
     },
     labelElm:function() {
         return this.elm().find(this._labelElm);

@@ -471,8 +471,13 @@ $wb.ui.Widget = $wb.Class('Widget',
          * @param {$wb.ui.Context} w context menu
          */
         setContextMenu:function(w) {
-            
+            var self = this;
             w.setElement(this.elm());
+            
+            w.bind('before-context',function() {
+                self.trigger('before-context',[w]);
+            });
+            
             
             this.bind('paint',function() {
                 this.elm().bindOnce('contextmenu',w.render.bind(w));
@@ -808,6 +813,11 @@ $wb.ui.ContextMenu = $wb.Class('ContextMenu',{
         }
         
         this.source(source);
+        
+        if (!this.trigger('before-context')) {
+            this.source(null);
+            return;
+        }
         
         elm.css({
             position:'absolute',
@@ -1241,22 +1251,22 @@ $wb.ui.TreeNode = $wb.Class('TreeNode',{
 
 $wb.ui.Tree = $wb.Class('Tree',{
     __extends:[$wb.ui.Widget],
+    __defaults:{
+        tmpl:$wb.template.tree.base,
+        nodeTmpl:$wb.template.tree.node,
+        subTreeTmpl:$wb.template.tree.sub,
+        hideRoot:false,
+        target:'.wb-tree-root',
+        root:null,
+        store:null
+    },
     _nodeTmpl:null,
     _subTreeTmpl:null,
     _hideRoot:false,
     _nodeIndex:{},
     _treeIndex:{},
     __construct:function(opts) {
-        if (!opts) opts = {};
-        opts = $.extend({
-            tmpl:$wb.template.tree.base,
-            nodeTmpl:$wb.template.tree.node,
-            subTreeTmpl:$wb.template.tree.sub,
-            hideRoot:false,
-            target:'.wb-tree-root',
-            root:null,
-            store:null
-        },opts);
+        opts = this.getDefaults(opts);
         this.__super(opts);
         this._nodeTmpl = opts.nodeTmpl;
         this._subTreeTmpl = opts.subTreeTmpl;
@@ -1280,6 +1290,16 @@ $wb.ui.Tree = $wb.Class('Tree',{
         this.elm().bind('action',function(evt,node) {
             this.trigger('action',[node]);
         }.bind(this));
+        
+        this.bind('before-context',function(context) {
+            var elm = context.source();
+            if (!$wb.utils.isA(elm,$wb.ui.TreeNode)) 
+                return false;
+            if (!elm.isActive()) {
+                elm.select();
+            }
+            return true;
+        });
         
         if (opts.store) {
             this.setStore(opts.store);
@@ -1900,8 +1920,7 @@ $wb.ui.Table = $wb.Class('Table',
                 headerCellTmpl:$wb.template.table.header_cell,
                 editable:false,
                 paging:{
-                    currentPage:0,
-                    totalPages:1
+                    currentPage:0
                 },
                 filters:[],
                 header:true,
@@ -1981,6 +2000,8 @@ $wb.ui.Table = $wb.Class('Table',
                     this._dirty = true;
                     this.trigger('dirty');
                 }
+                
+                
             }.bind(this));
         },
         _hasActionColumn:function() {
@@ -2012,6 +2033,8 @@ $wb.ui.Table = $wb.Class('Table',
         },
         repaintRows:function() {
             this._paintRows();
+            //Update paging - if needed
+            this.getPaging().setTotalPages(this.getStore().getTotalPages());
             this._layout();
         },
         _getColumnCount:function() {
@@ -2029,7 +2052,9 @@ $wb.ui.Table = $wb.Class('Table',
             var row = $(this.opts.rowTmpl());
             this._footer.append(row);
             if (!this._paging) {
-                this._paging = new $wb.ui.Paging(this.opts.paging);
+                this._paging = new $wb.ui.Paging($.extend(this.opts.paging,{
+                    totalPages:this.getStore().getTotalPages()
+                }));
                 this._paging.bind('change',function(page) {
                     this.trigger('page-change',[page]);
                 }.bind(this));

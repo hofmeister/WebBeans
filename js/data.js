@@ -12,7 +12,7 @@ $wb.data = {};
 
 $wb.data.Model = $wb.Class('Model',{
     __extends:[$wb.core.Events,$wb.core.Utils],
-    _defaults:{
+    __defaults:{
         id:null,
         name:null,
         valueType:"string",
@@ -35,9 +35,10 @@ $wb.data.Model = $wb.Class('Model',{
     },
     addFields:function(fields) {
         var ids = [];
+        var defaults = this.getDefaults();
         for(var id in fields) {
             ids.push(id);
-            this._fields[id] = $.extend({},this._defaults,fields[id]);
+            this._fields[id] = $.extend({},defaults,fields[id]);
             this._fields[id].id = id;
             if (!this._fields[id].shortName)
                 this._fields[id].shortName = this._fields[id].name;
@@ -114,7 +115,7 @@ $wb.data.Model = $wb.Class('Model',{
     }
 });
 
-$wb.data.Service = $wb.Class('Service',{
+$wb.data.Source = $wb.Class('Source',{
     __extends:[$wb.core.Events,$wb.core.Utils],
     _autoSync:true,
     _adder:null,
@@ -153,31 +154,58 @@ $wb.data.Service = $wb.Class('Service',{
             this._connection = null;
         }
     },
-    get:function(id) {
+    get:function(id,cb) {
         if (this._getter)
-            this._getter.apply(this,[id]);
+            this._getter.apply(this,[id,cb]);
     },
-    load:function(opts) {
+    load:function(opts,cb) {
+        var self = this;
         if (this._loader)
-            this._loader.apply(this,[opts]);
+            this._loader.apply(this,[opts,function(ok,data) {
+                self.trigger('loaded',[ok,data])
+                if (cb)
+                    cb(data);
+            }]);
     },
-    update:function(rows) {
-        if ($.type(rows) != 'array')
-            rows = [rows];
+    update:function(row,cb) {
+        var self = this;
         if (this._updater)
-            this._updater.apply(this,[rows]);
+            this._updater.apply(this,[row,function(ok,data) {
+                    if (data) row = data;
+                    if (!self._listener)
+                        self.trigger('updated',[ok,row])
+                    if (cb)
+                        cb(ok,row);
+            }]);
+        else
+            this.trigger('updated',[true,row])
     },
-    add:function(rows) {
-        if ($.type(rows) != 'array')
-            rows = [rows];
+    add:function(row,cb) {
+        var self = this;
         if (this._adder)
-            this._adder.apply(this,[rows]);
+            this._adder.apply(this,[row,function(ok,data) {
+                    if (data) row = data;
+                    if (!self._listener)
+                        self.trigger('added',[ok,row]);
+                    if (cb)
+                        cb(ok,row);
+            }]);
+        else
+            this.trigger('added',[true,row])
+        
     },
-    remove:function(ids) {
-        if ($.type(ids) != 'array')
-            ids = [ids];
+    remove:function(row,cb) {
+        var self = this;
         if (this._remover)
-            this._remover.apply(this,[ids]);
+            this._remover.apply(this,[row,function(ok,data) {
+                    if (data) row = data;
+                    if (!self._listener)
+                        self.trigger('removed',[ok,row]);
+                    if (cb)
+                        cb(ok,row);
+            }]);
+        else
+            this.trigger('removed',[true,row])
     }
 });
 
@@ -262,7 +290,7 @@ $wb.data.JsonService = $wb.Class('JsonService',{
     _socket:{},
     _socketInstances:{},
     __construct:function(opts) {
-        if (!opts) opts = {};
+        opts = this.getDefaults(opts);
         this.__super(opts);
         this.require(opts,'schema');
         this.opts = opts;
@@ -401,12 +429,21 @@ $wb.data.Store = $wb.Class('Store',
      */
     {
         __extends:[$wb.core.Events,$wb.core.Utils],
+        __defaults:{
+            model:null,
+            source:null
+        },
         
         /**
          * The model instance - if any.
          * @private
          */
         _model:null,
+        /**
+         * The source instance - if any.
+         * @private
+         */
+        _source:null,
         /**
          * The options
          * @private
@@ -418,17 +455,34 @@ $wb.data.Store = $wb.Class('Store',
          * @param {$wb.data.Model} [opts.model] Model for the data store. Usage is defined by subclasses
          */
         __construct:function(opts) {
-            if (!opts) opts = {};
+            opts = this.getDefaults(opts);
             this.__super(opts);
             if (opts && opts.model) {
-                if (!(opts.model instanceof $wb.data.Model))
-                    throw "'model' argument must be instance of Model";
+                if (!$wb.utils.isA(opts.model,$wb.data.Model))
+                    throw "'model' argument must be an instance of $wb.data.Model";
                 this._model = opts.model;
+                
+                this._model.bind('change',function() {
+                    this.trigger('change');
+                }.bind(this));
+            }
+            
+            if (opts && opts.source) {
+                if (!$wb.utils.isA(opts.source,$wb.data.Source))
+                    throw "'source' argument must be an instance of $wb.data.Source";
+                this._source = opts.source;
+                this._bindSource();
             }
             this.opts = opts;
         },
+        _bindSource:function() {
+          //placeHolder  
+        },
         getModel:function() {
             return this._model;
+        },
+        getSource:function() {
+            return this._source;
         }
     }
 );
@@ -442,6 +496,25 @@ $wb.data.KeyValueStore = $wb.Class('KeyValueStore',{
             this._data = this.model.create();
         else
             this._data = {};
+        
+    },
+    _bindSource:function() {
+        this.getSource().bind('added',function(ok,data) {
+            if (!ok) return;
+            this.putAll(data);
+        }.bind(this));
+        this.getSource().bind('loaded',function(ok,data) {
+            if (!ok) return;
+            this.putAll(data);
+        }.bind(this));
+        this.getSource().bind('updated',function(ok,data) {
+            if (!ok) return;
+            this.putAll(data);
+        }.bind(this));
+        this.getSource().bind('removed',function(ok,data) {
+            if (!ok) return;
+            this.removeAll(data);
+        }.bind(this));
     },
     put:function(key,value) {
         this._data[key] = value;
@@ -462,11 +535,26 @@ $wb.data.KeyValueStore = $wb.Class('KeyValueStore',{
         delete this._data[key];
         this.trigger('change');
         this.trigger('remove',[key]);
+    },
+    removeAll:function(keyValue) {
+        var keys = [];
+        for(var key in keyValue) {
+            delete this._data[key];
+            keys.push(key)
+        }
+        
+        this.trigger('change');
+        this.trigger('remove',keys);
     }
+    
 });
 
 $wb.data.ListStore = $wb.Class('ListStore',{
     __extends:[$wb.data.Store],
+    __defaults:{
+        rowField:'rows',
+        totalRowField:'total'
+    },
     _filtered:new $wb.Array(),
     _dirty:false,
     _filters:new $wb.Array(),
@@ -477,7 +565,7 @@ $wb.data.ListStore = $wb.Class('ListStore',{
     _hasKey:false,
     _autoKey:"_listId",
     __construct:function(opts) {
-        this.__super(opts);
+        this.__super(this.getDefaults(opts));
         this._data = {
             rows:new $wb.Array(),
             total:0
@@ -485,6 +573,27 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         if (opts.model) {
             this._hasKey = opts.model.hasKey();
         }
+    },
+    _bindSource:function() {
+        this.getSource().bind('loaded',function(ok,data) {
+            if (!ok) return;
+            this.setRows(data[this.opts.rowField],data[this.opts.totalRowField]);
+        }.bind(this));
+
+        this.getSource().bind('added',function(ok,data) {
+            if (!ok) return;
+            this.addAll(data);
+        }.bind(this));
+
+        this.getSource().bind('updated',function(ok,data) {
+            if (!ok) return;
+            this.updateAll(data);
+        }.bind(this));
+
+        this.getSource().bind('removed',function(ok,data) {
+            if (!ok) return;
+            this.removeAll(data);
+        }.bind(this));
     },
     add:function(row) {
         this.addAll([row]);
@@ -516,15 +625,31 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         this.trigger('added',[rows]);
         
     },
-    setRows:function(rows) {
+    setRows:function(rows,totalRows) {
         this.clear();
+        this._data.total = totalRows;
         this.addAll(rows);
+    },
+    getTotalRows:function() {
+        return this._data.total;
     },
     update:function(row) {
         var i = this.indexOf(row);
         if (i < 0) 
             return;
         $.extend(this._data.rows.get(i),row);
+        this.trigger('change');
+        this.trigger('updated',[[row]]);
+    },
+    updateAll:function(rows) {
+        for(var i = 0; i < rows.length;i++) {
+            var row = rows[i];
+            var ix = this.indexOf(row);
+            if (ix < 0) 
+                return;
+            $.extend(this._data.rows.get(ix),row);
+        }
+        
         this.trigger('change');
         this.trigger('updated',[[row]]);
     },
@@ -602,6 +727,7 @@ $wb.data.ListStore = $wb.Class('ListStore',{
     },
     clear:function() {
         this._data.rows.clear();
+        this._data.total = 0;
         this._clearFiltered();
     },
     find:function(fieldName,value) {
@@ -688,14 +814,11 @@ $wb.data.ListStore = $wb.Class('ListStore',{
 
 $wb.data.TableStore = $wb.Class('TableStore',{
     __extends:[$wb.data.ListStore],
+    __defaults:{rowsPerPage:30},
     _cols:[],
     __construct:function(opts) {
         this.require(opts,'model');
-        this.__super(opts);
-        
-        this._model.bind('change',function() {
-            this.trigger('change');
-        }.bind(this));
+        this.__super(this.getDefaults(opts));
     },
     getColumns:function() {
         var fields = this._model.getFields();
@@ -708,6 +831,12 @@ $wb.data.TableStore = $wb.Class('TableStore',{
                 out[colId] = fields[colId];
         }
         return out;
+    },
+    getTotalPages:function() {
+        return Math.max(1,Math.ceil(this.getTotalRows() / this.opts.rowsPerPage));
+    },
+    getRowsPerPage:function() {
+        return this.opts.rowsPerPage;
     }
 });
 
@@ -719,6 +848,11 @@ $wb.data.TreeStore = $wb.Class('TreeStore',
      */
     {
         __extends:[$wb.data.Store],
+        __defaults:{
+            idField:"id",
+            parentField:"parentId",
+            nameField:"name"
+        },
         _nodes:{},
         _children:{},
         _roots:{},
@@ -730,13 +864,34 @@ $wb.data.TreeStore = $wb.Class('TreeStore',
         * @param {String} [opts.nameField="name"] field that indicates what a nodes name is
         */
         __construct:function(opts) {
-            opts = $.extend({
-                idField:"id",
-                parentField:"parentId",
-                nameField:"name"
-            },opts)
-            this.__super(opts);
+            this.__super(this.getDefaults(opts));
         },
+        /**
+         * Get treestore to source if any
+         * @private
+         */
+        _bindSource:function() {
+            this.getSource().bind('loaded',function(ok,data) {
+                if (!ok) return;
+                this.add(data.rows);
+            }.bind(this));
+
+            this.getSource().bind('added',function(ok,data) {
+                if (!ok) return;
+                this.add(data);
+            }.bind(this));
+
+            this.getSource().bind('updated',function(ok,data) {
+                if (!ok) return;
+                this.update(data);
+            }.bind(this));
+
+            this.getSource().bind('removed',function(ok,data) {
+                if (!ok) return;
+                this.remove(data);
+            }.bind(this));
+        },
+        
         /**
          * Get parent id from row
          * @private
