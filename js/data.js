@@ -582,17 +582,17 @@ $wb.data.ListStore = $wb.Class('ListStore',{
 
         this.getSource().bind('added',function(ok,data) {
             if (!ok) return;
-            this.addAll(data);
+            this.add(data);
         }.bind(this));
 
         this.getSource().bind('updated',function(ok,data) {
             if (!ok) return;
-            this.updateAll(data);
+            this.update(data);
         }.bind(this));
 
         this.getSource().bind('removed',function(ok,data) {
             if (!ok) return;
-            this.removeAll(data);
+            this.remove(data);
         }.bind(this));
     },
     add:function(row) {

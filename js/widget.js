@@ -1602,188 +1602,8 @@ $wb.ui.Accordion = $wb.Class('Accordion',{
         });
     }
 });
+/* Paging widget */
 
-/* Table */
-
-
-$wb.ui.TableRow = $wb.Class('TableRow',
-    {
-        __extends:[$wb.ui.Widget],
-        _editMode:false,
-        __construct:function(opts) {
-            this.require(opts,'table');
-            opts = $.extend({
-                editable:false,
-                tmpl:opts.table.option('rowTmpl'),
-                data:{}
-            },opts)
-            
-            this.__super(opts);
-            var self = this;
-            this.elm().dblclick(function(evt) {
-                if (!self.opts.editable) return;
-                evt.preventDefault();
-                evt.stopPropagation();
-                this.makeEditable();
-            }.bind(this));
-            
-            this.bind('paint',function() {
-                if (this._editMode) {
-                    this._editRow();
-                } else {
-                    this._viewRow();
-                }
-                this.getTable()._layout();
-            });
-            this.bind('render',function() {
-                if (this._editMode) {
-                    this.elm().find('.wb-input:eq(0)').focus();
-                }
-            });
-        },
-        getTable:function() {
-            return this.opts.table;
-        },
-        getStore:function() {
-            return this.opts.table.getStore();
-        },
-        getData:function() {
-            if (this._editMode) {
-                var data = $wb.ui.form.Form.methods.getData.apply(this);
-                $.extend(this.opts.data,data);
-            }
-            return this.opts.data;
-        },
-        setData:function(data) {
-            this.opts.data = data;
-            $wb.ui.form.Form.methods.setData.apply(this,[data]);
-            return this;
-        },
-        toggleEditable:function() {
-            if (!this.opts.editable) return;
-            this._editMode = !this._editMode;
-            this.render();
-            return this;
-        },
-        makeEditable:function() {
-            if (!this.opts.editable || this._editMode) return;
-            this._editMode = true;
-            this.render();
-            return this;
-        },
-        makeStatic:function() {
-            this._editMode = false;
-            this.render();
-            return this;
-        },
-        isNew:function() {
-            return this._isNew;
-        },
-        setIsNew:function(isNew) {
-            this._isNew = isNew;
-            return this;
-        },
-        _editRow:function() {
-            var row = this.target();
-            row.addClass('wb-editing');
-            
-            row.html('');
-            var cols = this.getStore().getColumns();
-            var bodyCellTmpl = this.getTable().option('bodyCellTmpl');
-            
-            for(var i in cols) {
-                var col = cols[i];
-                if (col.hidden) continue;
-                var value = $wb.utils.GetValue(this.getData(),col.id);
-                var fieldType = $wb.ui.FieldType.type(col.valueType);
-                var cell = $(bodyCellTmpl());
-                cell.append(fieldType.getTableField(col,value).elm());
-                row.append(cell);
-            }
-            
-            var editActions = this.getTable().option('rowEditActions');
-            
-            if (this.getTable().hasActions()) {
-                var actionCell = $(bodyCellTmpl());
-                actionCell.addClass('wb-actions');
-                var action = new $wb.ui.Action('cancel',function() {
-                        if (this.isNew()) {
-                            this.destroy();
-                        } else {
-                            this.makeStatic();
-                        }
-                    }.bind(this)
-                );
-                actionCell.append(action.render());
-                
-                if (editActions) {
-                    for(var name in editActions) {
-                        var action;
-                        if (typeof editActions[name] == 'function') {
-                            action = new $wb.ui.Action(name,editActions[name],this);
-                        } else {
-                            action = editActions[name].clone().setContext(this);
-                        }
-                        
-                        actionCell.append(action.render());
-                    }
-                }
-                row.append(actionCell);
-            }
-            return row;
-        },
-        remove:function() {
-          this.getStore().remove(this.getData());
-          this.__super();
-        },
-        destroy:function() {
-          this.getStore().remove(this.getData());
-          this.__super();
-        },
-        _viewRow:function() {
-            var row = this.target();
-            row.removeClass('wb-editing');
-            row.html('');
-            
-            var bodyCellTmpl = this.getTable().option('bodyCellTmpl');
-            var cols = this.getStore().getColumns();
-            for(var i in cols) {
-                var col = cols[i];
-                if (col.hidden) continue;
-                var cell = $(bodyCellTmpl());
-                var value = $wb.utils.GetValue(this.getData(),col.id);
-                
-                var fieldType = $wb.ui.FieldType.type(col.valueType);
-                
-                cell.html(fieldType.format(col,value));
-                row.append(cell);
-            }
-            
-            var rowActions = this.getTable().option('rowActions');
-            
-            if (this.getTable().hasActions()) {
-                var actionCell = $(bodyCellTmpl());
-                actionCell.addClass('wb-actions');
-                if (rowActions) {
-                    for(var name in rowActions) {
-                        var action;
-                        if (typeof rowActions[name] == 'function') {
-                            action = new $wb.ui.Action(name,rowActions[name],this);
-                        } else {
-                            action = rowActions[name].clone().setContext(this);
-                        }
-                        
-                        actionCell.append(action.render());
-                    }
-                }
-                row.append(actionCell);
-            }
-            
-            return row;
-        }
-    }
-);
-    
 $wb.ui.Paging = $wb.Class('Paging',
     /**
      * @lends $wb.ui.Paging.prototype
@@ -1792,23 +1612,24 @@ $wb.ui.Paging = $wb.Class('Paging',
     {
     
     __extends:[$wb.ui.Widget],
+    __defaults:{
+        tmpl:$wb.template.paging.base,
+        entryTmpl:$wb.template.paging.entry,
+        countTmpl:$wb.template.paging.count,
+        maxPages:5,
+        currentPage:0,
+        prevName:'&laquo;',
+        nextName:'&raquo;',
+        activeClass:'wb-active',
+        nextClass:'wb-next',
+        prevClass:'wb-prev',
+        pageFormat:'%s'
+    },
     
     __construct:function(opts) {
+        opts = this.getDefaults(opts);
         this.require(opts,'totalPages');
-        
-        this.__super($.extend({
-            tmpl:$wb.template.paging.base,
-            entryTmpl:$wb.template.paging.entry,
-            countTmpl:$wb.template.paging.count,
-            maxPages:5,
-            currentPage:0,
-            prevName:'&laquo;',
-            nextName:'&raquo;',
-            activeClass:'wb-active',
-            nextClass:'wb-next',
-            prevClass:'wb-prev',
-            pageFormat:'%s'
-        },opts));
+        this.__super(opts);
         
         this.elm().bind('click',function(evt) {
             evt.preventDefault();
@@ -1885,6 +1706,193 @@ $wb.ui.Paging = $wb.Class('Paging',
         throw new $wb.Error('Cannot add children to paging');
     }
 });
+
+
+
+/* Table */
+
+
+$wb.ui.TableRow = $wb.Class('TableRow',
+    {
+        __extends:[$wb.ui.Widget],
+        _editMode:false,
+        __construct:function(opts) {
+            this.require(opts,'table');
+            opts = $.extend({
+                editable:false,
+                tmpl:opts.table.option('rowTmpl'),
+                data:{}
+            },opts)
+            
+            this.__super(opts);
+            var self = this;
+            this.elm().dblclick(function(evt) {
+                if (!self.opts.editable) return;
+                evt.preventDefault();
+                evt.stopPropagation();
+                this.makeEditable();
+            }.bind(this));
+            
+            this.bind('paint',function() {
+                if (this._editMode) {
+                    this._editRow();
+                } else {
+                    this._viewRow();
+                }
+            });
+            this.bind('render',function() {
+                if (this._editMode) {
+                    $wb(this.elm().find('.wb-input:eq(0)')).focus();
+                }
+            });
+        },
+        getTable:function() {
+            return this.opts.table;
+        },
+        getStore:function() {
+            return this.opts.table.getStore();
+        },
+        getData:function() {
+            if (this._editMode) {
+                var data = $wb.ui.form.Form.methods.getData.apply(this);
+                $.extend(this.opts.data,data);
+            }
+            return this.opts.data;
+        },
+        setData:function(data) {
+            this.opts.data = data;
+            $wb.ui.form.Form.methods.setData.apply(this,[data]);
+            return this;
+        },
+        toggleEditable:function() {
+            if (!this.opts.editable) return this;
+            this._editMode = !this._editMode;
+            this.render();
+            return this;
+        },
+        makeEditable:function() {
+            if (!this.opts.editable || this._editMode) return this;
+            this._editMode = true;
+            this.render();
+            return this;
+        },
+        makeStatic:function() {
+            if (!this.opts.editable || !this._editMode) return this;
+            this._editMode = false;
+            this.render();
+            return this;
+        },
+        isNew:function() {
+            return this._isNew;
+        },
+        setIsNew:function(isNew) {
+            this._isNew = isNew;
+            return this;
+        },
+        _editRow:function() {
+            var row = this.target();
+            row.addClass('wb-editing');
+            
+            row.html('');
+            var cols = this.getStore().getColumns();
+            var bodyCellTmpl = this.getTable().option('bodyCellTmpl');
+            
+            for(var i in cols) {
+                var col = cols[i];
+                if (col.hidden) continue;
+                var value = $wb.utils.GetValue(this.getData(),col.id);
+                var fieldType = $wb.ui.FieldType.type(col.valueType);
+                var cell = $(bodyCellTmpl());
+                cell.append(fieldType.getTableField(col,value).elm());
+                row.append(cell);
+            }
+            
+            var editActions = this.getTable().option('rowEditActions');
+            
+            if (this.getTable().hasActions()) {
+                var actionCell = $(bodyCellTmpl());
+                actionCell.addClass('wb-actions');
+                var action = new $wb.ui.Action('cancel',function() {
+                        if (this.isNew()) {
+                            this.destroy();
+                        } else {
+                            this.makeStatic();
+                        }
+                    }.bind(this)
+                );
+                actionCell.append(action.render());
+                
+                if (editActions) {
+                    for(var name in editActions) {
+                        var action;
+                        if (typeof editActions[name] == 'function') {
+                            action = new $wb.ui.Action(name,editActions[name],this);
+                        } else {
+                            action = editActions[name].clone().setContext(this);
+                        }
+                        
+                        actionCell.append(action.render());
+                    }
+                }
+                row.append(actionCell);
+            }
+            return row;
+        },
+        remove:function() {
+          var data = this.getData();
+          var store = this.getStore();
+          this.__super();
+          store.remove(data);
+        },
+        destroy:function() {
+          var data = this.getData();
+          var store = this.getStore();
+          this.__super();
+          store.remove(data);
+        },
+        _viewRow:function() {
+            var row = this.target();
+            row.removeClass('wb-editing');
+            row.html('');
+            
+            var bodyCellTmpl = this.getTable().option('bodyCellTmpl');
+            var cols = this.getStore().getColumns();
+            for(var i in cols) {
+                var col = cols[i];
+                if (col.hidden) continue;
+                var cell = $(bodyCellTmpl());
+                var value = $wb.utils.GetValue(this.getData(),col.id);
+                
+                var fieldType = $wb.ui.FieldType.type(col.valueType);
+                
+                cell.html(fieldType.format(col,value));
+                row.append(cell);
+            }
+            
+            var rowActions = this.getTable().option('rowActions');
+            
+            if (this.getTable().hasActions()) {
+                var actionCell = $(bodyCellTmpl());
+                actionCell.addClass('wb-actions');
+                if (rowActions) {
+                    for(var name in rowActions) {
+                        var action;
+                        if (typeof rowActions[name] == 'function') {
+                            action = new $wb.ui.Action(name,rowActions[name],this);
+                        } else {
+                            action = rowActions[name].clone().setContext(this);
+                        }
+                        
+                        actionCell.append(action.render());
+                    }
+                }
+                row.append(actionCell);
+            }
+            
+            return row;
+        }
+    }
+);
 
 $wb.ui.Table = $wb.Class('Table',
     /**
@@ -2002,7 +2010,7 @@ $wb.ui.Table = $wb.Class('Table',
                 this.elm().find('.wb-inner-table-container').attr('colspan',totalCellCount);
             });
             
-            this.opts.store.bind('change',function() {
+            var onChange = function() {
                 this._checkForEditing();
                 if (this._autoUpdate) {
                     this.repaintRows();
@@ -2010,9 +2018,9 @@ $wb.ui.Table = $wb.Class('Table',
                     this._dirty = true;
                     this.trigger('dirty');
                 }
-                
-                
-            }.bind(this));
+            }.bind(this);
+            
+            this.opts.store.bind('change',onChange);
         },
         _hasActionColumn:function() {
             return this.elm().find('.wb-actions').length > 0
