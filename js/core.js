@@ -241,6 +241,7 @@ require($wbConfig.jQuery,function() {
      * var instance = new MySubClass("hello");
      * instance.emit(); // Emits hello world in the console.
      */
+    var Class;
     $wb.Class = function (name,opts) {
         /**
          * @description Base class
@@ -252,6 +253,7 @@ require($wbConfig.jQuery,function() {
          */
         var clz = new Function("return function "+name+"() { "+
             //First - grab all fields from the prototype and add as actual fields on "this"
+            "    if (arguments[0] == '__inheritance__') return; "+
             "    var clz = this.constructor; "+
             "    for(var key in clz.prototype) {"+
             "        var val = clz.prototype[key];"+
@@ -263,6 +265,7 @@ require($wbConfig.jQuery,function() {
             "            val = $.extend(true,{},val);"+
             "        this[key] = val;"+
             "    }"+
+            
                 //Call the constructor - this method is actually not the defined constructor but a placeholder. 
                 //See further down
             "    this.__initArgs = arguments;"+
@@ -280,6 +283,10 @@ require($wbConfig.jQuery,function() {
         var parents = new $wb.Set();
         
         if (opts.__extends) {
+            var firstExtend = opts.__extends[0];
+            if (firstExtend)
+                clz.prototype = new firstExtend('__inheritance__');
+            
             for(var i in opts.__extends) {
                 var parent = opts.__extends[i];
                 //Extend the prototype with all inherited prototypes
@@ -288,7 +295,13 @@ require($wbConfig.jQuery,function() {
                 //Add to set
                 parents.add(parent.prototype);
             }
+        } else {
+            if (Class)
+                clz.prototype = new Class();
         }
+        clz.prototype.constructor = clz;
+        
+        
         
         //Clean up
         delete opts.__extends;
@@ -412,7 +425,6 @@ require($wbConfig.jQuery,function() {
 
         return clz;
     };
-    
     
     /**
      * @description A Set collection (unique list)
@@ -578,6 +590,9 @@ require($wbConfig.jQuery,function() {
             return this._arr;
         }
     };
+    
+    
+    Class = $wb.Class('Class',{});
     
     // Heavily inspired by:
     // parseUri 1.2.2
