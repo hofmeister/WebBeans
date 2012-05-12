@@ -475,7 +475,7 @@ $wb.ui.Widget = $wb.Class('Widget',
             w.setElement(this.elm());
             
             w.bind('before-context',function() {
-                self.trigger('before-context',[w]);
+                return self.trigger('before-context',[w]);
             });
             
             
@@ -1182,6 +1182,12 @@ $wb.ui.TreeNode = $wb.Class('TreeNode',{
                 evt.preventDefault();
                 this.fireAction();
             }.bind(this));
+            
+            this.bind('before-context',function(context) {
+                //Special handling for context menus on trees
+                if (this.tree)
+                    this.tree.trigger('before-context',[context])
+            })
         });
     },
     toggleOpen:function(open) {
@@ -1292,9 +1298,13 @@ $wb.ui.Tree = $wb.Class('Tree',{
         }.bind(this));
         
         this.bind('before-context',function(context) {
+            //Special handling for context menus on trees
             var elm = context.source();
+            //Ignore if not a node
             if (!$wb.utils.isA(elm,$wb.ui.TreeNode)) 
                 return false;
+            
+            //select if not already active
             if (!elm.isActive()) {
                 elm.select();
             }
