@@ -483,6 +483,7 @@ $wb.ui.form.ColorField = $wb.Class('ColorField',{
     },
     __construct:function(opts) {
         this.__super(this.getDefaults(opts));
+        this.readonly();
         this._loadPlugin();
         this.bind('change',function() {
             this.target().css('background-color',this.color());
@@ -490,14 +491,13 @@ $wb.ui.form.ColorField = $wb.Class('ColorField',{
     },
     _loadPlugin:function() {
         if (!jQuery.fn.ColorPicker) {
-            loadCSS(this.opts.pluginBaseDir+"css/colorpicker.css");
-            require(this.opts.pluginBaseDir+"js/colorpicker.js",this._init.bind(this));
+            loadCSS(this.opts.pluginBaseDir+"colorpicker.css");
+            require(this.opts.pluginBaseDir+"colorpicker.js",this._init.bind(this));
         } else {
             this._init();
         }
     },
     _init:function() {
-        this.target().attr('readonly',true);
         this.target().ColorPicker({
             color:this.color(),
             onSubmit: function(hsb, hex, rgb, el) {
@@ -510,7 +510,8 @@ $wb.ui.form.ColorField = $wb.Class('ColorField',{
             }.bind(this),
             onBeforeShow: function () {
                     this.target().ColorPickerSetColor(this.value());
-                    this.target().css('background-color',this.color())
+                    this.target().css('background-color',this.color());
+                    $('.colorpicker').disableMarking();
             }.bind(this)
         });
         this.target().css('background-color',this.color());

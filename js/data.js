@@ -337,14 +337,22 @@ $wb.data.JsonService = $wb.Class('JsonService',{
                             if (typeof args == 'function') {
                                 callback = args;
                                 args = null;
-                            } else {
+                            } else if ($.type(args) == 'array') {
+                                args = $.extend(true,[],args);
+                            } else if ($.type(args) == 'object') {
                                 args = $.extend(true,{},args);
                             }
 
                             if (method.args) {
 
                                 if (method.args.length == 1 && method.args[0].transport == 'BODY') {
-                                    data = $.extend({},args);
+                                     if ($.type(args) == 'array') {
+                                        data = $.extend(true,[],args);
+                                    } else if ($.type(args) == 'object') {
+                                        data = $.extend(true,{},args);
+                                    } else {
+                                        data = args;
+                                    }
                                     args = {};
                                     bodyType = method.args[0].type;
                                 } else {
