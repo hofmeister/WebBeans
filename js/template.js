@@ -156,7 +156,7 @@ $wb.template = {
             return '<option />';
         },
         button_pane:function() {
-            return '<div class="wb-button-pane"></div>';
+            return '<div class="wb-button-pane line"></div>';
         }
     },
     accordion:function() {

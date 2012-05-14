@@ -55,12 +55,14 @@ $wb.ui.form.Form = $wb.Class('Form',{
         return el.widget();
     },
     setData:function(data) {
-        this.opts.data = data;
-        for(var key in data) {
-            var el = this.elm().find('[name="'+key+'"]');
-            if (el.length == 0) 
-                continue;
-            var value = data[key];
+        var elms = this.elm().find('.wb-input');
+        
+        elms.each(function() {
+            var el = $(this);
+            if (!el.widget()) return;
+            var w = el.widget();
+            var name = w.name();
+            if (!name) return;
             
             var tag = el[0].tagName.toLowerCase();
             
@@ -72,27 +74,27 @@ $wb.ui.form.Form = $wb.Class('Form',{
                     case 'button':
                     case 'submit':
                         return;
-                        
-                    case 'checkbox':
-                    case 'radio':
-                        if (value)
-                            el.attr('checked',true);
-                        else
-                            el.removeAttr('checked');
-                        return;
                 }
             }
             
-            el.widget().value(value);
-        }
+            if (typeof data[name] != 'undefined')
+                w.value(data[name]);
+        });
+        
+        this.opts.data = data;
+        
     },
     getData:function() {
         var elms = this.elm().find('.wb-input');
         var out = {};
         elms.each(function() {
             var el = $(this);
-            var name = el.attr('name');
+            
+            if (!el.widget()) return;
+            var w = el.widget();
+            var name = w.name();
             if (!name) return;
+            
             if (el.widget().isDisabled()) {
                 out[name] = null;
                 return;
@@ -108,11 +110,6 @@ $wb.ui.form.Form = $wb.Class('Form',{
                     case 'button':
                     case 'submit':
                         return;
-                        
-                    case 'checkbox':
-                    case 'radio':
-                        if (!el.is(':checked'))
-                            return;
                 }
             }
             
@@ -321,6 +318,9 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
             this.trigger('change');
             return out;
         }
+    },
+    name:function() {
+        return this.target().attr('name');
     },
     focus:function() {
         this.target().focus();

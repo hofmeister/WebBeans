@@ -16,7 +16,7 @@ $wb.ui.game.Board = $wb.Class('Board',{
             },0);
         });
 
-        this.bind('beforelayout',this.makeFullScreen);
+        this.bind('before-layout',this.makeFullScreen);
         this.bind('paint',function() {
             this.elm().addClass('game-board'); 
         });

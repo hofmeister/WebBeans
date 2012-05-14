@@ -511,7 +511,7 @@ $wb.ui.Widget = $wb.Class('Widget',
         * @private
         */
         _layout: function() {
-            this.trigger('beforelayout');
+            this.trigger('before-layout');
             if (this._layoutMethod) {
                 this._layoutMethod.apply(this);
             }
@@ -519,7 +519,7 @@ $wb.ui.Widget = $wb.Class('Widget',
                 var child = this._children[i];
                 child._layout();
             }
-            this.trigger('afterlayout');
+            this.trigger('after-layout');
         },
         /**
         * @private
@@ -581,7 +581,7 @@ $wb.ui.BasePane = $wb.Class('BasePane',
                 this.add(topbar);
             if (header)
                 this.add(header);
-            this.bind('beforelayout',this.makeFullScreen);
+            this.bind('before-layout',this.makeFullScreen);
         },
         makeFullScreen: function() {
             var w = $(window).width();
@@ -885,7 +885,7 @@ $wb.ui.Canvas = $wb.Class('Canvas',{
         this.__super({
             tmpl:$wb.template.panes.canvas
         });
-        this.bind('afterlayout',function() {
+        this.bind('after-layout',function() {
             var elm = this.target();
             elm.attr('width',elm.width());
             elm.attr('height',elm.height());
@@ -1593,7 +1593,7 @@ $wb.ui.Accordion = $wb.Class('Accordion',{
             first.addClass('wb-active');
             first.find('.wb-submenu').show().slideDown();
         });
-        this.bind('afterlayout',function() {
+        this.bind('after-layout',function() {
             var h = this.elm().height();
             var mainBtns = this.elm().children('.wb-menuitem').children('.wb-title');
             var btnSize = mainBtns.fullSize();
@@ -1745,6 +1745,14 @@ $wb.ui.TableRow = $wb.Class('TableRow',
                     $wb(this.elm().find('.wb-input:eq(0)')).focus();
                 }
             });
+            
+            this.elm().bind('keyup',function(evt) {
+                switch(evt.keyCode) {
+                    case 27: //Escape
+                        this.makeStatic();
+                        break;
+                }
+            }.bind(this));
         },
         getTable:function() {
             return this.opts.table;
@@ -1768,18 +1776,21 @@ $wb.ui.TableRow = $wb.Class('TableRow',
             if (!this.opts.editable) return this;
             this._editMode = !this._editMode;
             this.render();
+            this.getTable()._layout();
             return this;
         },
         makeEditable:function() {
             if (!this.opts.editable || this._editMode) return this;
             this._editMode = true;
             this.render();
+            this.getTable()._layout();
             return this;
         },
         makeStatic:function() {
             if (!this.opts.editable || !this._editMode) return this;
             this._editMode = false;
             this.render();
+            this.getTable()._layout();
             return this;
         },
         isNew:function() {
@@ -1976,13 +1987,19 @@ $wb.ui.Table = $wb.Class('Table',
                     }
                     var parent = this.elm().parent();
                     if (parent && parent.innerHeight() > 0) {
-                        var tblHeight = parent.innerHeight();
-                        if (this.opts.header)
-                            tblHeight -= this._header.outerHeight();
-                        if (this.opts.footer)
-                            tblHeight -= this._footer.outerHeight();
+                        var others = parent.children().not(this.elm());
+                        var otherHeight = others.totalOuterHeight();
+                        var maxHeight = parent.innerHeight();
                         
-                        this.elm().find('.wb-table-body-scroll').outerHeight(tblHeight-1);
+                        maxHeight -= otherHeight;
+                        if (this.opts.header)
+                            maxHeight -= this._header.outerHeight();
+                        if (this.opts.footer)
+                            maxHeight -= this._footer.outerHeight();
+                        
+                        var scroller = this.elm().find('.wb-table-body-scroll');
+                        if (scroller.children('table').outerHeight() > maxHeight)
+                            scroller.outerHeight(maxHeight-1);
                     }
                 }
             },opts));
@@ -2051,8 +2068,10 @@ $wb.ui.Table = $wb.Class('Table',
         },
         repaintRows:function() {
             this._paintRows();
-            //Update paging - if needed
-            this.getPaging().setTotalPages(this.getStore().getTotalPages());
+            if (this.getPaging() != null) {
+                //Update paging - if needed
+                this.getPaging().setTotalPages(this.getStore().getTotalPages());
+            }
             this._layout();
         },
         _getColumnCount:function() {
@@ -2337,7 +2356,9 @@ $wb.ui.Table = $wb.Class('Table',
          * @returns {$wb.ui.TableRow} An editable row
          */
         newRow:function() {
-            return this.addRow(null,true).setIsNew(true).makeEditable(true);
+            var row = this.addRow(null,true).setIsNew(true).makeEditable(true);
+            this._layout();
+            return row;
         }
 
     }
@@ -2507,20 +2528,21 @@ $wb.ui.Window = $wb.Class('Window',
             if (opts.moveable) {
                 this._makeMovable();
             }
-            this.bind('beforelayout',function() {
-
-
+            this.bind('before-layout',function() {
                 if (this.opts.width) {
                     this.elm().outerWidth(this.opts.width);
                 }
-                if (this.opts.height) {
+                if (this.opts.height && this.elm().height() > this.opts.height) {
                     this.elm().outerHeight(this.opts.height);
                     var availHeight = this.elm().innerHeight()-this.header().outerHeight();
                     if (availHeight > 0)
                         this.target().outerHeight(availHeight);
+                } else {
+                    this.elm().css('height','auto');
+                    this.target().css('height','auto');
                 }
             });
-            this.bind('afterlayout',doPosition);
+            this.bind('after-layout',doPosition);
             this.bind('show',doPosition);
             this.bind('render',function() {
                 var zIndex = 200+$wb.ui.Window._windows.length;

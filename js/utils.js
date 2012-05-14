@@ -310,8 +310,7 @@ $wb.utils = {
     };
     $.fn.innerEdgeHeight = function() {
         var el = $(this);
-        var out = parseInt(el.css('padding-top'))
-                +parseInt(el.css('padding-bottom'));
+        var out = 0;
         
         //Input fields has inner border
         if (el[0] && el[0].tagName) {
@@ -319,7 +318,9 @@ $wb.utils = {
                 case 'input':
                 case 'th':
                     out += parseInt(el.css('border-top-width'))
-                        +parseInt(el.css('border-bottom-width'));
+                            + parseInt(el.css('padding-top'))
+                            + parseInt(el.css('padding-bottom'))
+                            + parseInt(el.css('border-bottom-width'));
                     break;
             }
         }
@@ -331,15 +332,16 @@ $wb.utils = {
     $.fn.innerEdgeWidth = function() {
         var el = $(this);
         
-        var out = parseInt(el.css('padding-left'))
-                +parseInt(el.css('padding-right'));
+        var out = 0;
         //Input fields has inner border
         if (el[0] && el[0].tagName) {
             switch(el[0].tagName.toLowerCase()) {
                 case 'input':
                 case 'th':
-                    out += parseInt(el.css('border-left-width'))
-                        +parseInt(el.css('border-right-width'))
+                    out += parseInt(el.css('padding-left'))
+                            + parseInt(el.css('padding-right'))
+                            + parseInt(el.css('border-left-width'))
+                            + parseInt(el.css('border-right-width'))
                     break;
             }
         }    

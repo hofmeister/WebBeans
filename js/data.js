@@ -344,7 +344,8 @@ $wb.data.JsonService = $wb.Class('JsonService',{
                             if (method.args) {
 
                                 if (method.args.length == 1 && method.args[0].transport == 'BODY') {
-                                    data = args;
+                                    data = $.extend({},args);
+                                    args = {};
                                     bodyType = method.args[0].type;
                                 } else {
                                     for(var i = 0; i < method.args.length;i++) {
@@ -387,6 +388,7 @@ $wb.data.JsonService = $wb.Class('JsonService',{
                                     }
                                 }
                             }
+                            
                             for(var key in args) {
                                 if (!args[key]) continue;
                                 url += (url.indexOf('?') > -1) ? "&" : "?";
