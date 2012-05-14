@@ -403,27 +403,6 @@ $wb.ui.form.TextField = $wb.Class('TextField',{
     }
 });
 
-$wb.ui.form.ColorField = $wb.Class('ColorField',{
-    __extends:[$wb.ui.form.InputField],
-    __construct:function(opts) {
-        if (!opts) opts = {};
-        opts = $.extend({
-            tmpl: $wb.template.form.color
-        },opts);
-        this.__super(opts);
-    }
-});
-
-$wb.ui.form.DateField = $wb.Class('DateField',{
-    __extends:[$wb.ui.form.InputField],
-    __construct:function(opts) {
-        if (!opts) opts = {};
-        opts = $.extend({
-            tmpl: $wb.template.form.date
-        },opts);
-        this.__super(opts);
-    }
-});
 
 $wb.ui.form.CheckBox = $wb.Class('CheckBox',{
     __extends:[$wb.ui.form.InputField],
@@ -482,6 +461,64 @@ $wb.ui.form.SearchField = $wb.Class('SearchField',{
             type:'search'
         },opts);
         this.__super(opts);
+    }
+});
+
+
+$wb.ui.form.DateField = $wb.Class('DateField',{
+    __extends:[$wb.ui.form.InputField],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            tmpl: $wb.template.form.date
+        },opts);
+        this.__super(opts);
+    }
+});
+
+$wb.ui.form.ColorField = $wb.Class('ColorField',{
+    __extends:[$wb.ui.form.TextField],
+    __defaults:{
+        pluginBaseDir:$wbConfig.base+"js/3rdparty/colorpicker/"
+    },
+    __construct:function(opts) {
+        this.__super(this.getDefaults(opts));
+        this._loadPlugin();
+        this.bind('change',function() {
+            this.target().css('background-color',this.color());
+        });
+    },
+    _loadPlugin:function() {
+        if (!jQuery.fn.ColorPicker) {
+            loadCSS(this.opts.pluginBaseDir+"css/colorpicker.css");
+            require(this.opts.pluginBaseDir+"js/colorpicker.js",this._init.bind(this));
+        } else {
+            this._init();
+        }
+    },
+    _init:function() {
+        this.target().attr('readonly',true);
+        this.target().ColorPicker({
+            color:this.color(),
+            onSubmit: function(hsb, hex, rgb, el) {
+		this.value(hex);
+		this.target().ColorPickerHide();
+            }.bind(this),
+            onChange:function(hsb,hex,rgb) {
+                this.value(hex);
+                this.target().css('background-color',this.color())
+            }.bind(this),
+            onBeforeShow: function () {
+                    this.target().ColorPickerSetColor(this.value());
+                    this.target().css('background-color',this.color())
+            }.bind(this)
+        });
+        this.target().css('background-color',this.color());
+    },
+    color:function() {
+        if (!this.value())
+            this.value('FFFFFF');
+        return "#"+this.value();
     }
 });
 
@@ -628,6 +665,13 @@ $wb.ui.form.TextArea = $wb.Class('TextArea',{
 
 $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
     __extends:[$wb.ui.form.TextArea],
+    __defaults:{
+        mode:null,
+        indentUnit:4,
+        lineWrapping:true,
+        lineNumbers:true,
+        codemirrorBase:$wbConfig.base+"js/3rdparty/codemirror/"
+    },
     _codemirror:null,
     _rendered:false,
     _copyMethods:[  
@@ -639,13 +683,7 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
         ,'getRange','replaceRange','posFromIndex','indexFromPos'
     ],
     __construct:function(opts) {
-        if (!opts) opts = {};
-        
         opts = $.extend({
-            mode:null,
-            indentUnit:4,
-            lineWrapping:true,
-            lineNumbers:true,
             onFocus:function() {
                 this._codeMirrorElm().addClass('wb-focus');
             }.bind(this),
@@ -658,9 +696,8 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
                         return;
                     CodeMirror.simpleHint(cm, CodeMirror.javascriptHint);
                 }
-            },
-            codemirrorBase:$wbConfig.base+"js/3rdparty/codemirror/"
-        },opts);
+            }
+        },this.getDefaults(opts));
         
         this.__super(opts);
         
@@ -805,7 +842,7 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
             type:"color",
             format:function(opts,value) {
                 if (value) {
-                    return '<span style="width:16px;height:16px;background-color:#%" />'.format(value);
+                    return '<span style="width:16px;height:16px;background-color:#%s" />'.format(value);
                 }
                 return _('None');
             },
