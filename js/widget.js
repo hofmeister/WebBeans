@@ -1999,7 +1999,7 @@ $wb.ui.Table = $wb.Class('Table',
                         
                         var scroller = this.elm().find('.wb-table-body-scroll');
                         if (scroller.children('table').outerHeight() > maxHeight)
-                            scroller.outerHeight(maxHeight-1);
+                            scroller.outerHeight(maxHeight);
                     }
                 }
             },opts));

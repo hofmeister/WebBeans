@@ -85,7 +85,7 @@ $wb.template = {
             return '<tfoot class="wb-table-foot"></tfoot>';
         },
         body:function() {
-            return '<tbody class="wb-table-body"><td class="wb-inner-table-container"><div class="wb-table-body-scroll"><table  cellspacing="0" cellpadding="0"><tbody class="wb-inner-table" /></table></div></td></tbody>';
+            return '<tbody class="wb-table-body"><td class="wb-inner-table-container" valign="top"><div class="wb-table-body-scroll"><table  cellspacing="0" cellpadding="0"><tbody class="wb-inner-table" /></table></div></td></tbody>';
         },
         row:function() {
             return '<tr class="wb-table-row" />';
