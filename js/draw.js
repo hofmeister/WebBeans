@@ -8,6 +8,7 @@
 /**
  * @namespace Drawing API
  */
+
 $wb.draw = {};
 
 
@@ -48,6 +49,7 @@ $wb.draw.Canvas = $wb.Class('Canvas',{
             this._layerNames[name] = this.children().length;
         }
         this.add(layer);
+        return layer;
     },
     getLayer:function(ix) {
         if ($.type(ix) == 'string')
@@ -83,7 +85,10 @@ $wb.draw.Layer = $wb.Class('Layer',{
     __defaults:{
         tmpl:$wb.template.draw.layer,
         order:-1,
-        name:null
+        name:null,
+        layout:function() {
+            this._paintElements();
+        }
     },
     _elements:[],
     __construct:function(opts) {
@@ -97,8 +102,10 @@ $wb.draw.Layer = $wb.Class('Layer',{
     render:function(container) {
         if (container)
             this.elm().append(container)
+        this._paintElements();
+    },
+    _paintElements:function() {
         this.clear();
-        
         this._elements.sort(function(a,b) {
             return a.opts.zIndex-b.opts.zIndex;
         });
@@ -108,7 +115,6 @@ $wb.draw.Layer = $wb.Class('Layer',{
             if (child.isVisible()) {
                 child.draw(this);
             }
-                
         }
     },
     getOrder:function() {
@@ -589,6 +595,66 @@ $wb.draw.Rectangle = $wb.Class('Rectangle',{
     }
 });
 
+$wb.draw.Grid = $wb.Class('Grid',{
+    __extends:[$wb.draw.Element],
+    __defaults:{
+        dashed:true,
+        lineCap:'round',
+        dashArray:[0,5],
+        lineWidth:1,
+        width:50,
+        height:50,
+        offset:{
+            left:0,
+            top:0
+        }
+    },
+    __construct:function(opts) {
+        this.__super(opts);
+    },
+    setPoints:function(x1,y1,x2,y2) {
+        this.opts.x1 = x1;
+        this.opts.y1 = y1;
+        this.opts.x2 = x2;
+        this.opts.y2 = y2;
+        
+        this.clearCache();
+    },
+    _paint:function(ctxt,canvas) {
+        var offset = {
+            x:this.opts.offset.left,
+            y:this.opts.offset.top
+        }
+        
+        var size = {
+            width:parseInt(canvas.attr('width'))-offset.x,
+            height:parseInt(canvas.attr('height'))-offset.y
+        };
+        
+        if (!size.width) return;
+        
+        var cellWidth = Math.ceil(size.width/this.opts.width);
+        var cellHeight = Math.ceil(size.height/this.opts.height);
+        
+        
+        ctxt.beginPath();
+        for(var x = 0; x < cellWidth;x++) {
+            var offsetX = offset.x+x*this.opts.width;
+            
+            ctxt.moveTo(offsetX,offset.y);
+            ctxt.lineTo(offsetX,size.height);
+            
+            for(var y = 0; y < cellHeight;y++) {
+                var offsetY = offset.y+y*this.opts.height;
+                
+                ctxt.moveTo(offset.x,offsetY);
+                ctxt.lineTo(size.width,offsetY);
+            }
+        }
+        ctxt.stroke();
+    }
+});
+
 $wb.draw.Circle = $wb.Class('Circle',{
     __extends:[$wb.draw.Element],
     __defaults:{
@@ -632,3 +698,29 @@ $wb.draw.Circle = $wb.Class('Circle',{
             ctxt.stroke();
     }
 });
+
+
+//Extensions to the default API
+var CP = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
+if (CP && CP.lineTo){
+  CP.dashedLine = function(x,y,x2,y2,dashArray){
+    if (!dashArray) dashArray=[10,5];
+    if (dashLength==0) dashLength = 0.001; // Hack for Safari
+    var dashCount = dashArray.length;
+    this.moveTo(x, y);
+    var dx = (x2-x), dy = (y2-y);
+    var slope = dy/dx;
+    var distRemaining = Math.sqrt( dx*dx + dy*dy );
+    var dashIndex=0, draw=true;
+    while (distRemaining>=0.1){
+      var dashLength = dashArray[dashIndex++%dashCount];
+      if (dashLength > distRemaining) dashLength = distRemaining;
+      var xStep = Math.sqrt( dashLength*dashLength / (1 + slope*slope) );
+      x += xStep
+      y += slope*xStep;
+      this[draw ? 'lineTo' : 'moveTo'](x,y);
+      distRemaining -= dashLength;
+      draw = !draw;
+    }
+  }
+}

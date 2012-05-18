@@ -324,4 +324,7 @@ body {
     width:100%;
     height:600px;
 }
+.wb-canvas {
+    position:relative;
+}
 
