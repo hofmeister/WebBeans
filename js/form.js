@@ -820,14 +820,18 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
 
 //Define basic field types
 (function() {
-    $wb.ui.FieldType._default = new $wb.ui.FieldType(
-        {
+    $wb.ui.FieldType._default = new $wb.ui.FieldType({
             type:"string"
         }
     );
+        
     
-    new $wb.ui.FieldType({type:"text"});
-    new $wb.ui.FieldType({type:"json"});
+    $wb.ui.FieldType._default = new $wb.ui.FieldType({
+            type:"number",
+            inherits:'string'
+        }
+    );    
+    
     
     new $wb.ui.FieldType(
         {
@@ -902,4 +906,57 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
             }
         }
     );
+    
+    new $wb.ui.FieldType(
+        {
+            type:"text",
+            formField:function(opts,value) {
+                var out = new $wb.ui.form.TextArea({name:opts.id,label:opts.name});
+                out.value(value);
+                return out;
+            }
+        }
+    );
+    
+     
+    new $wb.ui.FieldType({
+        type:"code",
+        inherits:'text',
+        mode:'javascript',
+        formField:function(opts,value) {
+            var out = new $wb.ui.form.TextEditor({name:opts.id,label:opts.name,mode:this.mode});
+            out.value(value);
+            return out;
+        }
+    });
+        
+    new $wb.ui.FieldType({
+        type:"javascript",
+        inherits:'code',
+        mode:'javascript'
+    });
+    
+    new $wb.ui.FieldType({
+        type:"html",
+        inherits:'code',
+        mode:'html'
+    });
+    
+    new $wb.ui.FieldType({
+        type:"xml",
+        inherits:'code',
+        mode:'xml'
+    });
+    
+    new $wb.ui.FieldType({
+        type:"markdown",
+        inherits:'code',
+        mode:'markdown'
+    });
+    
+    new $wb.ui.FieldType({
+        type:"json",
+        inherits:'code',
+        mode:{name:'javascript',json:true}
+    });
 })()

@@ -398,6 +398,27 @@ input:focus,button:focus,select:focus,textarea:focus,a:focus {
     color:white;
 }
 
+
+.wb-tree .wb-tree-node.wb-dragging {
+    background-color: #EEE;
+    border:1px solid #333;
+    padding:5px;
+    -webkit-border-radius: 5px;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
+    -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box;
+    cursor: pointer;
+    color:#333;
+    margin-top:-5px;
+}
+
+.wb-tree .wb-tree-node.wb-dragging.wb-valid {
+    background-color: #97d679;
+}
+.wb-tree .wb-tree-node.wb-dragging > .wb-title {
+    background-color: transparent !important;
+}
+
 /* accordion */
 
 .wb-accordion .wb-submenu {

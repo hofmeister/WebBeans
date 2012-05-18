@@ -154,9 +154,9 @@ $wb.data.Source = $wb.Class('Source',{
             this._connection = null;
         }
     },
-    get:function(id,cb) {
+    get:function(criteria,cb) {
         if (this._getter)
-            this._getter.apply(this,[id,cb]);
+            this._getter.apply(this,[criteria,cb]);
     },
     load:function(opts,cb) {
         var self = this;

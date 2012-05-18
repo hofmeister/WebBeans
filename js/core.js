@@ -88,7 +88,7 @@ var require = function(path,cb,async) {
     }
     if (requireAllIx > -1) {
         paths.splice(requireAllIx,0,
-                "utils","localization","data","template","widget","form");
+                "jquery-ui","utils","localization","data","template","widget","form",'draw','geo');
     }
     
     var oks = new Array(paths.length);
@@ -104,7 +104,7 @@ var require = function(path,cb,async) {
     
     var build = function(i,path,buildCallback) {
         if (!path) return;
-        if (/^[A-Z]+$/i.test(path)) {
+        if (/^[A-Z\-]+$/i.test(path)) {
             //WebBeans module
             if (typeof $wbConfig.base == 'undefined')
                 throw "Remember to provide $wbConfig.base with a valid url pointing to a webbeans CDN";
@@ -170,6 +170,7 @@ if (!$wbConfig.noCSS) {
     //Load the base webbeans css
     loadCSS("webbeans");
     loadCSS($wbConfig.base+"style/font-awesome.css");
+    loadCSS($wbConfig.base+"style/jquery-ui.css");
 
     if ($wbConfig.skin) {
         //Load the skin
@@ -187,7 +188,12 @@ require($wbConfig.jQuery,function() {
         if (typeof elm == 'function') {
             return elm();
         } else {
-            return $(elm).widget();
+            if (typeof elm == 'string' && elm.indexOf('<') == 0) {
+                //Html
+                return new $wb.ui.Html(elm);
+            }
+            jQueryElm = $(elm);
+            return jQueryElm.widget();
         }
     };
     
@@ -404,6 +410,7 @@ require($wbConfig.jQuery,function() {
                 for(var i in clz.__extends) {
                     var parent = clz.__extends[i];
                     defaults = $.extend(true,defaults,parent.constructor.__defaults);
+                    defaults = parent.getDefaults(defaults);
                 }
             }
             
@@ -983,6 +990,19 @@ require($wbConfig.jQuery,function() {
                 if (!this._bindings[evt])
                     this._bindings[evt] = [];
                 this._bindings[evt].push(handler);
+                return this;
+            },
+            unbind:function(evt,handler) {
+                if (!handler) {
+                    delete this._bindings[evt];
+                } else {
+                    if (!this._bindings[evt]) 
+                        return this;
+                    var ix = this._bindings[evt].indexOf(handler);
+                    if (ix > -1)
+                        this._bindings[evt].splice(ix,1);
+                }
+                return this;
             }
         }
     );
@@ -1011,11 +1031,13 @@ require($wbConfig.jQuery,function() {
                         throw new $wb.Error(_("Missing argument: %s: %s",this._clz,arg),this);   
                     }
                 }
+                return this;
             },
             notEmpty:function(obj,msg) {
                 if (!msg) msg = _("Required value was empty");
                 if (!obj) 
                     throw new $wb.Error(msg,this);
+                return this;
             }
         }
     );

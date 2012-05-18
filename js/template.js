@@ -54,12 +54,17 @@ $wb.template = {
     button: function() {
         return '<a href="#" class="wb-button"></a>';
     },
+    draw:{
+        canvas:function() {
+             return '<div class="wb-canvas"></div>';
+        },
+        layer:function() {
+             return '<canvas class="wb-layer"></canvas>';
+        }
+    },
     panes: {
         pane:function() {
              return '<div class="wb-pane"></div>';
-        },
-        canvas:function() {
-             return '<canvas class="wb-pane"></canvas>';
         },
         split:function() {
             return '<div class="wb-pane wb-splitpane"><div class="wb-splitter"></div></div>';

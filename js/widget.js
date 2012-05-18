@@ -123,7 +123,7 @@ $wb.ui.FieldType = $wb.Class('FieldType',
         /**
          * @constructs
          * @param {Object} opts Options
-         * @param {String} opts.type Type name
+         * @param {String} [opts.type] Type name - if provided - registers this field type globally
          * @param {String} [opts.inherits] A type name of a field type this type should inherit
          * @param {Function} [opts.format] A function returning a string for insertion into a table or similar. The function is called with 2 arguments: <pre>function({id:"fieldName",type:"fieldType"},value)</pre> 
          * @param {Function} [opts.formField] A function returning a widget for insertion into a form. The function is called with 2 arguments: <pre>function({id:"fieldName",type:"fieldType"},value)</pre>
@@ -136,8 +136,9 @@ $wb.ui.FieldType = $wb.Class('FieldType',
                 delete opts.inherits;
             }
             this._opts = $.extend(true,this._opts,inherits,opts);
-            this.require(this._opts,'type','format','formField','tableField');
-            $wb.ui.FieldType._registry[opts.type] = this;
+            this.require(this._opts,'format','formField','tableField');
+            if (opts.type)
+                $wb.ui.FieldType._registry[opts.type] = this;
         },
         getFormField:function(opts,value) {
             var out = this._opts.formField.apply(this._opts,[opts,value]);
@@ -156,6 +157,8 @@ $wb.ui.FieldType = $wb.Class('FieldType',
 );
 $wb.ui.FieldType._registry = {};
 $wb.ui.FieldType.type = function(name) {
+    if ($wb.utils.isA(name, $wb.ui.FieldType))
+        return name;
     if ($wb.ui.FieldType._registry[name]) 
         return $wb.ui.FieldType._registry[name];
     if (!$wb.ui.FieldType.defaultType) 
@@ -163,7 +166,152 @@ $wb.ui.FieldType.type = function(name) {
     return $wb.ui.FieldType.defaultType;
 }
 
+$wb.ui.FieldType.exists = function(name) {
+    return (typeof $wb.ui.FieldType._registry[name] != 'undefined');
+};
 
+/**
+ * @namespace Various UI helpers - extend these helpers to include the functionality in your widgets. Note that some
+ * may already be inherited by the base Widget class
+ */
+
+$wb.ui.helper = {};
+
+$wb.ui.helper.Draggable = $wb.Class('Draggable',
+    /**
+     * Is a super class to the base Widget class - providing drag and drop functionality through 
+     * setDraggable.
+     * @lends $wb.ui.helper.Draggable.prototype
+     */
+    {
+    __defaults:{
+        draggable:{
+            copy:false,
+            dropZones:null
+        }
+    },
+    _onStartDrag:function(evt) {
+        if (evt.button == 2) return;
+        var elm = this.dragHandle();
+        var opts = this.opts.draggable;
+        var self = this;
+        
+        var startPosition = elm.position();
+        var startCss = {
+            position:elm.css('position'),
+            zIndex:elm.css('z-index'),
+            cursor:elm.css('cursor')
+        };
+        
+        var mouseOffset = {
+            x:evt.pageX-elm.offset().left,
+            y:evt.pageY-elm.offset().top
+        };
+        
+        var dropZones = null;
+        if (opts.dropZones)
+            dropZones = $(opts.dropZones)
+        
+        var active = false;
+        var initialize = function() {
+            if (opts.copy) {
+                var copy = $(elm[0].outerHTML);
+                this.dragHandle().after(copy);
+                elm = copy;
+            }
+            elm.css({
+                position:'absolute',
+                zIndex:999,
+                cursor:'pointer'
+            }).addClass('wb-dragging');
+            active = true;
+        }.bind(this);
+        
+        var parent = $('body');
+        
+        var mouseUp = function(evt) {
+            parent.unbind('mousemove',mouseMove);
+            if (!active) {
+                return;
+            }
+            evt.preventDefault();
+            
+            if (dropZones) {
+                var hitElements = dropZones.elementAt(evt.pageX,evt.pageY);
+                if (hitElements.length > 0) {
+                    self.trigger('dropped',[elm,hitElements]);
+                } else {
+                    //No drop zone found - move back
+                    elm.animate(startPosition,'fast',function() {
+                        if (opts.copy) {
+                            elm.detach();
+                        } else {
+                            elm.css(startCss);
+                            elm.removeClass('wb-dragging');
+                        }
+                    });
+                }
+            }
+        }
+        
+        
+        
+        var mouseMove = function(evt) {
+            if (!active) {
+                initialize();
+            }
+            //evt.preventDefault();
+            elm.offset({
+                left:evt.pageX-mouseOffset.x,
+                top:evt.pageY-mouseOffset.y
+            });
+            if (dropZones) {
+                var hitElements = dropZones.elementAt(evt.pageX,evt.pageY);
+                if (hitElements.length > 0) { 
+                    if (!elm.hasClass('wb-valid')) {
+                        elm.addClass('wb-valid');
+                        self.trigger('droppableover',[elm,hitElements]);
+                    }
+                } else {
+                    if (elm.hasClass('wb-valid')) {
+                        elm.removeClass('wb-valid');
+                        self.trigger('droppableout',[elm]);
+                    }
+                }
+            }
+            
+        }
+      
+        //mouseMove(evt);
+        parent.bind('mousemove',mouseMove);
+        parent.one('mouseup',mouseUp);
+    },
+    _boundStartDragHandler:null,
+    /**
+      * Enable or disable dragging of this widget
+      * @param {Object|boolan) opts if boolean false - disable - else enable with the given options
+      * @param {boolean} opts.copy - When dragging - drag a copy
+      * @param {DOMElement|jQueryObject} opts.dropZones - Only places to drop elements. If not - will revert
+      * 
+      */
+    setDraggable:function(opts) {
+        if (!this._boundStartDragHandler)
+            this._boundStartDragHandler = this._onStartDrag.bind(this);
+        this.dragHandle().unbind('mousedown',this._boundStartDragHandler);
+        if (!opts) {
+            return;
+        }
+        
+        this.opts.draggable = $.extend({},this.getDefaults().draggable,opts);
+        this.dragHandle().bindOnce('mousedown',this._boundStartDragHandler);
+    },
+    /**
+     * Returns DOM element to use for dragging. Override to change.
+     */
+    dragHandle:function() {
+        return this.elm();
+    }
+})
 
 
 //Widgets
@@ -174,7 +322,9 @@ $wb.ui.Widget = $wb.Class('Widget',
      * @augments $wb.Class
      */
     {
-        __extends:[$wb.core.Events,$wb.core.Utils],
+        __extends:[ $wb.core.Events,
+                    $wb.core.Utils,
+                    $wb.ui.helper.Draggable],
         /**
          * Base element
          * @private
@@ -534,19 +684,19 @@ $wb.ui.Widget = $wb.Class('Widget',
             }
             
             this.elm().putBack();
-        },
-        /**
-        * @private
-        */
-        _resize: function() {
-            this._layout.apply(this);
-            for(var i in this._children) {
-                var child = this._children[i];
-                child._resize();
-            }
         }
     }
 );
+    
+$wb.ui.Html = $wb.Class('Html',{
+    __extends:[$wb.ui.Widget],
+    __construct:function(html,target) {
+        this.__super({
+            tmpl:function() {return html},
+            target:target?target:null
+        })
+    }
+});
 
 $wb.ui.BasePane = $wb.Class('BasePane',
     /**
@@ -556,6 +706,10 @@ $wb.ui.BasePane = $wb.Class('BasePane',
      */
     {
         __extends:[$wb.ui.Widget],
+        __defaults:{
+            tmpl:$wb.template.base,
+            layout:$wb.ui.layout.GridBag
+        },
 
         /**
         * @constructs
@@ -563,19 +717,10 @@ $wb.ui.BasePane = $wb.Class('BasePane',
         * @param {$wb.ui.Widget} [header] header bar
         */
         __construct:function(topbar,header) {
-            this.__super({
-                tmpl:$wb.template.base,
-                layout:$wb.ui.layout.GridBag
-            });
+            this.__super(this.getDefaults());
 
-            var self = this;
-            var resizeTimeout = null;
-            $(window).bind('resize',function() {
-                clearTimeout(resizeTimeout);
-                resizeTimeout = setTimeout(function() {
-                    self._resize();
-                },0);
-            });
+            
+            $(window).bind('resize',this._layout.bind(this));
 
             if (topbar)
                 this.add(topbar);
@@ -594,16 +739,14 @@ $wb.ui.BasePane = $wb.Class('BasePane',
 
 $wb.ui.Link = $wb.Class('Link',{
     __extends:[$wb.ui.Widget],
+    __defaults:{
+        tmpl:$wb.template.link,
+        context:this
+    },
     __construct:function(opts) {
-        if (!opts) opts = {};
-        opts = $.extend({
-            tmpl:$wb.template.link,
-            context:this
-        },opts);
-        
         this.require(opts,'title');
         
-        this.__super(opts);
+        this.__super(this.getDefaults(opts));
         
         
         var self = this;
@@ -647,14 +790,14 @@ $wb.ui.Action = $wb.Class('Action',{
 });
 
 $wb.ui.Button = $wb.Class('Button',{
-    _titleElm:null,
     __extends:[$wb.ui.Widget],
+    __defaults:{
+        titleElm:'.wb-title'
+    },
+    _titleElm:null,
     __construct:function(opts) {
-        opts = $.extend({
-            titleElm:'.wb-title'
-        },opts)
-        this.__super(opts);
-        this._titleElm = opts.titleElm;
+        this.__super(this.getDefaults(opts));
+        this._titleElm = this.opts.titleElm;
         this.bind('paint',function() {
             this.elm().disableMarking();
         });
@@ -679,21 +822,21 @@ $wb.ui.MenuButton = $wb.Class('MenuButton',{
 });
 
 $wb.ui.Menu = $wb.Class('Menu',{
+    __extends:[$wb.ui.Widget],
+    __defaults:{
+        tmpl:$wb.template.menu.base,
+        itemTmpl:$wb.template.menu.menuItem,
+        subTmpl:$wb.template.menu.subMenu,
+        vertical:true
+    },
     _itemTmpl:null,
     _subTmpl:null,
-    __extends:[$wb.ui.Widget],
     _vertical:null,
     __construct:function(opts) {
-        if (!opts) opts = {};
-        opts = $.extend({
-            tmpl:$wb.template.menu.base,
-            itemTmpl:$wb.template.menu.menuItem,
-            subTmpl:$wb.template.menu.subMenu,
-            vertical:true
-        },opts);
-        this.__super(opts);
+        
+        this.__super(this.getDefaults(opts));
 
-        this.require(opts,'itemTmpl','subTmpl');
+        this.require(this.opts,'itemTmpl','subTmpl');
 
         this._vertical = opts.vertical;
         this._subTmpl = opts.subTmpl;
@@ -754,26 +897,26 @@ $wb.ui.Menu = $wb.Class('Menu',{
 
 $wb.ui.TopBar = $wb.Class('TopBar',{
     __extends:[$wb.ui.Menu],
+    __defaults:{
+        tmpl:$wb.template.top.bar,
+        vertical:false
+    },
     __construct:function(opts) {
-        if (!opts) opts = {};
-        $.extend(opts,{
-            tmpl:$wb.template.top.bar,
-            vertical:false
-        });
-        this.__super(opts);
+        this.__super(this.getDefaults(opts));
     }
 });
 
 $wb.ui.ContextMenu = $wb.Class('ContextMenu',{
     __extends:[$wb.ui.Menu],
+    __defaults:{
+        tmpl:$wb.template.context.menu,
+        vertical:true
+    },
     _source:null,
     _element:null,
     __construct:function(opts) {
-        if (!opts) opts = {};
-        $.extend(opts,{
-            tmpl:$wb.template.context.menu,
-            vertical:true
-        });
+        opts = this.getDefaults(opts);
+        
         this.__super(opts);
         this.elm().bind('contextmenu',function(evt) {
             evt.preventDefault();
@@ -852,26 +995,23 @@ $wb.ui.ContextMenu.hide = function() {
 
 $wb.ui.Header = $wb.Class('Header',{
     __extends:[$wb.ui.Menu],
+    __defaults:{
+        tmpl:$wb.template.header.bar,
+        vertical:false
+    },
     __construct:function(opts) {
-        if (!opts) opts = {};
-        $.extend(opts,{
-            tmpl:$wb.template.header.bar,
-            vertical:false
-        });
-        this.__super(opts);
+        this.__super(this.getDefaults(opts));
     }
 });
 
 $wb.ui.Pane = $wb.Class('Pane',{
     __extends:[$wb.ui.Widget],
+    __defaults:{
+        tmpl:$wb.template.panes.pane,
+        layout:$wb.ui.layout.Box
+    },
     __construct:function(opts) {
-        if (!opts) opts = {};
-        opts = $.extend({
-            tmpl:$wb.template.panes.pane,
-            layout:$wb.ui.layout.Box
-        },opts);
-
-        this.__super(opts);
+        this.__super(this.getDefaults(opts));
         this.bind('paint',function() {
             this.elm().disableMarking(); 
         });
@@ -879,25 +1019,10 @@ $wb.ui.Pane = $wb.Class('Pane',{
 });
 
 
-$wb.ui.Canvas = $wb.Class('Canvas',{
-    __extends:[$wb.ui.Pane],
-    __construct:function(painter) {
-        this.__super({
-            tmpl:$wb.template.panes.canvas
-        });
-        this.bind('after-layout',function() {
-            var elm = this.target();
-            elm.attr('width',elm.width());
-            elm.attr('height',elm.height());
-            elm.clearCanvas();
-            painter.apply(this);
-        });
-    }
-});
 
 
 $wb.ui.SplitPane = $wb.Class('SplitPane',{
-    defaultOpts: {
+    __defaults: {
         vertical:true,
         splitPosition:.5
     },
@@ -905,9 +1030,7 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
     _splitPosition:.5,
     __extends:[$wb.ui.Pane],
     __construct:function(opts) {
-        if (!opts) opts = {};
-        
-        opts = $.extend({},this.defaultOpts,opts,{
+        opts = $.extend(this.getDefaults(opts),{
             tmpl:$wb.template.panes.split,
             layout:function() {
                 this.setSplitPosition(this._splitPosition);
@@ -1027,21 +1150,20 @@ $wb.ui.TabButton = $wb.Class('TabButton',{
 
 $wb.ui.TabPane = $wb.Class('TabPane',{
     __extends:[$wb.ui.Pane],
-
+    __defaults:{
+        tmpl:$wb.template.panes.tab,
+        tabTmpl:$wb.template.panes.tab_button,
+        orientation:'top',
+        tabButtonFull:false,
+        target:'.wb-panes'
+    },
     _tabTmpl:null,
     _orientation:'top',
     _tabButtonWidgets:[],
     _tabButtonFull:false,
     __construct:function(opts) {
-        if (!opts) opts = {};
-        opts = $.extend({
-            tmpl:$wb.template.panes.tab,
-            tabTmpl:$wb.template.panes.tab_button,
-            orientation:'top',
-            tabButtonFull:false,
-            target:'.wb-panes'
-        },opts);
-
+        opts = this.getDefaults(opts);
+        
         opts.layout = function() {
             var layoutHorizontal = function() {
                 var h,w,tabs;
@@ -1537,20 +1659,19 @@ $wb.ui.Tree = $wb.Class('Tree',{
 
 $wb.ui.HtmlPane = $wb.Class('HtmlPane',{
     __extends:[$wb.ui.Pane],
+    __defaults:{
+        tmpl:$wb.template.panes.html,
+        target:'.wb-inner',
+        editable:false,
+        layout:function() {
+            var width = this.elm().width();
+            var height = this.elm().height();
+            this.target().outerWidth(width);
+            this.target().outerHeight(height);
+        }
+    },
     __construct:function(opts) {
-        if (!opts) opts = {};
-        opts = $.extend({
-            tmpl:$wb.template.panes.html,
-            target:'.wb-inner',
-            editable:false,
-            layout:function() {
-                var width = this.elm().width();
-                var height = this.elm().height();
-                this.target().outerWidth(width);
-                this.target().outerHeight(height);
-            }
-        },opts);
-        this.__super(opts);
+        this.__super(this.getDefaults(opts));
 
         this.bind('paint',function() {
             if (opts.editable) {
@@ -1565,12 +1686,11 @@ $wb.ui.HtmlPane = $wb.Class('HtmlPane',{
 
 $wb.ui.Accordion = $wb.Class('Accordion',{
     __extends:[$wb.ui.Menu],
+    __defaults:{
+        tmpl:$wb.template.accordion
+    },
     __construct:function(opts) {
-        if (!opts) opts = {};
-        opts = $.extend({
-            tmpl:$wb.template.accordion
-        },opts);
-        this.__super(opts);
+        this.__super(this.getDefaults(opts));
         this.bind('paint',function() {
             var self = this;
             var mainBtns = this.elm().children('.wb-menuitem');
@@ -1715,16 +1835,16 @@ $wb.ui.Paging = $wb.Class('Paging',
 $wb.ui.TableRow = $wb.Class('TableRow',
     {
         __extends:[$wb.ui.Widget],
+        __defaults:{
+            editable:false,
+            data:{}
+        },
         _editMode:false,
         __construct:function(opts) {
             this.require(opts,'table');
-            opts = $.extend({
-                editable:false,
-                tmpl:opts.table.option('rowTmpl'),
-                data:{}
-            },opts)
-            
-            this.__super(opts);
+            this.__super($.extend({
+                tmpl:opts.table.option('rowTmpl')
+            },this.getDefaults(opts)));
             var self = this;
             this.elm().dblclick(function(evt) {
                 if (!self.opts.editable) return;
@@ -1763,7 +1883,7 @@ $wb.ui.TableRow = $wb.Class('TableRow',
         getData:function() {
             if (this._editMode) {
                 var data = $wb.ui.form.Form.methods.getData.apply(this);
-                $.extend(this.opts.data,data);
+                this.opts.data = $.extend(this.opts.data,data);
             }
             return this.opts.data;
         },
@@ -1808,10 +1928,11 @@ $wb.ui.TableRow = $wb.Class('TableRow',
             var cols = this.getStore().getColumns();
             var bodyCellTmpl = this.getTable().option('bodyCellTmpl');
             
+            var data = this.getData();
             for(var i in cols) {
                 var col = cols[i];
                 if (col.hidden) continue;
-                var value = $wb.utils.GetValue(this.getData(),col.id);
+                var value = $wb.utils.GetValue(data,col.id);
                 var fieldType = $wb.ui.FieldType.type(col.valueType);
                 var cell = $(bodyCellTmpl());
                 cell.append(fieldType.getTableField(col,value).elm());
@@ -1912,6 +2033,73 @@ $wb.ui.Table = $wb.Class('Table',
      */
     {
         __extends:[$wb.ui.Widget],
+        __defaults:{
+            target:'.wb-inner-table',
+            tmpl:$wb.template.table.base,
+            headerTmpl:$wb.template.table.header,
+            footerTmpl:$wb.template.table.footer,
+            bodyTmpl:$wb.template.table.body,
+            rowTmpl:$wb.template.table.row,
+            bodyCellTmpl:$wb.template.table.body_cell,
+            headerCellTmpl:$wb.template.table.header_cell,
+            rowReader:function(row) {
+                return row;
+            },
+            editable:false,
+            paging:{
+                currentPage:0
+            },
+            filters:[],
+            header:true,
+            footer:true,
+            layout:function() {
+                var availWidth = this.elm().innerWidth();
+                if (availWidth < 1) return;
+                var isHeader = false;
+
+                var cells = null;
+                if (this.opts.header) {
+                    isHeader = true;
+                    cells = this._header.find('.wb-table-cell').not('.wb-actions');
+                } else {
+                    cells = this._body.find('.wb-table-row:eq(0) .wb-table-cell').not('.wb-actions');
+                }
+
+                if (this._hasActionColumn()) {
+                    var actionWidth = Math.floor(Math.max(availWidth/10,120));
+
+                    if (!isNaN(actionWidth) && actionWidth > 0) {
+                        availWidth -= actionWidth;
+                    }
+                }
+
+                var cellWidth = Math.floor(availWidth/cells.length);
+
+                if (isHeader) {
+                    cells.outerWidth(cellWidth);
+                }
+
+                var innerCells = this.elm().find('.wb-inner-table .wb-table-row:eq(0) .wb-table-cell').not('.wb-actions');
+                if (innerCells.length > 0) {
+                    innerCells.width(cellWidth);
+                }
+                var maxHeight = this.elm().outerHeight();
+                //Only calculate fixed height if this table has a fixed height
+                //Todo: Add support for min and max height
+                var cssHeight = parseInt(this.elm()[0].style.height);
+                if (cssHeight > 0 && !isNaN(cssHeight)) {
+                    if (this.opts.header)
+                        maxHeight -= this._header.outerHeight();
+                    if (this.opts.footer)
+                        maxHeight -= this._footer.outerHeight();
+
+                    if (maxHeight > 10) {
+                        var scroller = this.elm().find('.wb-table-body-scroll');
+                        scroller.outerHeight(maxHeight);
+                    }
+                }
+            }
+        },
         _header:null,
         _footer:null,
         _body:null,
@@ -1921,7 +2109,7 @@ $wb.ui.Table = $wb.Class('Table',
         _paging:null,
         _rows:[],
         _autoUpdate:true,
-        dirty:false,
+        _dirty:false,
         /**
          * @constructs
          * @param {Object} opts Options
@@ -1937,72 +2125,7 @@ $wb.ui.Table = $wb.Class('Table',
          * @param {Map<Type,Function>} [opts.headerActions] Map of header btn titles along with a callback function
          */
         __construct:function(opts) {
-            if (!opts) opts = {};
-            this.__super($.extend({
-                target:'.wb-inner-table',
-                tmpl:$wb.template.table.base,
-                headerTmpl:$wb.template.table.header,
-                footerTmpl:$wb.template.table.footer,
-                bodyTmpl:$wb.template.table.body,
-                rowTmpl:$wb.template.table.row,
-                bodyCellTmpl:$wb.template.table.body_cell,
-                headerCellTmpl:$wb.template.table.header_cell,
-                editable:false,
-                paging:{
-                    currentPage:0
-                },
-                filters:[],
-                header:true,
-                footer:true,
-                layout:function() {
-                    var availWidth = this.elm().innerWidth();
-                    if (availWidth < 1) return;
-                    var isHeader = false;
-                    
-                    var cells = null;
-                    if (this.opts.header) {
-                        isHeader = true;
-                        cells = this._header.find('.wb-table-cell').not('.wb-actions');
-                    } else {
-                        cells = this._body.find('.wb-table-row:eq(0) .wb-table-cell').not('.wb-actions');
-                    }
-                    
-                    if (this._hasActionColumn()) {
-                        var actionWidth = Math.floor(Math.max(availWidth/10,120));
-                    
-                        if (!isNaN(actionWidth) && actionWidth > 0) {
-                            availWidth -= actionWidth;
-                        }
-                    }
-                    
-                    var cellWidth = Math.floor(availWidth/cells.length);
-                    
-                    if (isHeader) {
-                        cells.outerWidth(cellWidth);
-                    }
-                    
-                    var innerCells = this.elm().find('.wb-inner-table .wb-table-row:eq(0) .wb-table-cell').not('.wb-actions');
-                    if (innerCells.length > 0) {
-                        innerCells.width(cellWidth);
-                    }
-                    var parent = this.elm().parent();
-                    if (parent && parent.innerHeight() > 0) {
-                        var others = parent.children().not(this.elm());
-                        var otherHeight = others.totalOuterHeight();
-                        var maxHeight = parent.innerHeight();
-                        
-                        maxHeight -= otherHeight;
-                        if (this.opts.header)
-                            maxHeight -= this._header.outerHeight();
-                        if (this.opts.footer)
-                            maxHeight -= this._footer.outerHeight();
-                        
-                        var scroller = this.elm().find('.wb-table-body-scroll');
-                        if (scroller.children('table').outerHeight() > maxHeight)
-                            scroller.outerHeight(maxHeight);
-                    }
-                }
-            },opts));
+            this.__super(this.getDefaults(opts));
 
             this.require(this.opts,'store');
             if (!$wb.utils.isA(this.opts.store,$wb.data.TableStore))
@@ -2343,7 +2466,11 @@ $wb.ui.Table = $wb.Class('Table',
             var target = this.elm().find('.wb-inner-table');
             if (!data)
                 data = {};
-            var row = new $wb.ui.TableRow({table:this,data:data,editable:this.opts.editable})
+            var row = new $wb.ui.TableRow({
+                table:this,
+                data:data?this.opts.rowReader(data):null,
+                editable:this.opts.editable}
+            );
             if (prepend)
                 target.prepend(row.elm());
             else
@@ -2373,6 +2500,11 @@ $wb.ui.Frame = $wb.Class('Frame',
      */
     {
         __extends:[$wb.ui.Pane],
+        __defaults:{
+            tmpl:$wb.template.frame,
+            target:'.wb-content',
+            frameHeader:'.wb-frame-header'
+        },
         
         /**
          * @constructs
@@ -2382,13 +2514,8 @@ $wb.ui.Frame = $wb.Class('Frame',
          * 
          */
         __construct:function(opts) {
-            if (!opts) opts = {};
-            opts = $.extend({
-                tmpl:$wb.template.frame,
-                target:'.wb-content',
-                frameHeader:'.wb-frame-header'
-            },opts);
-
+            opts = this.getDefaults(opts);
+            
             this.__super(opts);
 
             if (opts.title) {
@@ -2449,6 +2576,14 @@ $wb.ui.Window = $wb.Class('Window',
      */
     {
         __extends:[$wb.ui.Frame],
+        __defaults:{
+            tmpl:$wb.template.window,
+            modal:false,
+            moveable:true,
+            closable:true,
+            width:400,
+            layout:$wb.ui.layout.Box
+        },
         /**
          * @constructs
          * @param {Object} opts options
@@ -2459,16 +2594,8 @@ $wb.ui.Window = $wb.Class('Window',
          * @param {int} [opts.height="auto"] window height
          */
         __construct:function(opts) {
-            if (!opts) opts = {};
-            opts = $.extend({
-                tmpl:$wb.template.window,
-                modal:false,
-                moveable:true,
-                closable:true,
-                width:400,
-                layout:$wb.ui.layout.Fill
-            },opts);
-
+            opts = this.getDefaults(opts);
+            
             this.__super(opts);
 
             $wb.ui.Window._windows.push(this);
@@ -2532,11 +2659,8 @@ $wb.ui.Window = $wb.Class('Window',
                 if (this.opts.width) {
                     this.elm().outerWidth(this.opts.width);
                 }
-                if (this.opts.height && this.elm().height() > this.opts.height) {
-                    this.elm().outerHeight(this.opts.height);
-                    var availHeight = this.elm().innerHeight()-this.header().outerHeight();
-                    if (availHeight > 0)
-                        this.target().outerHeight(availHeight);
+                if (this.opts.height && this.opts.height) {
+                    //this.elm().outerHeight(this.opts.height);
                 } else {
                     this.elm().css('height','auto');
                     this.target().css('height','auto');
