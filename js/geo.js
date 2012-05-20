@@ -17,7 +17,7 @@ $wb.geo.distanceToLine = function(lineStart,lineEnd,point) {
     var dy = y - point.y;
 
     return Math.sqrt(dx*dx + dy*dy);
-}
+};
 
 $wb.geo.rect = {
     isInside:function(p,rect) {
@@ -38,7 +38,7 @@ $wb.geo.rect = {
             left:$wb.geo.distanceToLine(nw,sw,p),
             right:$wb.geo.distanceToLine(ne,se,p),
             bottom:$wb.geo.distanceToLine(sw,se,p)
-        } 
+        }; 
         var smallest = -1;
         var smallestSide = null;
         for(var side in delta) {
@@ -57,5 +57,5 @@ $wb.geo.rect = {
         }
         return null;
     }
-}
+};
 

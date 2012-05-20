@@ -60,7 +60,7 @@ $wb.ui.game.Car = $wb.Class('Car',{
         var position = {
             left:0,
             top:0
-        }
+        };
         
         this.bind('paint',function() {
             $('body').keyboardNavigation();
@@ -141,7 +141,7 @@ $wb.ui.game.Car = $wb.Class('Car',{
                 if (dir > 360)
                     dir -= 360;
                 else if (dir < 0)
-                    dir += 360
+                    dir += 360;
                 
                 self._direction = dir;    
             },50);

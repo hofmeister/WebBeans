@@ -168,14 +168,14 @@ $wb.template = {
         return '<ul class="wb-pane wb-accordion"></ul>';
     },
     link:function() {
-        return '<a href="#" />'
+        return '<a href="#" />';
     },
     actions:{
         custom:function(title) {
-            return '<a href="#" class="wb-action" title="'+title+'" />'
+            return '<a href="#" class="wb-action" title="'+title+'" />';
         },
         base:function(type,title) {
-            return '<a href="#" class="wb-action icon-'+type+'" title="'+title+'" />'
+            return '<a href="#" class="wb-action icon-'+type+'" title="'+title+'" />';
         },
         hide:function() {
             return $wb.template.actions.base.apply(this,['eye-close',_('Hide')]);

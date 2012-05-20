@@ -31,7 +31,7 @@ $wb.ui.layout.Stack = function() {
         nodes[i].elm().outerWidth(width);
         nodes[i].elm().outerHeight(height);
     }
-}
+};
 $wb.ui.layout.Flow = function() {
     var nodes = this.children();
     for(var i in nodes) {
@@ -164,7 +164,7 @@ $wb.ui.FieldType.type = function(name) {
     if (!$wb.ui.FieldType.defaultType) 
         throw new $wb.Error(_('Unknown field type id: %s',name));
     return $wb.ui.FieldType.defaultType;
-}
+};
 
 $wb.ui.FieldType.exists = function(name) {
     return (typeof $wb.ui.FieldType._registry[name] != 'undefined');
@@ -210,7 +210,7 @@ $wb.ui.helper.Draggable = $wb.Class('Draggable',
         
         var dropZones = null;
         if (opts.dropZones)
-            dropZones = $(opts.dropZones)
+            dropZones = $(opts.dropZones);
         
         var active = false;
         var initialize = function() {
@@ -252,7 +252,7 @@ $wb.ui.helper.Draggable = $wb.Class('Draggable',
                     });
                 }
             }
-        }
+        };
         
         
         
@@ -280,7 +280,7 @@ $wb.ui.helper.Draggable = $wb.Class('Draggable',
                 }
             }
             
-        }
+        };
       
         //mouseMove(evt);
         parent.bind('mousemove',mouseMove);
@@ -311,7 +311,7 @@ $wb.ui.helper.Draggable = $wb.Class('Draggable',
     dragHandle:function() {
         return this.elm();
     }
-})
+});
 
 
 //Widgets
@@ -547,7 +547,7 @@ $wb.ui.Widget = $wb.Class('Widget',
             delete this.opts;
             this.detach();
             this.trigger('destroy');
-            delete this;
+            this = undefined;
         },
         /**
          * Detach this widget
@@ -692,9 +692,9 @@ $wb.ui.Html = $wb.Class('Html',{
     __extends:[$wb.ui.Widget],
     __construct:function(html,target) {
         this.__super({
-            tmpl:function() {return html},
+            tmpl:function() {return html;},
             target:target?target:null
-        })
+        });
     }
 });
 
@@ -983,7 +983,7 @@ $wb.ui.ContextMenu.init = function() {
     $('body').bindOnce('click',$wb.ui.ContextMenu.hide);
     $('body').bindOnce('contextmenu',$wb.ui.ContextMenu.hide);
     $wb.ui.ContextMenu._done = true;
-}
+};
 $wb.ui.ContextMenu._done = false;
 
 $wb.ui.ContextMenu.hide = function() {
@@ -991,7 +991,7 @@ $wb.ui.ContextMenu.hide = function() {
     var w = $wb('.'+id);
     if (w)
         w.detach();
-}
+};
 
 $wb.ui.Header = $wb.Class('Header',{
     __extends:[$wb.ui.Menu],
@@ -1024,10 +1024,10 @@ $wb.ui.Pane = $wb.Class('Pane',{
 $wb.ui.SplitPane = $wb.Class('SplitPane',{
     __defaults: {
         vertical:true,
-        splitPosition:.5
+        splitPosition:0.5
     },
     _vertical:true,
-    _splitPosition:.5,
+    _splitPosition:0.5,
     __extends:[$wb.ui.Pane],
     __construct:function(opts) {
         opts = $.extend(this.getDefaults(opts),{
@@ -1123,7 +1123,7 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
 
         if (this._vertical) {
             width = this.elm().width()-splitterSize.width;
-            height = parseInt(this.elm().css('height'));
+            height = parseInt(this.elm().css('height'), 10);
             this.getSplitter().height(height);
             var w1 = width*splitPosition;
             var w2 = width-w1;
@@ -1308,8 +1308,8 @@ $wb.ui.TreeNode = $wb.Class('TreeNode',{
             this.bind('before-context',function(context) {
                 //Special handling for context menus on trees
                 if (this.tree)
-                    this.tree.trigger('before-context',[context])
-            })
+                    this.tree.trigger('before-context',[context]);
+            });
         });
     },
     toggleOpen:function(open) {
@@ -1585,6 +1585,7 @@ $wb.ui.Tree = $wb.Class('Tree',{
         });
     },
     add:function(title,arg,data,id) {
+        var elm;
         if ($wb.utils.isA(title,$wb.ui.TreeNode)) {
             title.elm().addClass('wb-leaf');
             this.children().push(title);
@@ -1594,12 +1595,12 @@ $wb.ui.Tree = $wb.Class('Tree',{
         }
         
         if ($wb.utils.isA(arg,$wb.ui.Tree)) {
-            var elm = this._addSubTree(title,arg,data);
+            elm = this._addSubTree(title,arg,data);
             this.children().push(elm);
             return title;
         }
 
-        var elm;
+        
         if ($.type(arg) == 'array') {
             elm = this._makeSubTree(title,arg,data,id);
         } else {
@@ -1762,9 +1763,9 @@ $wb.ui.Paging = $wb.Class('Paging',
                 return;
             }
             
-            var page = parseInt(elm.attr('href').substr(1));
+            var page = parseInt(elm.attr('href').substr(1), 10);
             this.setPage(page);
-        }.bind(this))
+        }.bind(this));
         
         this.bind('paint',function() {
             this.target().clear();
@@ -1921,6 +1922,7 @@ $wb.ui.TableRow = $wb.Class('TableRow',
             return this;
         },
         _editRow:function() {
+            var action;
             var row = this.target();
             row.addClass('wb-editing');
             
@@ -1944,7 +1946,7 @@ $wb.ui.TableRow = $wb.Class('TableRow',
             if (this.getTable().hasActions()) {
                 var actionCell = $(bodyCellTmpl());
                 actionCell.addClass('wb-actions');
-                var action = new $wb.ui.Action('cancel',function() {
+                action = new $wb.ui.Action('cancel',function() {
                         if (this.isNew()) {
                             this.destroy();
                         } else {
@@ -1956,7 +1958,6 @@ $wb.ui.TableRow = $wb.Class('TableRow',
                 
                 if (editActions) {
                     for(var name in editActions) {
-                        var action;
                         if (typeof editActions[name] == 'function') {
                             action = new $wb.ui.Action(name,editActions[name],this);
                         } else {
@@ -2086,7 +2087,7 @@ $wb.ui.Table = $wb.Class('Table',
                 var maxHeight = this.elm().outerHeight();
                 //Only calculate fixed height if this table has a fixed height
                 //Todo: Add support for min and max height
-                var cssHeight = parseInt(this.elm()[0].style.height);
+                var cssHeight = parseInt(this.elm()[0].style.height, 10);
                 if (cssHeight > 0 && !isNaN(cssHeight)) {
                     if (this.opts.header)
                         maxHeight -= this._header.outerHeight();
@@ -2163,7 +2164,7 @@ $wb.ui.Table = $wb.Class('Table',
             this.opts.store.bind('change',onChange);
         },
         _hasActionColumn:function() {
-            return this.elm().find('.wb-actions').length > 0
+            return this.elm().find('.wb-actions').length > 0;
         },
         getStore:function() {
             return this.opts.store;
@@ -2647,10 +2648,10 @@ $wb.ui.Window = $wb.Class('Window',
                         left:left
                     });
 
-                }
+                };
                 center();
                 $(window).resize(center);
-            }
+            };
 
             if (opts.moveable) {
                 this._makeMovable();
@@ -2745,7 +2746,7 @@ $wb.ui.Window = $wb.Class('Window',
 
                     self.elm().css(pos);
                 }
-            }
+            };
 
             handler.mousedown(function(evt) {
                 evt.preventDefault();
@@ -2755,7 +2756,7 @@ $wb.ui.Window = $wb.Class('Window',
                 clickedOffset = {
                     left:evt.pageX-offset.left,
                     top:evt.pageY-offset.top
-                }
+                };
                 $('body')
                 .mousemove(onMove)
                 .one('mouseup',function(evt) {
@@ -2792,7 +2793,7 @@ $wb.ui.Window.modal = function(opts)  {
     if (!opts) throw "Required argument 'opts' not valid";
     opts.modal = true;
     return $wb.ui.Window.open(opts);
-}
+};
 /**
  * Create window
  * @static 
@@ -2806,12 +2807,12 @@ $wb.ui.Window.open = function(opts)  {
     if (!opts.content) throw "content is required to make window";
     var content = opts.content;
     opts.content = null;
-    var win = new $wb.ui.Window(opts)
+    var win = new $wb.ui.Window(opts);
     win.add(content);
     $('body').prepend(win.elm());
     win.render();
     return win;
-}
+};
 
 /**
  * Create modal (shortcut)

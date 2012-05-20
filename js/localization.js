@@ -22,4 +22,4 @@ var _ = function() {
     }
     
     return String.prototype.format.apply(out,args);
-}
+};

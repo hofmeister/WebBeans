@@ -106,7 +106,7 @@ $wb.data.Model = $wb.Class('Model',{
                 if (!f.validator(value)) {
                     return false;
                 }
-            };
+            }
             if ($wb.utils.type(value) != f.valueType) {
                 return false;
             }
@@ -162,7 +162,7 @@ $wb.data.Source = $wb.Class('Source',{
         var self = this;
         if (this._loader)
             this._loader.apply(this,[opts,function(ok,data) {
-                self.trigger('loaded',[ok,data])
+                self.trigger('loaded',[ok,data]);
                 if (cb)
                     cb(data);
             }]);
@@ -173,12 +173,12 @@ $wb.data.Source = $wb.Class('Source',{
             this._updater.apply(this,[row,function(ok,data) {
                     if (data) row = data;
                     if (!self._listener)
-                        self.trigger('updated',[ok,row])
+                        self.trigger('updated',[ok,row]);
                     if (cb)
                         cb(ok,row);
             }]);
         else
-            this.trigger('updated',[true,row])
+            this.trigger('updated',[true,row]);
     },
     add:function(row,cb) {
         var self = this;
@@ -191,7 +191,7 @@ $wb.data.Source = $wb.Class('Source',{
                         cb(ok,row);
             }]);
         else
-            this.trigger('added',[true,row])
+            this.trigger('added',[true,row]);
         
     },
     remove:function(row,cb) {
@@ -205,7 +205,7 @@ $wb.data.Source = $wb.Class('Source',{
                         cb(ok,row);
             }]);
         else
-            this.trigger('removed',[true,row])
+            this.trigger('removed',[true,row]);
     }
 });
 
@@ -550,7 +550,7 @@ $wb.data.KeyValueStore = $wb.Class('KeyValueStore',{
         var keys = [];
         for(var key in keyValue) {
             delete this._data[key];
-            keys.push(key)
+            keys.push(key);
         }
         
         this.trigger('change');
@@ -1007,10 +1007,10 @@ $wb.data.TreeStore = $wb.Class('TreeStore',
                 return null;
             
             var out = [];
-            for(var id in this._children[id]) {
-                var node = this._nodes[id];
+            for(var key in this._children[id]) {
+                var node = this._nodes[key];
                 out.push(node);
-                node.children = this.getSubTree(id);
+                node.children = this.getSubTree(key);
             }
             return out;
         },
@@ -1074,8 +1074,10 @@ $wb.data.TreeStore = $wb.Class('TreeStore',
             
             if (parentId && this._children[parentId]) {
                 var children = this._children[parentId];
-                for(var id in children) {
-                    this.remove(children[id].row);
+                for(var key in children) {
+                    if (children.hasOwnProperty(key)) {
+                       this.remove(children[key].row); 
+                    }
                 }
             }
             return this;

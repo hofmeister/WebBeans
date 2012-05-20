@@ -20,18 +20,24 @@
  */
 
 
-if (typeof $wbConfig == 'undefined') 
+if (typeof $wbConfig === 'undefined') {
     throw "$wbConfig not initialized. You must initialize $wbConfig within the <head> tag and provide at least the 'base' property. The core.js file should be included in the bottom of the <body> tag";
+}
 
 //Set default jquery path
-if (!$wbConfig.jQuery) $wbConfig.jQuery = 'https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js';
+if (!$wbConfig.jQuery) {
+    $wbConfig.jQuery = 'https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js';
+}
 
 //Set default skin
-if (typeof $wbConfig.skin == 'undefined') $wbConfig.skin = 'default';
+if (typeof $wbConfig.skin === 'undefined') {
+    $wbConfig.skin = 'default';
+}
 
-if (typeof $wbConfig.base == 'undefined')
-        throw "Remember to provide $wbConfig.base with a valid url pointing to a webbeans CDN";
-
+if (typeof $wbConfig.base === 'undefined') {
+    throw "Remember to provide $wbConfig.base with a valid url pointing to a webbeans CDN";
+}
+        
 
 /**
     @description used to make a temporary scope that has the supplied package in global space. Notice that you cannot use using within using and it does contaminate the window object temporarily
@@ -40,24 +46,27 @@ if (typeof $wbConfig.base == 'undefined')
     @type Void
 */
 var using = function(pkg,cb) {
-    if (window.__using)
+    var key;
+    if (window.__using) {
         throw "Attempted to use when using()";
+    }
     window.__using = true;
     var old = {};
-    for(var key in pkg) {
-        old[key] = window[key] ? window[key] : null;
+    for(key in pkg) {
+        old[key] = window[key] || null;
         window[key] = pkg[key];
     }
     cb();
     
-    for(var key in old) {
-        if (!old[key])
+    for(key in old) {
+        if (!old[key]) {
             delete window[key];
-        else
+        } else {
             window[key] = old[key];
+        }
     }
     window.__using = false;
-}
+};
 
 /**
     @description Loads one or more scripts/moduyle into the current document. Deletes the script tag after it is loaded.
@@ -69,9 +78,8 @@ var using = function(pkg,cb) {
     @type Void
 */
 var require = function(path,cb,async) {
+    var i,paths = null;
     if (!async) async = false;
-    
-    var paths = null;
     
     if (typeof path == "string")
         paths = [path];
@@ -79,7 +87,7 @@ var require = function(path,cb,async) {
         paths = path;
     
     var requireAllIx = -1;
-    for(var i = 0; i < paths.length;i++) {
+    for(i = 0; i < paths.length;i++) {
         path = paths[i];
         if (path == '*') {
             paths.splice(i,1);
@@ -100,7 +108,7 @@ var require = function(path,cb,async) {
         }
         if (cb)
             cb();
-    }
+    };
     
     var build = function(i,path,buildCallback) {
         if (!path) return;
@@ -124,10 +132,10 @@ var require = function(path,cb,async) {
                 buildCallback();
         };
         document.getElementsByTagName('body')[0].appendChild(script);
-    }
+    };
     
     if (async) {
-        for(var i = 0; i < paths.length;i++) {
+        for(i = 0; i < paths.length;i++) {
             path = paths[i];
             build(i,path);
         }
@@ -140,7 +148,7 @@ var require = function(path,cb,async) {
             var path = paths[ix];
             ix++;
             build(oldIx,path,recurse);
-        }
+        };
         recurse();
     }   
 };
@@ -164,7 +172,7 @@ var loadCSS = function(path) {
     link.rel = "stylesheet";
     
     document.getElementsByTagName('head')[0].appendChild(link);
-}
+};
 
 if (!$wbConfig.noCSS) {
     //Load the base webbeans css
@@ -201,12 +209,12 @@ require($wbConfig.jQuery,function() {
      * @description Convert and splice arguments objects into arrays
      */
     var getArguments = function(args,num) {
-        out = [];
+        var out = [];
         for(var i = num;i < args.length;i++) {
            out.push(args[i]); 
         }
         return out;
-    }
+    };
     
     /**
     * @constant message handlers handles $wb.message and $wb.error
@@ -332,7 +340,7 @@ require($wbConfig.jQuery,function() {
             else
                 this.__super = oldSuper;
             return out;
-        }
+        };
 
         //Final methods - cannot be overridden.
         var fixed = {
@@ -365,7 +373,7 @@ require($wbConfig.jQuery,function() {
                 return call.apply(this,[clz,name,m,args]);
             }
             
-        }
+        };
         //
         //Methods contain the methods that are defined in *this* class
         //Note that they are placed on the constructor
@@ -381,7 +389,7 @@ require($wbConfig.jQuery,function() {
                     //Call method enabled you to call __super() and execute overridden methods
                     opts[key] = function() {
                         return this.__callMethod(key,arguments);
-                    }
+                    };
                 }
             })();
         }
@@ -399,10 +407,10 @@ require($wbConfig.jQuery,function() {
                 clz.__defaults = {};
             }
             clz.__defaults[name] = value;
-        }
+        };
         clz.setDefaults = function(defaults) {
             clz.__defaults = defaults;
-        }
+        };
         
         clz.getDefaults = clz.prototype.getDefaults = function(opts) {
             var defaults = {};
@@ -448,7 +456,7 @@ require($wbConfig.jQuery,function() {
                 return call.apply(this,[m.type.constructor,name,m.method,args]);
             }
             throw "No parents had method "+name;
-        }
+        };
         /**
          * @description Used internally to get the closest parent method named "name"
          * @memberOf $wb.Class
@@ -470,7 +478,7 @@ require($wbConfig.jQuery,function() {
                 }
             }
             return null;
-        }
+        };
         
 
         return clz;
@@ -755,7 +763,7 @@ require($wbConfig.jQuery,function() {
                     this[key] = obj[key];
                 }
                 if (obj.params) {
-                    for(var key in obj.params) {
+                    for(key in obj.params) {
                         this.params[key] = obj.params[key];
                     }
                 }
@@ -781,7 +789,7 @@ require($wbConfig.jQuery,function() {
                     if ($1) uri[o.q.name][$1] = $2;
                 });
                 if (uri.port)
-                    uri.port = parseInt(uri.port);
+                    uri.port = parseInt(uri.port, 10);
             },
             /**
              * @description Convert this url to a string
@@ -833,8 +841,8 @@ require($wbConfig.jQuery,function() {
     $wb.Url.protocols = {
         'http':80,
         'https':443,
-        'ftp':21,
-    }
+        'ftp':21
+    };
     
     /**
      * @description A read-only "location" field on the $wb namespace that reads the current location and gets a $wb.Url
@@ -1024,7 +1032,7 @@ require($wbConfig.jQuery,function() {
              * @throws String
              */
             require:function(obj) {
-                this.notEmpty(obj)
+                this.notEmpty(obj);
                 for(var i = 1; i < arguments.length;i++) {
                     var arg = arguments[i];
                     if (typeof obj[arg] == 'undefined') {
@@ -1097,7 +1105,7 @@ require($wbConfig.jQuery,function() {
         var ok = confirm(msg);
         if (cb)
             cb(ok);
-    }
+    };
     
     /**
      * @description Show alert box
@@ -1108,7 +1116,7 @@ require($wbConfig.jQuery,function() {
         alert(msg);
         if (cb)
             cb();
-    }
+    };
     window.$wb = $wb;
 });
 
@@ -1124,4 +1132,4 @@ String.prototype.format = function() {
                 .replace('$'+i, arguments[i]);
     }
     return out;
-}
+};

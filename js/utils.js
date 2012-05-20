@@ -9,11 +9,11 @@
     
     var parseCssSize = function(size) {
         if (!size) return 0;
-        var out = parseInt(size);
+        var out = parseInt(size, 10);
         if (isNaN(out))
             return 0;
         return out;
-    }
+    };
 
     /**
     * @namespace Utility functions
@@ -137,7 +137,7 @@
                 +parseCssSize(el.css('margin-bottom'))
                 +parseCssSize(el.css('border-top-width'))
                 +parseCssSize(el.css('border-bottom-width'));
-            })
+            });
             return out;
         },
 
@@ -356,19 +356,19 @@
         };
 
         $.fn.outerWidth = function(width) {
-            var el = $(this)
+            var el = $(this);
             if (typeof width == 'undefined') {
                 return el.width()+el.outerEdgeWidth();
             } else {
                 $(this).each(function() {
                     $(this).width(Math.max(0,width-$(this).outerEdgeWidth()));
-                })
+                });
             }
             return $(this);
         };
 
         $.fn.outerHeight= function(height) {
-            var el = $(this)
+            var el = $(this);
             if (typeof height == 'undefined')
                 return el.height()+el.outerEdgeHeight();
             else {
@@ -380,19 +380,19 @@
         };
 
         $.fn.innerWidth = function(width) {
-            var el = $(this)
+            var el = $(this);
             if (typeof width == 'undefined')
                 return el.width()-el.innerEdgeWidth();
             else {
                 $(this).each(function() {
                     $(this).width(width+el.innerEdgeWidth());
-                })
+                });
             }
             return $(this);
         };
 
         $.fn.innerHeight= function(height) {
-            var el = $(this)
+            var el = $(this);
             if (typeof height == 'undefined')
                 return el.height()-el.innerEdgeHeight();
             else {
@@ -404,7 +404,7 @@
         };
 
         $.fn.outerMinHeight= function(height) {
-            var el = $(this)
+            var el = $(this);
             if (typeof height == 'undefined')
                 return el.height()+el.edgeHeight();
             else {
@@ -422,7 +422,7 @@
             if (elm.children('input.wb-keynav-input').length > 0) 
                 return;
 
-            var input = $('<input type="text" class="wb-keynav-input" style="position:absolute;left:-9999px" />')
+            var input = $('<input type="text" class="wb-keynav-input" style="position:absolute;left:-9999px" />');
             elm.append(input);
 
             elm.bind('click',function(evt) {
@@ -464,7 +464,7 @@
             });
         };
         $.fn.rotate = function(degrees) {
-            var val = 'rotate('+degrees+'deg)'
+            var val = 'rotate('+degrees+'deg)';
             $(this).css({
                 '-webkit-transform': val,
                 '-moz-transform': val,
@@ -476,10 +476,10 @@
         };
         $.fn.offscreen = function() {
             $(this).addClass('wb-offscreen');
-        }
+        };
         $.fn.onscreen = function() {
             $(this).removeClass('wb-offscreen');
-        }
+        };
 
         $.fn.clear = function() {
             $(this).children().detach();

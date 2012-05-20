@@ -10,8 +10,8 @@ $(function() {
     var prefPane = new $wb.ui.Pane();
     prefPane.html('Preferences!');
     var showPrefPane = function() {
-        var win = $wb.ui.Window.open({title:"Preferences",content:prefPane});
-    }
+        $wb.ui.Window.open({title:"Preferences",content:prefPane});
+    };
     if (window.$qt) {
         $qt.setTitle($('title').html());
         $qt.addMenu("file","File");
@@ -103,7 +103,7 @@ $(function() {
                                 labelPosition:'top'});
                         form.add(input);
                         
-                        var input = new $wb.ui.form.TextField(
+                        input = new $wb.ui.form.TextField(
                             {name:'textinput',
                                 label:'Text Input label inside',
                                 labelPosition:'inside'});
@@ -143,7 +143,7 @@ $(function() {
                         id:{name:"ID",valueType:"number",primary:true},
                         name:{name:"Name",valueType:"string"},
                         description:{name:"Description",valueType:"string"},
-                        created:{name:"Created",valueType:"date",defaultValue:function() {return new Date()}},
+                        created:{name:"Created",valueType:"date",defaultValue:function() {return new Date();}},
                         tags:{name:"Tags",valueType:"string"}
                     });
                         
@@ -212,7 +212,7 @@ $(function() {
                                         tStore.removeAll(pl);
                                         break;
                                 }
-                            }
+                            };
                             
 
                             return ws;
@@ -227,7 +227,7 @@ $(function() {
                     $wb.registry.register('table',table);
                     
                     var tablePane = new $wb.ui.Pane();
-                    tablePane.add(table)
+                    tablePane.add(table);
                     
                     topPane.add("Html",htmlPane);
                     topPane.add("Form",form);
@@ -270,7 +270,7 @@ $(function() {
                         treeTab.add(tree);
 
                     
-                    var form = new $wb.ui.Pane();
+                    form = new $wb.ui.Pane();
                     form.html('Tab 2!');
                     
 
@@ -282,7 +282,7 @@ $(function() {
                             {title:"Inbox"},
                             {title:"Sent"},
                             {title:"Drafts"},
-                            {title:"Spam"},
+                            {title:"Spam"}
                         ]);
                         accordion.add('Calendar',[
                             {title:"Private"},
@@ -299,13 +299,13 @@ $(function() {
 
 
 
-                    var table = new $wb.ui.Pane();
+                    table = new $wb.ui.Pane();
                     table.html('Tab 3!');
 
                     topPane.add("Tree",treeTab);
                     topPane.add("Accordion",accordion);
                     topPane.add("Tab 3",table);
-                var bottomPane = new $wb.ui.Pane();
+                bottomPane = new $wb.ui.Pane();
                 bottomPane.html('Bottom left!');
 
                 leftPane.set(0, topPane);

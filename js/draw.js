@@ -13,16 +13,16 @@ $wb.draw = {};
 
 
 $wb.draw.Canvas = $wb.Class('Canvas',{
-    __extends:[$wb.ui.Widget],
-    __defaults:{
+    __extends: [$wb.ui.Widget],
+    __defaults: {
         tmpl:$wb.template.draw.canvas,
         layout:function() {
             var target = this.target();
             this.elm().find('.wb-layer').css({
                 position:'absolute',
-                top:0,
-                left:0
-            }).each(function() {
+                top: 0,
+                left: 0
+            }).each(function () {
                 var layer = $(this).widget();
                 layer.canvas()
                         .css('z-index',layer.getOrder())
@@ -73,7 +73,7 @@ $wb.draw.Canvas = $wb.Class('Canvas',{
         if ($.type(ix) == 'number') {
             var layer = this.children().splice(ix,1);
             layer.elm().detach();
-            delete layer;
+            layer = undefined;
         }
             
         return this;
@@ -101,7 +101,7 @@ $wb.draw.Layer = $wb.Class('Layer',{
     },
     render:function(container) {
         if (container)
-            this.elm().append(container)
+            this.elm().append(container);
         this._paintElements();
     },
     _paintElements:function() {
@@ -128,7 +128,7 @@ $wb.draw.Layer = $wb.Class('Layer',{
         return this.elm();
     },
     clear:function() {
-        this.context().clearRect(0,0,parseInt(this.elm().attr('width')),parseInt(this.elm().attr('height')))
+        this.context().clearRect(0,0,parseInt(this.elm().attr('width')),parseInt(this.elm().attr('height')));
     },
     context:function() {
         return this.elm()[0].getContext('2d');
@@ -203,7 +203,7 @@ $wb.draw.Element = $wb.Class('Element',{
         for(var i in this._ctxtOpts) {
             var opt = this._ctxtOpts[i];
             ctxt[opt] = this.opts[opt];
-        };
+        }
         if (this.opts.rounded) {
             ctxt.lineCap = 'round';
             ctxt.lineJoin = 'round';
@@ -537,7 +537,7 @@ $wb.draw.Arrow = $wb.Class('Arrow',{
         var offset = {
             x:to.x+3*Math.cos(angle),
             y:to.y+3*Math.sin(angle)
-        }
+        };
         
         ctxt.moveTo(offset.x, offset.y);
         ctxt.lineTo(offset.x-size*Math.cos(angle-Math.PI/6),offset.y-size*Math.sin(angle-Math.PI/6));
@@ -546,7 +546,7 @@ $wb.draw.Arrow = $wb.Class('Arrow',{
         
         
     }
-})
+});
 
 
 $wb.draw.Polygon = $wb.Class('Polygon',{
@@ -624,11 +624,11 @@ $wb.draw.Grid = $wb.Class('Grid',{
         var offset = {
             x:this.opts.offset.left,
             y:this.opts.offset.top
-        }
+        };
         
         var size = {
-            width:parseInt(canvas.attr('width'))-offset.x,
-            height:parseInt(canvas.attr('height'))-offset.y
+            width:parseInt(canvas.attr('width'), 10)-offset.x,
+            height:parseInt(canvas.attr('height'), 10)-offset.y
         };
         
         if (!size.width) return;
@@ -716,11 +716,11 @@ if (CP && CP.lineTo){
       var dashLength = dashArray[dashIndex++%dashCount];
       if (dashLength > distRemaining) dashLength = distRemaining;
       var xStep = Math.sqrt( dashLength*dashLength / (1 + slope*slope) );
-      x += xStep
+      x += xStep;
       y += slope*xStep;
       this[draw ? 'lineTo' : 'moveTo'](x,y);
       distRemaining -= dashLength;
       draw = !draw;
     }
-  }
+  };
 }

@@ -12,7 +12,9 @@ $wb.ui.form = {};
 $wb.ui.form.Form = $wb.Class('Form',{
     __extends:[$wb.ui.Pane],
     __construct:function(opts) {
-        if (!opts) opts = {};
+        if (!opts) {
+            opts = {};
+        }
         opts = $.extend({
             tmpl:$wb.template.form.form,
             data:{}
@@ -27,7 +29,7 @@ $wb.ui.form.Form = $wb.Class('Form',{
         var elms = this.elm().find('.wb-input');
         elms.each(function() {
             var el = $(this);
-            if (el.attr('type') != 'button' && this.tagName != 'button') {
+            if (el.attr('type') !== 'button' && this.tagName !== 'button') {
                 el.widget().disable();
             }
                 
@@ -37,7 +39,7 @@ $wb.ui.form.Form = $wb.Class('Form',{
         var elms = this.elm().find('.wb-input');
         elms.each(function() {
             var el = $(this);
-            if (el.attr('type') != 'button' && this.tagName != 'button') {
+            if (el.attr('type') !== 'button' && this.tagName !== 'button') {
                 el.widget().enable();
             }
         });
@@ -58,18 +60,25 @@ $wb.ui.form.Form = $wb.Class('Form',{
         var elms = this.elm().find('.wb-input');
         
         elms.each(function() {
-            var el = $(this);
-            if (!el.widget()) return;
-            var w = el.widget();
-            var name = w.name();
-            if (!name) return;
+            var el = $(this),w,name,tag,type;
+            if (!el.widget()) {
+                return;
+            }
             
-            var tag = el[0].tagName.toLowerCase();
+            w = el.widget();
+            name = w.name();
+            tag = el[0].tagName.toLowerCase();
+            type = null;
             
-            if (el.attr('type'))
-                var type = el.attr('type').toLowerCase();
+            if (!name) {
+                return;
+            }
             
-            if (tag == 'input') {
+            if (el.attr('type')) {
+                type = el.attr('type').toLowerCase();
+            }
+            
+            if (tag === 'input') {
                 switch(type) {
                     case 'button':
                     case 'submit':
@@ -77,35 +86,42 @@ $wb.ui.form.Form = $wb.Class('Form',{
                 }
             }
             
-            if (typeof data[name] != 'undefined')
+            if (typeof data[name] !== 'undefined') {
                 w.value(data[name]);
+            }
         });
         
         this.opts.data = data;
         
     },
     getData:function() {
-        var elms = this.elm().find('.wb-input');
-        var out = {};
+        var elms = this.elm().find('.wb-input'),
+            out = {};
         elms.each(function() {
-            var el = $(this);
+            var el = $(this),w,name,value,tag,type,i;
             
-            if (!el.widget()) return;
-            var w = el.widget();
-            var name = w.name();
-            if (!name) return;
+            if (!el.widget()) {
+                return;
+            }
+            w = el.widget();
+            name = w.name();
+            if (!name) {
+                return;
+            }
             
             if (el.widget().isDisabled()) {
                 out[name] = null;
                 return;
             }
             
-            var value = el.widget().value();
-            var tag = this.tagName.toLowerCase();
-            if (el.attr('type'))
-                var type = el.attr('type').toLowerCase();
+            value = el.widget().value();
+            tag = this.tagName.toLowerCase();
             
-            if (tag == 'input') {
+            if (el.attr('type')) {
+                type = el.attr('type').toLowerCase();
+            }
+            
+            if (tag === 'input') {
                 switch(type) {
                     case 'button':
                     case 'submit':
@@ -114,11 +130,11 @@ $wb.ui.form.Form = $wb.Class('Form',{
             }
             
             var obj = out;
-            var isArray = (name.substr(-2) == '[]');
+            var isArray = (name.substr(-2) === '[]');
             var parts = name.split('[');
-            for(var i = 0; i < parts.length;i++) {
+            for(i = 0; i < parts.length;i++) {
                 var part = parts[i];
-                var last = (parts.length-1)==i;
+                var last = (parts.length-1)===i;
                 if (isArray && last) {
                     name = parts[i-1];
                     break;
@@ -128,13 +144,13 @@ $wb.ui.form.Form = $wb.Class('Form',{
                 if (!obj[part])
                     obj[part] = {};
                 if (last)
-                    name = part
+                    name = part;
                 else
                     obj = obj[part];
             }
         
             if (isArray) {
-                if ($.type(obj[name]) != 'array')
+                if ($.type(obj[name]) !== 'array')
                     obj[name] = [];
                 obj[name].push(value);
             } else {
@@ -147,19 +163,19 @@ $wb.ui.form.Form = $wb.Class('Form',{
 
 $wb.ui.form.AutoForm = $wb.Class('AutoForm',{
     __extends:[$wb.ui.form.Form],
+    __defaults:{
+        okTitle:_('Ok'),
+        cancelTitle:_('Cancel'),
+        resetTitle:_('Reset'),
+        showOk:true,
+        showCancel:true,
+        showReset:false,
+        showButtons:true
+    },
     __construct:function(opts) {
-        if (!opts) opts = {};
-        opts = $.extend(true,{
-            okTitle:_('Ok'),
-            cancelTitle:_('Cancel'),
-            resetTitle:_('Reset'),
-            showOk:true,
-            showCancel:true,
-            showReset:false,
-            showButtons:true
-        },opts)
-        this.__super(opts);
         this.require(opts,'model');
+        
+        this.__super(this.getDefaults(opts));
         
         var fields = opts.model.getFields();
         
@@ -215,7 +231,7 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
             labelPosition:'left',
             disabled:false,
             tmpl: function() {
-                return $wb.template.form.container.apply(this,[this.opts.type,opts.inputTmpl()])
+                return $wb.template.form.container.apply(this,[this.opts.type,opts.inputTmpl()]);
             }
         },opts);
         
@@ -383,7 +399,7 @@ $wb.ui.form.InputField = $wb.Class('InputField',{
         opts = $.extend({
             type:'text',
             tmpl: function() {
-                return $wb.template.form.input.apply(this,[opts.type])
+                return $wb.template.form.input.apply(this,[opts.type]);
             }
         },opts);
         
@@ -506,7 +522,7 @@ $wb.ui.form.ColorField = $wb.Class('ColorField',{
             }.bind(this),
             onChange:function(hsb,hex,rgb) {
                 this.value(hex);
-                this.target().css('background-color',this.color())
+                this.target().css('background-color',this.color());
             }.bind(this),
             onBeforeShow: function () {
                     this.target().ColorPickerSetColor(this.value());
@@ -531,7 +547,7 @@ $wb.ui.form.Button = $wb.Class('Button',{
             type:'button',
             target:null,
             tmpl: function() {
-                return $wb.template.form.button.apply(this,[opts.type])
+                return $wb.template.form.button.apply(this,[opts.type]);
             }
         },opts);
         this.__super(opts);
@@ -681,7 +697,7 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
         'markText','setBookmark','findMarksAt','setMarker','clearMarker','setLineClass','hideLine',
         'showLine','onDeleteLine','lineInfo','getLineHandle','addWidget','matchBrackets','lineCount',
         'getCursor','somethingSelected','setCursor','setSelection','getLine','setLine','removeLine',
-        ,'getRange','replaceRange','posFromIndex','indexFromPos'
+        'getRange','replaceRange','posFromIndex','indexFromPos'
     ],
     __construct:function(opts) {
         opts = $.extend({
@@ -716,7 +732,7 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
             loadCSS(this.opts.codemirrorBase+"codemirror.css");
             var required = [
                 this.opts.codemirrorBase+"codemirror.js"
-            ]
+            ];
             require(required,this._loadMode.bind(this));
         } else {
             this._loadMode();
@@ -783,7 +799,7 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
             return this;
         } else {
             if (this._codemirror) {
-                this._codemirror.save()
+                this._codemirror.save();
             }
             return this.__super();
         }
@@ -852,7 +868,7 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
                 return _('None');
             },
             formField:function(opts,value) {
-                var out = new $wb.ui.form.ColorField({label:opts.name,name:opts.id})
+                var out = new $wb.ui.form.ColorField({label:opts.name,name:opts.id});
                 out.value(value);
                 return out;
             }
@@ -868,7 +884,7 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
                 return _('None');
             },
             formField:function(opts,value) {
-                var out = new $wb.ui.form.DateField({label:opts.name,name:opts.id})
+                var out = new $wb.ui.form.DateField({label:opts.name,name:opts.id});
                 out.value(value);
                 return out;
             }
@@ -900,7 +916,7 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
                 return this.values[value];
             },
             formField:function(opts,value) {
-                var out = new $wb.ui.form.Select({label:opts.name,name:opts.id,options:this.values})
+                var out = new $wb.ui.form.Select({label:opts.name,name:opts.id,options:this.values});
                 out.value(value);
                 return out;
             }
@@ -959,4 +975,4 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
         inherits:'code',
         mode:{name:'javascript',json:true}
     });
-})()
+})();

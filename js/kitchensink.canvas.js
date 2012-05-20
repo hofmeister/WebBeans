@@ -20,11 +20,11 @@ $(function() {
                     break;
                 case 'yellow':
                     this._colorStart = "#CCCC66";
-                    this._colorEnd = "#FFFF00"
+                    this._colorEnd = "#FFFF00";
                     break;
                 case 'blue':
                     this._colorStart = "#3333CC";
-                    this._colorEnd = "#9999FF"
+                    this._colorEnd = "#9999FF";
                     break;
             }
             
