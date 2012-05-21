@@ -98,11 +98,21 @@ $wb.draw.Layer = $wb.Class('Layer',{
     add:function(elm) {
         elm.setLayer(this);
         this._elements.push(elm);
+        this.trigger('add',[elm]);
+    },
+    remove:function(elm) {
+        var ix = this._elements.indexOf(elm);
+        if (ix > -1) {
+            this._elements.splice(ix,1);
+        }
+        this.trigger('remove',[elm]);
     },
     render:function(container) {
+        this.trigger('before-render');
         if (container)
             this.elm().append(container);
         this._paintElements();
+        this.trigger('render');
     },
     _paintElements:function() {
         this.clear();
@@ -137,7 +147,7 @@ $wb.draw.Layer = $wb.Class('Layer',{
 
 
 $wb.draw.Element = $wb.Class('Element',{
-    __extends:[$wb.core.Utils],
+    __extends:[$wb.core.Utils,$wb.core.Events],
     __defaults:{
         visible:true,
         cache:false,
@@ -164,6 +174,12 @@ $wb.draw.Element = $wb.Class('Element',{
         this._layer = layer;
         return this;
     },
+    destroy:function() {
+        var layer = this._layer;
+        layer.remove(this);
+        this.trigger('destroy');
+        delete this;
+    },
     getLayer:function() {
         return this._layer;
     },
@@ -172,6 +188,7 @@ $wb.draw.Element = $wb.Class('Element',{
             return this.draw(layer);
         }
         this._layer.render();
+        this.trigger('render');
         return this;
     },
     draw:function(layer) {
@@ -179,6 +196,7 @@ $wb.draw.Element = $wb.Class('Element',{
         if (!layer) {
             layer = this._layer;
         }
+        this.trigger('before-draw');
         
         if (this.opts.cache) {
             if (!this._cached) {
@@ -196,6 +214,7 @@ $wb.draw.Element = $wb.Class('Element',{
             this._setOptions(layer.context());
             this._paint(layer.context(),layer.canvas());
         }
+        this.trigger('draw');
         return this;
     },
     

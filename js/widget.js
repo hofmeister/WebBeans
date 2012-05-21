@@ -547,7 +547,7 @@ $wb.ui.Widget = $wb.Class('Widget',
             delete this.opts;
             this.detach();
             this.trigger('destroy');
-            this = undefined;
+            delete this;
         },
         /**
          * Detach this widget
@@ -957,17 +957,18 @@ $wb.ui.ContextMenu = $wb.Class('ContextMenu',{
         
         this.source(source);
         
-        if (!this.trigger('before-context')) {
-            this.source(null);
-            return;
-        }
-        
         elm.css({
             position:'absolute',
             left:evt.pageX,
             top:evt.pageY,
             zIndex:9999
         });
+        
+        if (!this.trigger('before-context')) {
+            this.source(null);
+            return;
+        }
+    
         elm.bindOnce('click',$wb.ui.ContextMenu.hide);
         
         if (this._element) {
