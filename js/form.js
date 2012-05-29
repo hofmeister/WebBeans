@@ -813,7 +813,6 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
             if (this._codemirror) {
                 if (!arguments[0])
                     arguments[0] = "";
-                console.log('set value');
                 this._codemirror.setValue(arguments[0]);
             }
             
