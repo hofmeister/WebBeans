@@ -41,6 +41,16 @@
             return html;
         },
         /**
+         * Generate a random UUID. 
+         * Copy / pasted from http://www.broofa.com/Tools/Math.uuid.js
+         */
+        uuid:function() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            var r = Math.random()*16|0, v = c == 'x' ? r : (r&0x3|0x8);
+                return v.toString(16);
+            });
+        },
+        /**
         * Get value using path on object
         * @param {Object} obj the object
         * @param {String} path the path
@@ -287,7 +297,7 @@
                 if (el[0] && el[0].tagName) {
                     switch(el[0].tagName.toLowerCase()) {
                         case 'input':
-                        case 'th': //Padding and border is part of width
+                        //case 'th': //Padding and border is part of width
                             size = parseCssSize(el.css('margin-'+this));
                             break;
                     }
@@ -305,8 +315,8 @@
                 var size = 0;
                 if (el[0] && el[0].tagName) {
                     switch(el[0].tagName.toLowerCase()) {
-                        case 'input':
-                        case 'th': //Padding and border is part of width
+                        case 'input'://Padding and border is part of width
+                        //case 'th': 
                             size = parseCssSize(el.css('border-'+this+'-width'))
                                 + parseCssSize(el.css('padding-'+this+''));
                             break;

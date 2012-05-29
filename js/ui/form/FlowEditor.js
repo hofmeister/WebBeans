@@ -15,6 +15,9 @@ $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
             this._canvas.elm().outerHeight(this.target().innerHeight());
             this._canvas.elm().outerWidth(this.target().innerWidth());
         },
+        elementFactory:function(data) {
+            return new $wb.ui.form.FlowEditorElement({});
+        },
         boxMargin:10,
         grid:[30,30]
     },
@@ -22,6 +25,7 @@ $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
     _obstacles:[],
     _dragging:false,
     _drawing:false,
+    _dirty:false,
     __construct:function(opts) {
         this.__super(this.getDefaults(opts));
         
@@ -32,23 +36,23 @@ $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
         this.add(this._canvas);
         
         this._bindDragging();
-        
+
         this._bindConnectionDrawing();
-        
+
         this._bindConnectionHover();
-        
+
         this._setupContextMenu();
-        
+
         this._startAnimating();
-        
+
         this.bind('after-layout',function() {
             this._paintConnections(true);
         });
-        
+
         this.bind('detach',function() {
             this._stopAnimating();
         });
-        
+
         var gridLayer = this._canvas.addLayer('grid',0);
         gridLayer.add(new $wb.draw.Grid({
             width:this.opts.grid[0],
@@ -68,35 +72,116 @@ $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
         
         context.bind('before-paint',function() {
             context.clear();
-            var src = $wb(context.source().elm().closest('.wb-obstacle'));
+            var src = $wb(context.source().elm().closest(self.opts.flowElementFinder));
             var offset = context.elm().offset();
             var conn = null;
-            
+            var makeRemove = true;
             if (!(src instanceof $wb.ui.form.FlowEditorElement)) {
                 conn = this.getConnectionAt({x:offset.left,y:offset.top});
                 if (!conn)
-                    return false;
+                    makeRemove = false;
+            } else {
+                makeRemove = !src.isFixed();
             }
-            context.add([
-                {title:"Remove",arg:function() {
-                    if (!(src instanceof $wb.ui.form.FlowEditorElement)) {
-                        //Remove connection
-                        conn.path.destroy();
-                    } else {
-                        src.destroy();
-                    }
-                    self._paintConnections();
-                }}
-            ]);
-            return this.trigger('before-context',[context,conn | src]);
+            if (makeRemove) {
+                context.add([
+                    {title:"Remove",arg:function() {
+                        if (!(src instanceof $wb.ui.form.FlowEditorElement)) {
+                            //Remove connection
+                            conn.path.destroy();
+                        } else {
+                            src.destroy();
+                            self.trigger('element-removed',[src]);
+                            self._triggerChange();
+                        }
+                        self._paintConnections();
+                    }}
+                ]);
+            }
+            
+            return this.trigger('before-context',[context,conn || src]);
         }.bind(this));
         this._context = context;
     },
     _removeConnection:function(conn) {
         var ix = this._connections.indexOf(conn);
         if (ix > -1) {
+            
+            var startElm = $wb(conn.start);
+            startElm.removeConnection(conn.start.attr('rel'),conn);
+            var endElm = $wb(conn.end);
+            endElm.removeConnection(conn.end.attr('rel'),conn);
+            
             this._connections.splice(ix,1);
+            this.trigger('connection-removed',[conn]);
+            this._triggerChange();
         }
+    },
+    _triggerChange:function() {
+        this.trigger('change');
+    },
+    getData:function() {
+        var out = [];
+        this.elm().find(this.opts.flowElementFinder).each(function() {
+            var elm = $wb(this);
+            out.push(elm.getData());
+        });
+        return out;
+    },
+    clear:function() {
+        this.elm().find(this.opts.flowElementFinder).each(function() {
+            $wb(this).destroy();
+        });
+        this._paintConnections(true);
+        return this;
+    },
+    setData:function(elements) {
+        this.clear();
+        var connections = [];
+        var elms = {};
+        for(var i = 0; i < elements.length;i++) {
+            var elm = this._makeElement(elements[i]);
+            if (!elm) continue;
+            
+            elms[elm.getId()] = elm;
+            
+            for(var x = 0; x < elements[i].connections.length;x++) {
+                var connData = elements[i].connections[x];
+                
+                connections.push({
+                    from:{
+                        elm:elm.getId(),
+                        connector:connData.from
+                    },
+                    to:connData.to
+                });
+            }
+        }
+        
+        var renderConnections = function renderConnections() {
+            for(i = 0; i < connections.length;i++) {
+                var conn = connections[i];
+                var fromElm = elms[conn.from.elm];
+                var toElm = elms[conn.to.elm];
+
+                if (!fromElm) continue;
+                var from = fromElm.getConnector(conn.from.connector);
+                if (!toElm) continue;
+                var to = toElm.getConnector(conn.to.connector);
+
+                this.addConnection(from,to);
+            }
+            this._paintConnections(true);
+        }.bind(this);
+        
+        this.whenReady(renderConnections);
+    },
+    _makeElement:function(data) {
+        var elm = this.opts.elementBuilder.apply(this,[data.data]);
+        if (!elm) return null;
+        this.add(elm);
+        elm.setData(data);
+        return elm;
     },
     /**
      * Get context menu element
@@ -199,6 +284,8 @@ $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
                 });
             } else {
                 $wb(elm).changed = true;
+                self.trigger('element-moved',[$wb(elm)]);
+                self._triggerChange();
                 self._paintConnections(true);
                 self._dragging = null;
             }
@@ -218,6 +305,7 @@ $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
             start.left -= base.left-(startPoint.outerWidth()/2);
             start.top -= base.top-(startPoint.outerHeight()/2);
             self._drawing = true;
+            self.trigger('draw-start');
             //self.target().css('cursor','none');
             
             //Handler that continuesly paints the drawn connection
@@ -239,12 +327,12 @@ $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
                 //No obstacles for temp path
                 conn.path.setObstacles([]);
                 conn.path.render(layer);
+                self.trigger('draw',[conn]);
             }
             
             this.target()
                 .mousemove(handler)
                 .one('mouseup',function(evt) {
-                    var layer = this._canvas.getLayer('connections');
                     var endPoint = this.target().find(this.opts.connectorFinder).not(startPoint).elementAt(evt.pageX,evt.pageY);
                     if (endPoint.length > 0) {
                         self._clearActive();
@@ -256,6 +344,7 @@ $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
                         this._paintConnections();
                     }
                     self._drawing = false;
+                    self.trigger('draw-stop');
                     //self.target().css('cursor','default');
                     this._canvas.getLayer('tmp').clear();
                     this.target().unbind('mousemove',handler);
@@ -280,13 +369,15 @@ $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
         $wb(from).addConnection(startId,conn);
 
         var endId = to.attr('rel');
-        $wb(to).addConnection(endId,conn);
+        $wb(to).addConnection(endId,conn,true);
 
         this._connections.push(conn);
         layer.add(conn.path);
         conn.path.bind('destroy',function() {
             this._removeConnection(conn);
         }.bind(this));
+        this.trigger('connection-added',[conn]);
+        this._triggerChange();
         return conn;
     },
     /**
@@ -302,6 +393,13 @@ $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
         this.target().find(self.opts.flowElementFinder).each(function() {
             self._obstacles.push(self._getBoundingBox(this,base));
         });
+    },
+    _getElements:function() {
+        return this.target().find(this.opts.flowElementFinder);
+    },
+    _getElementAt:function(x,y) {
+        var elms = this._getElements().elementAt(x,y);
+        return elms.length > 0 ? $(elms[0]) : null;
     },
     /**
      * Bind connection hover and click handling. Requires som special handling as they are simply lines on a canvas
@@ -322,7 +420,7 @@ $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
                 y:evt.pageY-base.top
             }
             
-            if (self.target().find(self.opts.flowElementFinder).elementAt(evt.pageX,evt.pageY).length > 0) {
+            if (self._getElementAt(evt.pageX,evt.pageY) != null) {
                 return null;
             }
             return point;
@@ -346,10 +444,17 @@ $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
                 self._paintConnections();
         });
         
+       
+        
         //Connection hovering
         this.target().bind('mousemove',function(evt){
             var point = getTranslatedPoint(evt);
             if (!point) return;
+            
+            var elm = self._getElementAt(evt.pageX,evt.pageY);
+            if (elm) {
+                return;
+            }
             
             var conn = self._getConnectionAt(point,self.opts.boxMargin);
             if (conn) {
@@ -362,6 +467,7 @@ $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
                 
             } else if (self._clearHover()) {
                 self.target().css('cursor','default');
+                self._paintConnections();
             }
         });
     },
@@ -385,12 +491,39 @@ $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
         }
         child.setFlow(this);
         
+        var self = this;
+        
+        child.elm()
+            .mouseover(function(evt) {
+                self._clearHover();
+                var elm = $wb(this);
+                var conns = elm.getConnections();
+                for(var i = 0; i < conns.length;i++) {
+                    conns[i].hover = true;
+                }
+                self._paintConnections();
+            }).mouseout(function(evt) {
+                self._clearHover();
+                self._paintConnections();
+            }).click(function(evt) {
+                self._clearActive();
+                var elm = $wb(this);
+                var conns = elm.getConnections();
+                for(var i = 0; i < conns.length;i++) {
+                    conns[i].active = true;
+                }
+                self._paintConnections();
+            });
+        
         if (offset)
             child.setOffset(offset);
-        
         this.__super(child);
+        this.trigger('element-added',[child]);
+        this._triggerChange();
         return child;
     },
+    
+    
     /**
      * Get connection line at point
      * @private
@@ -579,6 +712,8 @@ $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
      * @private
      */
     _paintConnections:function(forceRefresh) {
+        if (!this.isReady()) return;
+        
         var layer = this._canvas.getLayer('connections');
         if (this._connections.length == 0) {
             layer.render();
@@ -616,6 +751,7 @@ $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
 $wb.ui.form.FlowEditorElement = $wb.Class('FlowEditorElement',{
     __extends:[$wb.ui.Widget],
     __defaults:{
+        fixed:false,
         tmpl:function () {
             return '<div class="wb-flow-element wb-obstacle" />';
         },
@@ -634,14 +770,18 @@ $wb.ui.form.FlowEditorElement = $wb.Class('FlowEditorElement',{
     _edge:{},
     _connections:{},
     _connectors:{},
-    __construct:function() {
-        this.__super(this.getDefaults());
-        this.elm().css({
-            position:'absolute',
-            zIndex:4
+    _data:{},
+    _id:null,
+    __construct:function(opts) {
+        
+        this.bind('after-element',function() {
+            this._paintConnectors();
         });
         
-        this._paintConnectors();
+        this.__super(this.getDefaults(opts));
+        this._id = $wb.utils.uuid();
+        
+        
         
         this.bind('after-layout',function() {
             var width = this.target().outerWidth();
@@ -674,12 +814,15 @@ $wb.ui.form.FlowEditorElement = $wb.Class('FlowEditorElement',{
         });
         
         this.bind('detach',function() {
-            for(var id in this._connections) {
-                for(var i = 0; i < this._connections[id].length;i++) {
-                    this._connections[id][i].path.destroy();
-                }
-            }
+            this._clearConnections();
         });
+    },
+    _clearConnections:function() {
+        for(var id in this._connections) {
+            for(var i = 0; i < this._connections[id].length;i++) {
+                this._connections[id][i].path.destroy();
+            }
+        }
     },
     _paintConnectors:function() {
         var connectors = [];
@@ -688,7 +831,7 @@ $wb.ui.form.FlowEditorElement = $wb.Class('FlowEditorElement',{
                 if (this._connectors[id]) {
                     continue;
                 }
-                    
+
                 var conn = $(this.opts.connectorTmpl());
                 conn.attr('rel',id);
                 connectors.push(conn[0]);
@@ -715,19 +858,38 @@ $wb.ui.form.FlowEditorElement = $wb.Class('FlowEditorElement',{
     setFlow:function(flow) {
         this._flow = flow;
         
-        this.elm().draggable({
-            containment:'parent',
-            grid:this._flow.option('grid')
+        this.elm().css({
+            position:'absolute',
+            zIndex:4
         });
+        if (!this.isFixed()) {
+            this.elm().draggable({
+                containment:'parent',
+                grid:this._flow.option('grid')
+            });
+        }
     },
     addConnection:function(connectorId,conn) {
         if (!this._connections[connectorId])
             this._connections[connectorId] = [];
         this._connections[connectorId].push(conn);
         this.trigger('connection-added',[connectorId,conn]);
-        conn.path.bind('destroy',function() {
-            this.trigger('connection-removed',[connectorId,conn]);
-        }.bind(this))
+    },
+    removeConnection:function(connectorId,conn) {
+        if (!this._connections[connectorId]) return;
+        var ix = this._connections[connectorId].indexOf(conn);
+        this._connections[connectorId].splice(ix,1);
+        this.trigger('connection-removed',[connectorId,conn]);
+    },
+    getConnections:function() {
+        var out = [];
+        for(var id in this._connections) {
+            for(var i = 0; i < this._connections[id].length;i++) {
+                var conn = this._connections[id][i];
+                out.push(conn);
+            }
+        }
+        return out;
     },
     getConnector:function(id) {
         return this._connectors[id];
@@ -744,8 +906,54 @@ $wb.ui.form.FlowEditorElement = $wb.Class('FlowEditorElement',{
         var top = (Math.floor((offset.top-margin) / 
                         grid[1])*grid[1])+margin;
         this.elm().css({
-            left:left,
-            top:top
+            left:Math.max(margin,left),
+            top:Math.max(margin,top)
         });
+    },
+    getId:function() {
+        return this._id;
+    },
+    setData:function(data) {
+        if (data.data) {
+            this._data = $.extend({},data.data);
+            this._clearConnections();
+            this._id = data.id;
+            
+            if (data.position)
+                this.elm().css(data.position);
+        } else {
+            this._data = data;
+        }
+        return this;
+    },
+    getData:function() {
+        var out = {
+            data:this._data,
+            position:this.elm().position(),
+            connections:[],
+            id:this.getId()
+        };
+        
+        for(var id in this._connections) {
+            for(var i = 0; i < this._connections[id].length;i++) {
+                var conn = this._connections[id][i];
+                var endElm = $wb(conn.end.closest(this._flow.option('flowElementFinder')));
+                
+                if (endElm.getId() == this.getId()) 
+                    continue;
+                
+                out.connections.push({
+                    from:id,
+                    to:{
+                        elm:endElm.getId(),
+                        connector:conn.end.attr('rel')
+                    }
+                });
+            }
+        }
+        return out;
+    },
+    isFixed:function() {
+        return this.opts.fixed;
     }
 });

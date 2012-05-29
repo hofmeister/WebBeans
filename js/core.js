@@ -417,12 +417,12 @@ require($wbConfig.jQuery,function() {
             if (!opts || !opts.__defaultInited) {
                 for(var i in clz.__extends) {
                     var parent = clz.__extends[i];
-                    defaults = $.extend(true,defaults,parent.constructor.__defaults);
+                    defaults = $.extend(defaults,parent.constructor.__defaults);
                     defaults = parent.getDefaults(defaults);
                 }
             }
             
-            return $.extend(true,defaults,clz.__defaults,opts,{__defaultInited:true});
+            return $.extend(defaults,clz.__defaults,opts,{__defaultInited:true});
         }.bind(clz);
         
         clz.getDefault = clz.prototype.getDefault = function(name) {
@@ -1129,7 +1129,7 @@ String.prototype.format = function() {
         throw "Missing text argument from translation method";
     for(var i = 0;i < arguments.length;i++) {
         out = out.replace('%s', arguments[i])
-                .replace('$'+i, arguments[i]);
+                .replace('$'+(i+1), arguments[i]);
     }
     return out;
 };

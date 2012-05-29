@@ -328,3 +328,20 @@ body {
     position:relative;
 }
 
+
+/* flow editor */
+.wb-flow-editor {
+    position:relative;
+}
+
+
+.wb-flow-connector {
+    z-index: 5;
+    position:absolute;
+}
+
+.wb-flow-element {
+    display:block;
+    cursor:pointer;
+}
+

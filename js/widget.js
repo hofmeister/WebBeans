@@ -51,14 +51,14 @@ $wb.ui.layout.Box = function() {
 
 $wb.ui.layout.Fill = function() {
     var nodes = this.children();
-    if (nodes.length > 1)
-        throw "Fill layout can only handle a single child";
     var width = this.target().innerWidth();
     var height = this.target().innerHeight();
-    if (width > 0)
-        nodes[0].elm().outerWidth(width);
-    if (height > 0)
-        nodes[0].elm().outerHeight(height);
+    $(nodes).each(function() {
+        if (width > 0)
+            this.elm().outerWidth(width);
+        if (height > 0)
+            this.elm().outerHeight(height);
+    });
     
 };
 
@@ -361,6 +361,10 @@ $wb.ui.Widget = $wb.Class('Widget',
          */
         _context:null,
         /**
+         * Indicates if the widget is ready for rendering
+         */
+        _ready:true,
+        /**
          * The provided options.
          * @type Object
          */
@@ -372,6 +376,7 @@ $wb.ui.Widget = $wb.Class('Widget',
         * @param {Function} opts.tmpl template function
         * @param {String} opts.id Id of the element
         * @param {Function} opts.layout Layout function
+        * @param {boolean} [opts.async] If true - rendering will be hold off untill "ready" event is triggered
         */
         __construct:function(opts) {
             this.__super();
@@ -379,18 +384,47 @@ $wb.ui.Widget = $wb.Class('Widget',
             this.require(opts,'tmpl');
 
             $.extend(true,this.opts,opts);
-
-            this._makeElm();
-
+            
             this._id = opts.id;
-
+            
+            this._makeElm();
+            
             if (this._id) {
                 this.elm().attr('id',this._id);
             }
-
+            
             this._layoutMethod = opts.layout ? opts.layout : function() {};
 
             this.bind('resize',this._layout);
+            
+            if (opts.async) {
+                this._ready = false;
+            }
+        },
+        makeReady:function() {
+            if (!this.isReady() && this._ready) 
+                return;
+            if (this.isReady() && this._ready) {
+                this.trigger('ready');
+                return;
+            }
+                
+            if (!this._ready) {
+                this._ready = true;
+                this._makeElm();
+            }
+            this.trigger('ready');
+        },
+        whenReady:function(cb) {
+            if (this.isReady()) {
+                this.render();
+                cb();
+            } else {
+                this.bind('ready',function() {
+                    this.render();
+                    cb();
+                });
+            }
         },
         /**
         * @private
@@ -426,7 +460,6 @@ $wb.ui.Widget = $wb.Class('Widget',
                 if (this.opts["class"]) {
                     el.addClass(this.opts["class"]);
                 }
-                this._elm.widget(this);
             }
 
             if (this.opts.target) {
@@ -434,6 +467,26 @@ $wb.ui.Widget = $wb.Class('Widget',
             } else {
                 this._target = this._elm;
             }
+            
+            this._elm.widget(this);
+                
+            this.trigger('after-element');
+        },
+        isAsync:function() {
+            for(var i in this._children) {
+                if (this._children[i].isAsync())
+                    return true;
+            }
+            return this.opts.async;
+        },
+        isReady:function() {
+            for(var i in this._children) {
+                if (!this._children[i].isReady()) {
+                    return false;
+                }
+                    
+            }
+            return this._ready;
         },
         /**
          * Add child 
@@ -441,6 +494,11 @@ $wb.ui.Widget = $wb.Class('Widget',
          * @returns {$wb.ui.Widget} itself
          */
         add:function(child) {
+            if (!child.isReady()) {
+                child.bind('ready',function() {
+                    this.makeReady();
+                }.bind(this));
+            }
             this.children().push(child);
             return this;
         },
@@ -602,6 +660,8 @@ $wb.ui.Widget = $wb.Class('Widget',
          * @returns {jQueryElement} the base element of this widget
          */
         render: function(container) {
+            if (!this._ready) 
+                return false;
             if (this._paint() === false) 
                 return false;
             
@@ -802,8 +862,13 @@ $wb.ui.Button = $wb.Class('Button',{
             this.elm().disableMarking();
         });
     },
-    title:function(title) {
-        return this.elm().find(this._titleElm).html(title);
+    title:function() {
+        if (arguments.length > 0) {
+            this.elm().find(this._titleElm).html(arguments[0]);
+            return this;
+        } else {
+            return this.elm().find(this._titleElm).html();
+        }
     },
     click:function() {
         this.trigger('click',arguments);
@@ -1592,12 +1657,14 @@ $wb.ui.Tree = $wb.Class('Tree',{
             this.children().push(title);
             if (title.opts.id)
                 this._nodeIndex[title.opts.id] = elm;
+            this.trigger('added',[title]);
             return title;
         }
         
         if ($wb.utils.isA(arg,$wb.ui.Tree)) {
             elm = this._addSubTree(title,arg,data);
             this.children().push(elm);
+            this.trigger('added',[arg]);
             return title;
         }
 
@@ -1611,6 +1678,7 @@ $wb.ui.Tree = $wb.Class('Tree',{
         if (id)
             this._nodeIndex[id] = elm;
         this._children.push(elm);
+        this.trigger('added',[elm]);
         return elm;
     },
     _makeNode:function(title,callback,data,id) {
@@ -2076,24 +2144,27 @@ $wb.ui.Table = $wb.Class('Table',
                 }
 
                 var cellWidth = Math.floor(availWidth/cells.length);
-
+                
                 if (isHeader) {
                     cells.outerWidth(cellWidth);
                 }
 
                 var innerCells = this.elm().find('.wb-inner-table .wb-table-row:eq(0) .wb-table-cell').not('.wb-actions');
                 if (innerCells.length > 0) {
-                    innerCells.width(cellWidth);
+                    innerCells.outerWidth(cellWidth);
                 }
-                var maxHeight = this.elm().outerHeight();
                 //Only calculate fixed height if this table has a fixed height
                 //Todo: Add support for min and max height
                 var cssHeight = parseInt(this.elm()[0].style.height, 10);
                 if (cssHeight > 0 && !isNaN(cssHeight)) {
-                    if (this.opts.header)
+                    var maxHeight = parseInt(this.elm()[0].style.height,10);
+                    
+                    if (this.opts.header) {
                         maxHeight -= this._header.outerHeight();
-                    if (this.opts.footer)
+                    }
+                    if (this.opts.footer) {
                         maxHeight -= this._footer.outerHeight();
+                    }
 
                     if (maxHeight > 10) {
                         var scroller = this.elm().find('.wb-table-body-scroll');

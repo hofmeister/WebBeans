@@ -11,6 +11,8 @@ $wb.ui.form = {};
 
 $wb.ui.form.Form = $wb.Class('Form',{
     __extends:[$wb.ui.Pane],
+    _dirtyData:false,
+    _rendered:false,
     __construct:function(opts) {
         if (!opts) {
             opts = {};
@@ -21,6 +23,7 @@ $wb.ui.form.Form = $wb.Class('Form',{
         },opts);
         this.__super(opts);
         this.bind('render',function() {
+            this._rendered = true;
             this.setData(this.opts.data);
             $wb(this.find('.wb-input:eq(0)')).focus();
         });
@@ -45,7 +48,8 @@ $wb.ui.form.Form = $wb.Class('Form',{
         });
     },
     reset:function() {
-        this.elm()[0].reset();
+        if (this.elm()[0].reset)
+            this.elm()[0].reset();
         this.opts.data = {};
         var elms = this.elm().find('.wb-input');
         elms.each(function() {
@@ -54,42 +58,45 @@ $wb.ui.form.Form = $wb.Class('Form',{
     },
     getField:function(name) {
         var el = this.elm().find('[name="'+name+'"]');
-        return el.widget();
+        return $wb(el);
     },
     setData:function(data) {
-        var elms = this.elm().find('.wb-input');
-        
-        elms.each(function() {
-            var el = $(this),w,name,tag,type;
-            if (!el.widget()) {
-                return;
-            }
-            
-            w = el.widget();
-            name = w.name();
-            tag = el[0].tagName.toLowerCase();
-            type = null;
-            
-            if (!name) {
-                return;
-            }
-            
-            if (el.attr('type')) {
-                type = el.attr('type').toLowerCase();
-            }
-            
-            if (tag === 'input') {
-                switch(type) {
-                    case 'button':
-                    case 'submit':
-                        return;
+        if (this._rendered) {
+            var elms = this.elm().find('.wb-input');
+            elms.each(function() {
+                var el = $(this),w,name,tag,type;
+                if (!el.widget()) {
+                    return;
                 }
-            }
-            
-            if (typeof data[name] !== 'undefined') {
-                w.value(data[name]);
-            }
-        });
+
+                w = el.widget();
+                name = w.name();
+                tag = el[0].tagName.toLowerCase();
+                type = null;
+
+                if (!name) {
+                    return;
+                }
+
+                if (el.attr('type')) {
+                    type = el.attr('type').toLowerCase();
+                }
+
+                if (tag === 'input') {
+                    switch(type) {
+                        case 'button':
+                        case 'submit':
+                            return;
+                    }
+                }
+
+                if (typeof data[name] !== 'undefined') {
+                    w.value(data[name]);
+                }
+            });
+        } else {
+            this._dirtyData = true;
+        }
         
         this.opts.data = data;
         
@@ -628,9 +635,15 @@ $wb.ui.form.Select = $wb.Class('Select',{
         if (!opts) opts = {};
         opts = $.extend({
             type:'select',
-            tmpl:$wb.template.form.select
+            tmpl:$wb.template.form.select,
+            multi:false
         },opts);
         this.__super(opts);
+        
+        if (opts.multi) {
+            this.elm().addClass('wb-multiple');
+            this.target().attr('multiple','multiple');
+        }
         
         if (opts.options) {
             if ($.type(opts.options) == 'function') {
@@ -775,9 +788,15 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
                 var m = this._copyMethods[i];
                 this[m] = this._codemirror[m].bind(this._codemirror);
             }
+            
+            //Cause a slight delay to allow it to properly refresh
+            //@TODO: Find root cause and fix
+            setTimeout(function() {
+                this._codemirror.refresh()
+            }.bind(this),100);
+            
             this._rendered = false;
         });
-        
         /**
          * If the widget had time to render before we got the whole thing loaded
          * trigger render event manually to ensure we get code mirror setup
@@ -794,8 +813,10 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
             if (this._codemirror) {
                 if (!arguments[0])
                     arguments[0] = "";
+                console.log('set value');
                 this._codemirror.setValue(arguments[0]);
             }
+            
             return this;
         } else {
             if (this._codemirror) {

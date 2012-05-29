@@ -108,6 +108,7 @@ $wb.draw.Layer = $wb.Class('Layer',{
         this.trigger('remove',[elm]);
     },
     render:function(container) {
+        if (!this.isReady()) return;
         this.trigger('before-render');
         if (container)
             this.elm().append(container);

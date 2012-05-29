@@ -690,3 +690,22 @@ input:focus,button:focus,select:focus,textarea:focus,a:focus {
 .icon-remove-sign,.icon-remove-circle,.icon-remove,.icon-ban-circle {
     color:#ffb5b5 !important;
 }
+
+/* flow editor */
+.wb-flow-editor {
+    -webkit-border-radius: 5px ;
+    -moz-border-radius: 5px ;
+    border-radius:5px;
+    background-color: white;
+    background-image: none;
+}
+
+.wb-flow-editor .wb-flow-connector {
+    -webkit-border-radius: 5px ;
+    -moz-border-radius: 5px ;
+    border-radius:5px ;
+    width:5px;
+    height:5px;
+    background-color: blue;
+    border:1px solid #333;
+}
