@@ -25,7 +25,10 @@ $wb.ui.form.Form = $wb.Class('Form',{
         this.bind('render',function() {
             this._rendered = true;
             this.setData(this.opts.data);
-            $wb(this.find('.wb-input:eq(0)')).focus();
+            var elm = $wb(this.find('.wb-input:eq(0)'));
+            if (elm) {
+                elm.focus();
+            }
         });
     },
     disable:function() {
@@ -377,6 +380,16 @@ $wb.ui.form.Text = $wb.Class('Text',{
             }
         },opts);
         this.__super(opts);
+        
+        if (opts.text) {
+            if (opts.monotype) {
+                this._html = "<pre>%s</pre>".format(opts.text);
+            } else {
+                this._html = opts.text;
+            }
+            
+        }
+            
         
         this.bind('render',function() {
             this.html(this._html);

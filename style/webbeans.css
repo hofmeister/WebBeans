@@ -34,9 +34,9 @@ body {
 
 /* tools */
 .wb-rounded {
-    -webkit-border-radius: 5px 5px 5px 5px ;
-    -moz-border-radius: 5px 5px 5px 5px ;
-    border-radius: 5px 5px 5px 5px ;
+    -webkit-border-radius: 5px ;
+    -moz-border-radius: 5px;
+    border-radius: 5px;
     -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box;
 }
 .wb-animate {
@@ -194,6 +194,15 @@ body {
        -o-transform: rotate(0deg);  /* Opera 10.5 */
           transform: rotate(0deg);
 }
+
+.wb-tree-sub .wb-tree-sub > .wb-tree-node {
+    margin-left:-22px
+}
+
+.wb-tree-sub .wb-tree-sub > .wb-leaf {
+    margin-left:0;
+}
+
 .wb-tree li.wb-leaf > .wb-handle {
     background-image: none;
     display:none;
@@ -253,6 +262,7 @@ body {
     float:left;
     width:90px;
 }
+
 
 .wb-input-container.wb-label-right > label > span {
     text-align:left;

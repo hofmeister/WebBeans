@@ -998,6 +998,9 @@ $wb.data.TreeStore = $wb.Class('TreeStore',
                 children:roots
             };
         },
+        get:function(id) {
+            return this._nodes[id] ? this._nodes[id].row : null;
+        },
         /**
          * Get sub tree structure
          * @returns {Object} tree structure

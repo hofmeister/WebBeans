@@ -1514,9 +1514,16 @@ $wb.ui.Tree = $wb.Class('Tree',{
                 for(var i = 0; i < rows.length;i++) {
                     var row = rows[i];
                     if (row.parentId) {
-                        if (self._treeIndex[row.parentId]) {
-                            self._treeIndex[row.parentId].add(row.name,null,row,row.id);
+                        if (!self.getSubTree(row.parentId) && self.getNode(row.parentId)) {
+                            var subTree = self._newSubTree(row.parentId);
+                            self._addSubTreeToNode(self.getNode(row.parentId),subTree);
+                            self.getNode(row.parentId).elm().removeClass('wb-leaf');
                         }
+                        
+                        if (self.getSubTree(row.parentId)) {
+                            self.getSubTree(row.parentId).add(row.name,null,row,row.id);
+                        }
+                        
                     } else {
                         self.add(row.name,null,row,row.id);
                     }
@@ -1525,22 +1532,19 @@ $wb.ui.Tree = $wb.Class('Tree',{
                 self.render();
             });
             store.bind('remove',function(rows) {
+                
                 for(var i = 0; i < rows.length;i++) {
                     var row = rows[i];
-                    if (self._nodeIndex[row.id])
-                        self._nodeIndex[row.id].destroy();
-                    delete self._nodeIndex[row.id];
-                    if (self._treeIndex[row.id])
-                        self._treeIndex[row.id].destroy();
-                    delete self._treeIndex[row.id];
+                    self.removeNode(row.id);
+                    self.removeSubTree(row.id);
                 }
             });
             store.bind('update',function(rows) {
                 for(var i = 0; i < rows.length;i++) {
                     var row = rows[i];
-                    if (self._nodeIndex[row.id]) {
-                        self._nodeIndex[row.id].setData(row);
-                        self._nodeIndex[row.id].title(row.name);
+                    if (self.getNode(row.id)) {
+                        self.getNode(row.id).setData(row);
+                        self.getNode(row.id).title(row.name);
                     }
                 }
             });
@@ -1551,6 +1555,32 @@ $wb.ui.Tree = $wb.Class('Tree',{
     },
     getRoot:function() {
         return this.opts.root != null ? this.opts.root : this;
+    },
+    getNode:function(id) {
+        return this.getRoot()._nodeIndex[id];
+    },
+    removeNode:function(id) {
+        if (this.getRoot()._nodeIndex[id]) {
+            this.getRoot()._nodeIndex[id].destroy();
+            delete this.getRoot()._nodeIndex[id];
+        }
+        return this;
+    },
+    removeSubTree:function(id) {
+        if (this.getRoot()._treeIndex[id]) {
+            this.getRoot()._treeIndex[id].destroy();
+            delete this.getRoot()._treeIndex[id];
+        }
+        return this;
+    },
+    getSubTree:function(id) {
+        return this.getRoot()._treeIndex[id];
+    },
+    _addSubTreeIx:function(id,tree) {
+        return this.getRoot()._treeIndex[id] = tree;
+    },
+    _addNodeIx:function(id,node) {
+        return this.getRoot()._nodeIndex[id] = node;
     },
     _readFromStore:function() {
          if (!this.opts.store) return null;
@@ -1655,8 +1685,9 @@ $wb.ui.Tree = $wb.Class('Tree',{
         if ($wb.utils.isA(title,$wb.ui.TreeNode)) {
             title.elm().addClass('wb-leaf');
             this.children().push(title);
-            if (title.opts.id)
-                this._nodeIndex[title.opts.id] = elm;
+            if (title.opts.id) {
+                this._addNodeIx(title.opts.id,elm);
+            }
             this.trigger('added',[title]);
             return title;
         }
@@ -1675,8 +1706,9 @@ $wb.ui.Tree = $wb.Class('Tree',{
             elm = this._makeNode(title,arg,data,id);
             elm.elm().addClass('wb-leaf');
         }
-        if (id)
-            this._nodeIndex[id] = elm;
+        if (id) {
+            this._addNodeIx(id,elm);
+        }
         this._children.push(elm);
         this.trigger('added',[elm]);
         return elm;
@@ -1699,17 +1731,21 @@ $wb.ui.Tree = $wb.Class('Tree',{
     _addSubTree:function(title,subTree,data) {
         var node = this._makeNode(title,null,data);
         
-        node.tree = subTree;
-        
-        if (subTree.opts.id)
-            this._treeIndex[subTree.opts.id] = subTree;
-        
-        node.add(subTree);
+        this._addSubTreeToNode(node,subTree);
 
         return node;
     },
-    _makeSubTree:function(title,nodes,data,id) {
-        var subTree = new $wb.ui.Tree({
+    _addSubTreeToNode:function(node,subTree) {
+        node.tree = subTree;
+        
+        if (subTree.opts.id) {
+            this._addSubTreeIx(subTree.opts.id,subTree);
+        }
+        
+        node.add(subTree);
+    },
+    _newSubTree:function(id) {
+        return new $wb.ui.Tree({
             tmpl:this._subTreeTmpl,
             nodeTmpl:this._nodeTmpl,
             subTreeTmpl:this._subTreeTmpl,
@@ -1717,11 +1753,17 @@ $wb.ui.Tree = $wb.Class('Tree',{
             root:this.getRoot(),
             id:id
         });
+    },
+    _makeSubTree:function(title,nodes,data,id) {
+        var subTree = this._newSubTree(id);
         
-        for(var i in nodes) {
-            var m = nodes[i];
-            subTree.add(m.title,m.arg,m.data,m.id);
+        if (nodes) {
+            for(var i in nodes) {
+                var m = nodes[i];
+                subTree.add(m.title,m.arg,m.data,m.id);
+            }
         }
+        
         return this._addSubTree(title,subTree,data);
     }
 });
