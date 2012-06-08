@@ -631,14 +631,19 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         }
 
         this._makeDirty();
+        this._data.total += rows.length;
         this.trigger('change');
         this.trigger('added',[rows]);
         
     },
     setRows:function(rows,totalRows) {
         this.clear();
+        if (!totalRows)
+            totalRows = rows.length;
         this._data.total = totalRows;
         this.addAll(rows);
+        //Add all also increases row count - compensate.
+        this._data.total -= rows.length;
     },
     getTotalRows:function() {
         return this._data.total;
@@ -716,14 +721,16 @@ $wb.data.ListStore = $wb.Class('ListStore',{
                 ix = this.indexOf(ix);
                 if (ix > -1)
                     this._data.rows.remove(ix);
+                    this._data.total--;
             } else {
                 this._data.rows.remove(ix);
+                this._data.total--;
             }
         }
         
         this._makeDirty();
         this.trigger('change');
-        this.trigger('remove',ixs);
+        this.trigger('remove',[ixs]);
     },
     addFilter:function(filterFunction) {
         this._filters.push(filterFunction);

@@ -387,11 +387,10 @@ $wb.ui.form.Text = $wb.Class('Text',{
             } else {
                 this._html = opts.text;
             }
-            
         }
             
-        
         this.bind('render',function() {
+            this.target().enableMarking();
             this.html(this._html);
         });
     },
@@ -912,6 +911,8 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
             type:"date",
             format:function(opts,value) {
                 if (value) {
+                    if (typeof value == 'number')
+                        value = new Date(value);
                     return value.toString();
                 }
                 return _('None');

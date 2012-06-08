@@ -1193,6 +1193,7 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
             this.getSplitter().height(height);
             var w1 = width*splitPosition;
             var w2 = width-w1;
+            
             this.get(0).elm().outerWidth(w1).outerHeight(height);
             this.get(1).elm().outerWidth(w2).outerHeight(height);
         } else {
@@ -1233,9 +1234,12 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
         opts.layout = function() {
             var layoutHorizontal = function() {
                 var h,w,tabs;
-                h = this.elm().height();
+                h = this.elm().innerHeight();
                 var btnH = this._tabButtons().outerHeight();
-                this.elm().find('.wb-pane,.wb-panes').outerHeight(h-btnH);
+                this.elm().find('.wb-pane,.wb-panes')
+                            .outerHeight(h-btnH);
+                this.elm().find('.wb-pane,.wb-panes')
+                            .outerWidth(this.elm().innerWidth());
 
                 if (this._tabButtonFull) {
                     w = this._tabButtons().width();
@@ -2165,10 +2169,10 @@ $wb.ui.Table = $wb.Class('Table',
             header:true,
             footer:true,
             layout:function() {
-                var availWidth = this.elm().innerWidth();
+                var availWidth = parseInt(this.elm()[0].style.width);
                 if (availWidth < 1) return;
                 var isHeader = false;
-
+                
                 var cells = null;
                 if (this.opts.header) {
                     isHeader = true;
@@ -2182,18 +2186,28 @@ $wb.ui.Table = $wb.Class('Table',
 
                     if (!isNaN(actionWidth) && actionWidth > 0) {
                         availWidth -= actionWidth;
+                        if (isHeader)
+                            this._header.find('.wb-actions').outerWidth(actionWidth);
+                        else
+                            this._body.find('.wb-table-row:eq(0) .wb-actions').outerWidth(actionWidth);
                     }
                 }
 
                 var cellWidth = Math.floor(availWidth/cells.length);
                 
+                var firstWidth = availWidth % (cellWidth*cells.length)
+                
                 if (isHeader) {
                     cells.outerWidth(cellWidth);
+                    if (firstWidth > 0)
+                        $(cells[0]).outerWidth(firstWidth+cellWidth);
                 }
 
                 var innerCells = this.elm().find('.wb-inner-table .wb-table-row:eq(0) .wb-table-cell').not('.wb-actions');
                 if (innerCells.length > 0) {
                     innerCells.outerWidth(cellWidth);
+                    if (firstWidth > 0)
+                        $(innerCells[0]).outerWidth(firstWidth+cellWidth);
                 }
                 //Only calculate fixed height if this table has a fixed height
                 //Todo: Add support for min and max height
@@ -2249,7 +2263,7 @@ $wb.ui.Table = $wb.Class('Table',
             this._header = $(this.opts.headerTmpl());
             this._footer = $(this.opts.footerTmpl());
             this._body = $(this.opts.bodyTmpl());
-
+            
             this.bind('paint',function() {
                 var elm = this.elm();
                 elm.append(this._header)
@@ -2501,8 +2515,8 @@ $wb.ui.Table = $wb.Class('Table',
                 actionCell.addClass('wb-actions');
                 if (this.opts.headerActions) {
                     for(var name in this.opts.headerActions) {
-                        
                         var action;
+                        
                         if (typeof this.opts.headerActions[name] == 'function') {
                             action = new $wb.ui.Action(name,this.opts.headerActions[name],this);
                         } else {
