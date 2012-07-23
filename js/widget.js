@@ -469,6 +469,10 @@ $wb.ui.Widget = $wb.Class('Widget',
             }
             
             this._elm.widget(this);
+            if (this.opts.height)
+                this._elm.outerHeight(this.opts.height);
+            if (this.opts.width)
+                this._elm.outerWidth(this.opts.width);
                 
             this.trigger('after-element');
         },
@@ -1119,16 +1123,19 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
             var self = this;
             this.getSplitter().mousedown(function(evt) {
                 evt.preventDefault();
+                if (self.opts.fixed) return;
                 //evt.stopPropagation();
                 moving = true;
                 self.elm().css('cursor',self._vertical ?  'col-resize': 'row-resize');
             });
             $('body').mouseup(function(evt) {
                 //evt.stopPropagation();
+                if (self.opts.fixed) return;
                 moving = false;
                 self.elm().css('cursor','inherit');
             });
             $('body').mousemove(function(evt) {
+                if (self.opts.fixed) return;
                 var fullSize,globalOffset,elmOffset;
                 if (!moving) return;
                 var splitterSize = self.getSplitter().fullSize();

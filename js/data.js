@@ -321,6 +321,7 @@ $wb.data.JsonService = $wb.Class('JsonService',{
                     (function() {
                         var method = controller.methods[methodName][0];
                         var bodyArgs = 0;
+                        if (!method.args) method.args = [];
                         for(var i = 0; i < method.args.length;i++) {
                             var arg = method.args[i];
                             if (arg.transport == 'BODY')
