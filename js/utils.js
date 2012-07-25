@@ -514,6 +514,10 @@
             out.bottom = out.top+elm.outerHeight();
             return out;
         };
+        
+        $.fn.isOnPage = function() {
+            return ($(this).closest('body').length != 0);
+        };
 
         //Temporarily detach element to reduce dom changes when doing alot of manipulating. Reintroduce it into the dom 
         //using "putBack"

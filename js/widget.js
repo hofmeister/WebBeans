@@ -41,6 +41,59 @@ $wb.ui.layout.Flow = function() {
     }
 };
 
+$wb.ui.layout.FlowReverse = function() {
+    var nodes = this.children();
+    for(var i in nodes) {
+        nodes[i].elm().css({
+            'float':'right'
+        });
+    }
+};
+
+$wb.ui.layout.Horizontal = function() {
+    var nodes = this.children();
+    var height = this.target().innerHeight();
+    var width = this.target().innerWidth();
+    for(var i in nodes) {
+        var elm = nodes[i].elm();
+        elm.css({
+            'float':'left'
+        });
+        elm.outerHeight(height);
+        width -= elm.outerWidth();
+    }
+    if (width > 0)
+        elm.outerWidth(width);
+};
+
+
+
+$wb.ui.layout.Centered = function() {
+    var nodes = this.children();
+    var height = this.target().innerHeight();
+    var width = this.target().innerWidth();
+    
+    var thisPos = this.target().css('position');
+    
+    if (thisPos != 'absolute' 
+            && thisPos != 'relative') {
+        this.target().css('position','relative');
+    }
+    
+    for(var i in nodes) {
+        var elm = nodes[i].elm();
+        var left = (width-elm.outerWidth()) / 2;
+        var top = (height-elm.outerHeight()) / 2;
+        
+        elm.css({
+            'position':'absolute',
+            left:left,
+            top:top
+        });
+    }
+};
+
+
 $wb.ui.layout.Box = function() {
     var width = this.target().innerWidth();
     var nodes = this.children();
@@ -669,8 +722,6 @@ $wb.ui.Widget = $wb.Class('Widget',
             if (this._paint() === false) 
                 return false;
             
-            this._layout();
-
             this._renderChildren();
 
             this._place(container);
@@ -725,6 +776,8 @@ $wb.ui.Widget = $wb.Class('Widget',
         * @private
         */
         _layout: function() {
+            if (!this.elm().isOnPage()) 
+                return;
             this.trigger('before-layout');
             if (this._layoutMethod) {
                 this._layoutMethod.apply(this);
@@ -885,10 +938,18 @@ $wb.ui.Button = $wb.Class('Button',{
 
 $wb.ui.MenuButton = $wb.Class('MenuButton',{
     __extends:[$wb.ui.Button],
+    _menu:null,
     __construct:function(opts) {
         this.__super(opts);
+    },
+    menu:function() {
+        if (arguments.length > 0) {
+           this._menu = arguments[0];
+           return this;
+        }
+        return this._menu;
     }
-});
+}); 
 
 $wb.ui.Menu = $wb.Class('Menu',{
     __extends:[$wb.ui.Widget],
@@ -896,7 +957,8 @@ $wb.ui.Menu = $wb.Class('Menu',{
         tmpl:$wb.template.menu.base,
         itemTmpl:$wb.template.menu.menuItem,
         subTmpl:$wb.template.menu.subMenu,
-        vertical:true
+        vertical:true,
+        store:null
     },
     _itemTmpl:null,
     _subTmpl:null,
@@ -926,6 +988,8 @@ $wb.ui.Menu = $wb.Class('Menu',{
             if ($.type(callback) == 'function')
                 this.elm().unbind('click').bind('click',callback);
         });
+        
+        btn.menu(this);
 
         return btn;
     },
@@ -943,6 +1007,7 @@ $wb.ui.Menu = $wb.Class('Menu',{
         }
 
         subMenuBtn.add(submenu);
+        subMenuBtn.menu(submenu);
 
         return subMenuBtn;
     },
@@ -959,8 +1024,50 @@ $wb.ui.Menu = $wb.Class('Menu',{
         } else {
             elm = this._makeButton(title,arg);
         }
+        
+        
         this._children.push(elm);
         return elm;
+    },
+    setStore:function(store,rowReader) {
+        if (store && !$wb.utils.isA(store,$wb.data.ListStore))
+            throw new $wb.Error(_("store option must be an instance of ListStore",this));
+        if (!rowReader)
+            throw new $wb.Error(_("store option requires a row reader function",this));
+        this.opts.store = store;
+        this.opts.rowReader = rowReader;
+        if (store) {
+            this._readFromStore();
+            var self = this;
+            store.bind('added',function(rows) {
+                self._addFromStore(rows);
+                self.render();
+            });
+            store.bind('removed',function(rows) {
+                console.log('todo');
+            });
+            store.bind('updated',function(rows) {
+                console.log('todo');
+            });
+        }
+    },
+    _readFromStore:function() {
+         if (!this.opts.store) return null;
+         var rows = this.opts.store.getRows();
+         if (rows == null) return null;
+         return this._addFromStore(rows,true);
+    },
+    _addFromStore:function(rows) {
+        for(var i = 0; i < rows.length;i++) {
+            var self = this;
+            (function(){
+                var row = self.opts.rowReader(rows[i]);
+                var realRow = rows[i];
+                self.add(row.name,function() {
+                    row.callback(realRow);
+                });
+            })()
+        }
     }
 });
 
@@ -2639,13 +2746,15 @@ $wb.ui.Frame = $wb.Class('Frame',
         __defaults:{
             tmpl:$wb.template.frame,
             target:'.wb-content',
-            frameHeader:'.wb-frame-header'
+            frameHeader:'.wb-frame-header',
+            icon:null
         },
         
         /**
          * @constructs
          * @param {Object} opts options
          * @param {String} [opts.title] the frame title
+         * @param {String} [opts.icon] Icon image url
          * @param {String} [opts.frameHeader='.wb-frame-header'] The css selector for the frame header
          * 
          */
@@ -2671,6 +2780,10 @@ $wb.ui.Frame = $wb.Class('Frame',
             if (arguments.length > 0) {
                 this.opts.title = arguments[0];
                 this.header().children('.wb-title').html(this.opts.title);
+                this.header().find('img').detach();
+                if (this.opts.icon)
+                    this.header().prepend('<img src="%s" alt="%s" />'
+                        .format(this.opts.icon,this.opts.title));
 
                 if (this.opts.title)
                     this.header().show();

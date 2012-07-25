@@ -284,6 +284,54 @@ $wb.data.JsonSocket = $wb.Class('JsonSocket',{
     }
 });
 
+
+$wb.data.PubSub = $wb.Class('PubSub',{
+    __extends:[$wb.data.JsonSocket],
+    _authed:false,
+    __construct:function(url) {
+        this.__super(url);
+    },
+    publish:function(action,context,data) {
+        this.send({type:'publish',args:[action,context,data]});
+    },
+    subscribe:function() {
+        var contexts = [];
+        var callback = null;
+        for(var i = 0; i < arguments.length;i++) {
+            if ($.type(arguments[i]) == 'string') 
+                contexts.push(arguments[i]);
+            if ($.type(arguments[i]) == 'function') 
+                callback = arguments[i];
+        }
+        if (!callback)
+            throw _('Subscribe method requires a callback argument');
+        if (contexts.length == 0)
+            throw _('Subscribe method requires atleast 1 context argument');
+        
+        this.bind('message',function(msg) {
+            if (msg.type == 'publish') {
+                var data = msg.args[0];
+                if (contexts.indexOf(data.context) > -1)
+                    callback(data.action,data.data,data.context);
+            }
+        });
+        
+        this.send({type:'subscribe',args:[contexts]});
+    },
+    unsubscribe:function() {
+        var contexts = [];
+        
+        for(var i = 0; i < arguments.length;i++) {
+            if ($.type(arguments[i]) == 'string') 
+                contexts.push(arguments[i]);
+        }
+        if (contexts.length == 0)
+            throw _('Unsubscribe method requires atleast 1 context argument');
+        
+        this.send({type:'unsubscribe',args:[contexts]});
+    }
+});
+
 $wb.data.JsonService = $wb.Class('JsonService',{
     __extends:[$wb.core.Events,$wb.core.Utils],
     opts:{},
@@ -589,6 +637,7 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         this.getSource().bind('loaded',function(ok,data) {
             if (!ok) return;
             this.setRows(data[this.opts.rowField],data[this.opts.totalRowField]);
+            
         }.bind(this));
 
         this.getSource().bind('added',function(ok,data) {
@@ -644,7 +693,7 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         this._data.total = totalRows;
         this.addAll(rows);
         //Add all also increases row count - compensate.
-        this._data.total -= rows.length;
+        this._data.total -= rows.length
     },
     getTotalRows:function() {
         return this._data.total;

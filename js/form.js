@@ -168,6 +168,19 @@ $wb.ui.form.Form = $wb.Class('Form',{
             }
         });
         return out;
+    },
+    submit:function() {
+        if (arguments.length == 1) {
+            var self = this;
+            var cb = arguments[0];
+            this.elm().submit(function(evt) {
+                evt.preventDefault();
+                cb(self.getData());
+            });
+        } else {
+            this.elm().submit();
+        }
+        return this;
     }
 });
 
@@ -571,16 +584,19 @@ $wb.ui.form.Button = $wb.Class('Button',{
         },opts);
         this.__super(opts);
         
+        this.bind('paint',function() {
+            this.title(this.opts.label);
+        });
+        
+        this._bind();
+    },
+    _bind:function() {
         var self = this;
         this.elm().click(function(evt) {
             evt.preventDefault();
             if (self.opts.action) {
                 self.opts.action(evt);
             }
-        });
-        
-        this.bind('paint',function() {
-            this.title(this.opts.label);
         });
     },
     title:function() {
@@ -602,6 +618,9 @@ $wb.ui.form.SubmitButton = $wb.Class('SubmitButton',{
             type:'submit'
         },opts);
         this.__super(opts);
+    },
+    _bind:function() {
+        
     }
 });
 
@@ -611,7 +630,7 @@ $wb.ui.form.ButtonPane = $wb.Class('ButtonPane',{
         if (!opts) opts = {};
         opts = $.extend({
             tmpl:$wb.template.form.button_pane,
-            layout:$wb.ui.layout.Flow
+            layout:$wb.ui.layout.FlowReverse
         },opts);
         this.__super(opts);
     }

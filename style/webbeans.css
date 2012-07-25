@@ -102,6 +102,13 @@ body {
     overflow: auto;
 }
 
+/* frame */
+
+
+.wb-frame-header > img {
+    float:left;
+}
+
 /* split pane */
 .wb-splitpane {
     overflow:hidden;
@@ -232,8 +239,8 @@ body {
 
 .wb-accordion {
     display:block;
-    width:100%;
     overflow:hidden;
+    min-width: 100px;
 }
 .wb-accordion .wb-submenu {
     width:auto;

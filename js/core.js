@@ -1049,6 +1049,58 @@ require($wbConfig.jQuery,function() {
             }
         }
     );
+        
+    /**
+     * @description App descriptor. Use as main namespace for app
+     * @class
+     */
+    $wb.App = $wb.Class('App',
+    /**
+     * @lends $wb.core.Events.prototype
+     * @augments $wb.Class
+     */
+    {
+        __extends:[ $wb.core.Events,
+                    $wb.core.Utils],
+        /**
+         * The provided options.
+         * @type Object
+         */
+        opts:{
+            name:"None"
+        },
+        _ready:false,
+        
+        
+        /**
+        * @constructs
+        * @param {Object} opts 
+        * @param {Function} opts.tmpl template function
+        * @param {String} opts.id Id of the element
+        * @param {Function} opts.layout Layout function
+        * @param {boolean} [opts.async] If true - rendering will be hold off untill "ready" event is triggered
+        */
+        __construct:function(opts) {
+            this.opts = $.extend(this.opts,opts);
+        },
+        name:function() {
+            return this.opts.name;
+        },
+        setReady:function(ready) {
+            if (!this._ready && ready) {
+                this.trigger('ready');
+            }
+            this._ready = ready;
+        },
+        whenReady:function(cb) {
+            if (this._ready) {
+                cb();
+            } else {
+                this.bind('ready',cb);
+            }
+        }
+    });
+        
     
     /**
      * @description global registry
@@ -1117,6 +1169,8 @@ require($wbConfig.jQuery,function() {
         if (cb)
             cb();
     };
+    
+    
     window.$wb = $wb;
 });
 
