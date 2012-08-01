@@ -580,6 +580,12 @@ $wb.ui.Widget = $wb.Class('Widget',
          * @returns {$wb.ui.Widget} itself
          */
         set:function(ix,child) {
+            if (typeof child == 'undefined' 
+                && ix instanceof $wb.ui.Widget) {
+                this.clear();
+                this.add(ix);
+                return this;
+            }
             if (this._children[ix]) {
                 this._children[ix].detach();
             }
@@ -1322,6 +1328,104 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
     }
 });
 
+$wb.ui.GridPane = $wb.Class('GridPane',{
+    __extends:[$wb.ui.Pane],
+    __defaults:{
+        grid:[1],
+        fixedHeight:true
+    },
+    _elms:[],
+    _panes:[],
+    __construct:function(opts) {
+        opts = this.getDefaults(opts);
+        opts.layout = function() {
+            var w = this.elm().innerWidth();
+            var h = this.elm().innerHeight();
+            
+            var fixedHeight = this.opts.fixedHeight;
+            
+            var height = h / this.opts.grid.length;
+            
+            
+            for(var row = 0; row < this.opts.grid.length;row++) {
+                var widthLeft = w;
+                
+                for(var col = 0; col < this.opts.grid[row].length;col++) {
+                    var pWidth = this.opts.grid[row][col];
+                    var pane = this._pane(row,col);
+                    var elm = pane.elm();
+                    
+                    if (pWidth < 0)
+                        var width = widthLeft;
+                    else
+                        var width = pWidth*w;
+                    
+                    elm.outerWidth(width);
+                    
+                    widthLeft -= width;
+                    
+                    if (fixedHeight) {
+                        elm.outerHeight(height);
+                    }
+                    
+                }
+                
+            }
+        };
+        
+        this.bind('paint',function() {
+            this.elm().addClass('wb-grid');
+            this._paintPanes();
+        });
+        this.bind('render',function() {
+            for(var row = 0; row < this.opts.grid.length;row++) {
+                for(var col = 0; col < this.opts.grid[row].length;col++) {
+                    var pane = this._pane(row,col);
+                    pane.render();
+                }
+            }
+        });
+        
+        this.__super(opts);
+
+        this.require(opts,'grid');
+        
+        this._paintPanes();
+        
+    },
+    _paintPanes:function() {
+        for(var row = 0; row < this.opts.grid.length;row++) {
+            if(!this._panes[row])
+                this._panes[row] = [];
+            for(var col = 0; col < this.opts.grid[row].length;col++) {
+                if (!this._panes[row][col]) {
+                    this._panes[row][col] = new $wb.ui.Pane({layout:$wb.ui.layout.Fill});
+                    this.add(this._pane(row,col));
+                    
+                    var elm = this._panes[row][col].elm();
+                    if (col == (this.opts.grid[row].length-1))
+                        elm.addClass('wb-last');
+                    if (row == (this.opts.grid.length-1))
+                        elm.addClass('wb-last-row');
+                    
+                    elm.css('float','left','height','auto');
+                    
+                }
+            }
+        }
+    },
+    set:function(row,col,elm) {
+        if (!this._elms[row])
+            this._elms[row] = [];
+        this._elms[row][col] = elm;
+        
+        this._pane(row,col).add(elm);
+    },
+    _pane:function(row,col) {
+        return this._panes[row][col];
+    }
+});
+
 $wb.ui.TabButton = $wb.Class('TabButton',{
     __extends:[$wb.ui.Button],
     __construct:function(opts) {
@@ -1936,19 +2040,19 @@ $wb.ui.Accordion = $wb.Class('Accordion',{
             this.elm().disableMarking();
 
         });
-        this.bind('render',function() {
-            if (this.elm().find('.wb-active').length > 0) 
-                return; 
-            var first = $(this.elm().children('.wb-menuitem')[0]);
-            first.addClass('wb-active');
-            first.find('.wb-submenu').show().slideDown();
-        });
-        this.bind('after-layout',function() {
-            var h = this.elm().height();
+        this.bind('before-layout',function() {
+            var h = this.elm().innerHeight();
             var mainBtns = this.elm().children('.wb-menuitem').children('.wb-title');
             var btnSize = mainBtns.fullSize();
             var availH = h - btnSize.height;
+            
             this.elm().find('.wb-submenu').outerHeight(availH);
+        });
+        this.bind('after-layout',function() {
+            if (this.elm().find('.wb-active').length > 0) 
+                return; 
+            var first = $(this.elm().children('.wb-menuitem')[0]);
+            first.click();
         });
     }
 });
@@ -2768,8 +2872,14 @@ $wb.ui.Frame = $wb.Class('Frame',
             } else {
                 this.header().hide();
             }
-
-
+            
+            this.bind('before-layout',function() {
+                var headerHeight = this.elm().innerHeight()-this.target().outerHeight();
+                
+                var otherElms = this.elm().children().not(this.target());
+                
+                this.target().outerHeight(this.elm().innerHeight()-otherElms.totalOuterHeight());
+            });
         },
         /**
          * Get or set title

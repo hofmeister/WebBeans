@@ -36,6 +36,7 @@
         ],
         htmlentities:function(html) {
             if (!html) return "";
+            html = ""+html;
             html = html.replace(/</g,"&lt;");
             html = html.replace(/>/g,"&gt;");
             return html;
