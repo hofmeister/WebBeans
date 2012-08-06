@@ -96,7 +96,7 @@ var require = function(path,cb,async) {
     }
     if (requireAllIx > -1) {
         paths.splice(requireAllIx,0,
-                "jquery-ui","utils","localization","data","template","widget","form",'draw','geo');
+                "jquery-ui","utils","localization","data","template","widget","form",'module','draw','geo');
     }
     
     var oks = new Array(paths.length);
@@ -266,6 +266,8 @@ require($wbConfig.jQuery,function() {
          * @function
          */
         var clz = new Function("return function "+name+"() { "+
+            //Check that function gets called correctly
+            "   if (!(this instanceof arguments.callee)) throw new $wb.Error('"+name+" is a constructor',arguments.callee);"+
             //First - grab all fields from the prototype and add as actual fields on "this"
             "    if (arguments[0] == '__inheritance__') return; "+
             "    var clz = this.constructor; "+
@@ -279,6 +281,8 @@ require($wbConfig.jQuery,function() {
             "            val = $.extend(true,{},val);"+
             "        this[key] = val;"+
             "    }"+
+            
+            
             
                 //Call the constructor - this method is actually not the defined constructor but a placeholder. 
                 //See further down
@@ -361,9 +365,9 @@ require($wbConfig.jQuery,function() {
                 var m = clz.methods[name];
                 if (!m) {
                     //Check if a superclass has it
-                    var parentMethod = clz.__getParentMethod(name);
-                    if (parentMethod) {
-                        m = parentMethod.method;
+                    var parentMethods = clz.__getParentMethods(name);
+                    if (parentMethods && parentMethods.length > 0) {
+                        m = parentMethods[0].method;
                     }
                 }
             
@@ -451,9 +455,17 @@ require($wbConfig.jQuery,function() {
          * @memberOf $wb.Object
          */
         clz.__super = function(name,args) {
-            var m = clz.__getParentMethod(name);
-            if (m) {
-                return call.apply(this,[m.type.constructor,name,m.method,args]);
+            var ms = clz.__getParentMethods(name);
+            if (ms && ms.length > 0) {
+                var realOut = undefined;
+                for(var i = 0; i < ms.length;i++) {
+                    var m = ms[i];
+                    var out = call.apply(this,[m.type.constructor,name,m.method,args]);
+                    if (typeof out != 'undefined') {
+                        realOut = out;
+                    }
+                }
+                return realOut;
             }
             throw "No parents had method "+name;
         };
@@ -462,22 +474,25 @@ require($wbConfig.jQuery,function() {
          * @memberOf $wb.Class
          * @static
          */
-        clz.__getParentMethod = function(name) {
+        clz.__getParentMethods = function(name) {
             var list = [];
+            var out = [];
             for(var i in clz.__extends) {
                 var parent = clz.__extends[i];
                 
                 list.push(parent._clz);
                 var m = parent.constructor.methods[name];
                 if (m) {
-                    return {type:parent,method:m};
+                    out.push({type:parent,method:m});
                 } else {
-                    m = parent.constructor.__getParentMethod(name);
-                    if (m) 
-                        return m;
+                    var ms = parent.constructor.__getParentMethods(name);
+                    
+                    if (ms) {
+                        out = out.concat(ms);
+                    }
                 }
             }
-            return null;
+            return out;
         };
         
 
@@ -1100,6 +1115,62 @@ require($wbConfig.jQuery,function() {
             }
         }
     });
+    
+    $wb.Controller = $wb.Class('MVCController',{
+        _actions:{},
+        _context:null,
+        __construct:function(actions) {
+            this._actions = actions;
+        },
+        context:function() {
+            if (arguments.length > 0) {
+                this._context = arguments[0];
+                
+                for(var actionName in this._actions) {
+                    this._actions[actionName].context(this._context);
+                    this[actionName] = this._actions[actionName].method();
+                    console.log(actionName);
+                }
+                
+                return this;
+            }
+            return this._context;
+        },
+        actions:function() {
+            return this._actions;
+        }
+    });
+    
+    $wb.Action = $wb.Class('MVCAction',{
+        _method:null,
+        _name:'',
+        _type:'default',
+        _context:null,
+        __construct:function(name,method,type) {
+            this._name = name;
+            this._method = method;
+            this._type = type;
+        },
+        context:function() {
+            if (arguments.length > 0) {
+                this._context = arguments[0];
+                return this;
+            }
+            return this._context;
+        },
+        name:function() {
+            return this._name;
+        },
+        method:function() {
+            return this._method.bind(this.context());
+        },
+        type:function() {
+            return this._type;
+        },
+        exec:function() {
+            return this.method.apply(this.context(),arguments);
+        }
+    });
         
     
     /**
@@ -1157,6 +1228,17 @@ require($wbConfig.jQuery,function() {
         var ok = confirm(msg);
         if (cb)
             cb(ok);
+    };
+    
+    /**
+     * @description Prompt for input
+     * @param {String} msg the message
+     * @param {Function} [cb] Called with a single string paramenter (result of prompt box)
+     */
+    $wb.prompt = function(msg,cb) {
+        var out = prompt(msg);
+        if (cb)
+            cb(out);
     };
     
     /**

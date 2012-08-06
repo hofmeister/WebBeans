@@ -64,6 +64,13 @@ $wb.data.Model = $wb.Class('Model',{
     getFields:function() {
         return this._fields;
     },
+    getFieldNames:function() {
+        var out = [];
+        for(var name in this._fields) {
+            out.push(name);
+        }
+        return out;
+    },
     create:function(data) {
         if (!data) data = {};
         var row = {};
@@ -291,10 +298,18 @@ $wb.data.PubSub = $wb.Class('PubSub',{
     __construct:function(url) {
         this.__super(url);
     },
+    auth:function(sessionId) {
+        this.send({type:'auth',args:[sessionId]});
+        this._authed = true;
+    },
     publish:function(action,context,data) {
+        if (!this._authed)
+            throw new $wb.Error('PubSub service needs authentication before usage');
         this.send({type:'publish',args:[action,context,data]});
     },
     subscribe:function() {
+        if (!this._authed)
+            throw new $wb.Error('PubSub service needs authentication before usage');
         var contexts = [];
         var callback = null;
         for(var i = 0; i < arguments.length;i++) {
@@ -319,6 +334,8 @@ $wb.data.PubSub = $wb.Class('PubSub',{
         this.send({type:'subscribe',args:[contexts]});
     },
     unsubscribe:function() {
+        if (!this._authed)
+            throw new $wb.Error('PubSub service needs authentication before usage');
         var contexts = [];
         
         for(var i = 0; i < arguments.length;i++) {

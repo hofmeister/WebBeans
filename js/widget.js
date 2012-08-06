@@ -54,13 +54,16 @@ $wb.ui.layout.Horizontal = function() {
     var nodes = this.children();
     var height = this.target().innerHeight();
     var width = this.target().innerWidth();
-    for(var i in nodes) {
+    
+    for(var i = 0; i < nodes.length;i++) {
         var elm = nodes[i].elm();
         elm.css({
             'float':'left'
         });
         elm.outerHeight(height);
-        width -= elm.outerWidth();
+        
+        if (i < (nodes.length-1))
+            width -= elm.outerWidth();
     }
     if (width > 0)
         elm.outerWidth(width);
@@ -367,6 +370,59 @@ $wb.ui.helper.Draggable = $wb.Class('Draggable',
 });
 
 
+$wb.ui.helper.Actionable = $wb.Class('Actionable',{
+    __defaults:{
+        actionTarget:null,
+        actionClass:'.wb-actions'
+    },
+    _actions:[],
+    __construct:function(opts) {
+        if (opts && $.type(opts.actions) == 'array') {
+            this._actions = this._actions.concat(opts.actions);
+        }
+        var self = this;
+        this.bind('render',function() {
+            var actionContainer = this.elm().find(this.opts.actionClass);
+            if (actionContainer.length == 0) {
+                actionContainer = $($wb.template.actions.container.apply(this));
+                this.actionTarget().append(actionContainer);
+            } else {
+                actionContainer.html('');
+            }
+            for(var i = 0; i < this._actions.length;i++) {
+                (function() {
+                    var a = this._actions[i];
+                    var btn = $($wb.template.actions.base.apply(this,[a.type(),a.name()]));
+                    btn.click(function(evt) {
+                        evt.preventDefault();
+                        evt.stopPropagation();
+                        a.method().apply(self);
+                    });
+                    actionContainer.append(btn);
+                }).apply(this);
+            }
+        });
+    },
+    actionTarget:function() {
+        if (!this.opts.actionTarget) {
+            return this.target();
+        }
+        return this.elm().find(this.opts.actionTarget);
+    },
+    addAction:function(action) {
+        this._actions.push(action);
+        return this;
+    },
+    actions:function() {
+        if (arguments.length > 0) {
+            this._actions = arguments[0];
+            return this;
+        }
+        return this._actions;
+    }
+});
+
+
 //Widgets
 $wb.ui.Widget = $wb.Class('Widget',
     /**
@@ -515,12 +571,6 @@ $wb.ui.Widget = $wb.Class('Widget',
                 }
             }
 
-            if (this.opts.target) {
-                this._target = this._elm.find(this.opts.target);
-            } else {
-                this._target = this._elm;
-            }
-            
             this._elm.widget(this);
             if (this.opts.height)
                 this._elm.outerHeight(this.opts.height);
@@ -715,6 +765,20 @@ $wb.ui.Widget = $wb.Class('Widget',
          * @returns {jQueryElement}
          */
         target:function() {
+            if (!this._target) {
+                if (this.opts.target) {
+                    this._target = this._elm.findFirst(this.opts.target);
+                    if (!this._target || this._target.length == 0) {
+                        throw new $wb.Error('Target not found in widget: %s in %s'.format(this.opts.target,this._clz));
+                    }
+                } else {
+                    if (!this._elm) {
+                        throw new $wb.Error('Element not yet created when attempting to access target in widget: %s'.format(this._clz));
+                    }
+                    this._target = this._elm;
+                }
+            }
+            
             return this._target;
         },
         /**
@@ -831,7 +895,8 @@ $wb.ui.BasePane = $wb.Class('BasePane',
         __extends:[$wb.ui.Widget],
         __defaults:{
             tmpl:$wb.template.base,
-            layout:$wb.ui.layout.GridBag
+            layout:$wb.ui.layout.GridBag,
+            parent:window
         },
 
         /**
@@ -843,7 +908,7 @@ $wb.ui.BasePane = $wb.Class('BasePane',
             this.__super(this.getDefaults());
 
             
-            $(window).bind('resize',this._layout.bind(this));
+            $(this.opts.parent).bind('resize',this._layout.bind(this));
 
             if (topbar)
                 this.add(topbar);
@@ -852,8 +917,8 @@ $wb.ui.BasePane = $wb.Class('BasePane',
             this.bind('before-layout',this.makeFullScreen);
         },
         makeFullScreen: function() {
-            var w = $(window).width();
-            var h = $(window).height();
+            var w = $(this.opts.parent).innerWidth();
+            var h = $(this.opts.parent).innerHeight();
             this.elm().width(w);
             this.elm().height(h);
         }
@@ -887,9 +952,16 @@ $wb.ui.Link = $wb.Class('Link',{
     title:function(title) {
         if (title) {
             this.elm().html(title).attr('title',title);
+            this.opts.title = title;
             return this;
         }
-        return this.elm().html();
+        return this.opts.title;
+    },
+    action:function() {
+        return this.opts.action;
+    },
+    context:function() {
+        return this.opts.context;
     },
     setContext:function(ctxt) {
         this.opts.context = ctxt;
@@ -913,9 +985,10 @@ $wb.ui.Action = $wb.Class('Action',{
 });
 
 $wb.ui.Button = $wb.Class('Button',{
-    __extends:[$wb.ui.Widget],
+    __extends:[$wb.ui.Widget,$wb.ui.helper.Actionable],
     __defaults:{
-        titleElm:'.wb-title'
+        titleElm:'.wb-title',
+        actionTarget:'.wb-title'
     },
     _titleElm:null,
     __construct:function(opts) {
@@ -1018,6 +1091,11 @@ $wb.ui.Menu = $wb.Class('Menu',{
         return subMenuBtn;
     },
     add: function(title,arg) {
+        
+        if (title instanceof $wb.ui.Link) {
+            return this.add(title.title(),title.action().bind(title.context()));
+        }
+        
         var elm;
         if ($.type(arg) == 'array') {
             elm = this._makeSubMenu(title,arg);
@@ -1069,9 +1147,11 @@ $wb.ui.Menu = $wb.Class('Menu',{
             (function(){
                 var row = self.opts.rowReader(rows[i]);
                 var realRow = rows[i];
-                self.add(row.name,function() {
+                var menu = self.add(row.name,function() {
                     row.callback(realRow);
                 });
+                if (row.actions)
+                    menu.actions(row.actions)
             })()
         }
     }
@@ -1176,6 +1256,73 @@ $wb.ui.ContextMenu.hide = function() {
         w.detach();
 };
 
+$wb.ui.DropdownMenu = $wb.Class('DropdownMenu',{
+    __extends:[$wb.ui.Menu],
+    __defaults:{
+        tmpl:$wb.template.dropdown.menu,
+        vertical:true
+    },
+    _element:null,
+    __construct:function(opts) {
+        opts = this.getDefaults(opts);
+        this.__super(opts);
+        
+        $wb.ui.ContextMenu.init();
+        
+        this.bind('detach',function() {
+            if (this._element) {
+                this._element.unbind('click',$wb.ui.ContextMenu.hide);
+                this._element.removeClass('wb-active');
+            }
+        });
+    },
+    render:function(element) {
+        if (!element) throw _("ContextMenu requires first argument to render to be an event");
+        this._element = element;
+        $wb.ui.ContextMenu.hide();
+        var elm = this.elm();
+        elm.addClass($wb.ui.ContextMenu.id);
+        element.addClass('wb-active');
+        $('body').append(elm);
+        elm.html('');
+        
+        //elm.bindOnce('click',$wb.ui.ContextMenu.hide);
+        
+        if (this._element) {
+            this._element.bindOnce('click',$wb.ui.ContextMenu.hide);
+        }
+        
+            
+        var out = this.__super();
+        var css = element.offset();
+        
+        var hOffset = this.elm().outerWidth()-element.outerWidth();
+        css.position = 'absolute';
+        css.zIndex = 9999;
+        css.left -= this.elm().outerWidth();
+        elm.css(css);
+        
+        var outside = elm.isOutside(window);
+        
+        if (outside != null) {
+            var pos = {
+                left:css.left,
+                top:css.top
+            }
+            if (outside == 'left') {
+                pos.left += hOffset;
+            }
+            if (outside == 'bottom') {
+                pos.top += element.outerHeight();
+                pos.top -= this.elm().outerHeight();
+            }
+            elm.css(pos);
+        }
+        
+        return out;
+    }
+});
+
 $wb.ui.Header = $wb.Class('Header',{
     __extends:[$wb.ui.Menu],
     __defaults:{
@@ -1202,7 +1349,114 @@ $wb.ui.Pane = $wb.Class('Pane',{
 });
 
 
+$wb.ui.Section = $wb.Class('Section',{
+    __extends:[$wb.ui.Pane],
+    __defaults:{
+        tmpl:$wb.template.section,
+        titleElm:'.wb-title',
+        title:null,
+        target:'.wb-target'
+    },
+    __construct:function(opts) {
+        this.__super(this.getDefaults(opts));
+        
+        this.bind('render',function() {
+           if (this.opts.title) {
+               this._titleElm().show();
+               this._titleElm().html(this.opts.title);
+           } else {
+               this._titleElm().hide();
+           }
+        });
+    },
+    _titleElm:function() {
+        return this.elm().findFirst(this.opts.titleElm);
+    },
+    title:function() {
+        if (arguments.length > 0) {
+            this.opts.title = arguments[0];
+            this._titleElm().html(this.opts.title);
+            return this;
+        }
+        return this.opts.title;
+    }
+});
 
+
+
+$wb.ui.KeyValuePane = $wb.Class('KeyValuePane',{
+   __extends:[$wb.ui.Pane],
+   __defaults:{
+        tmpl:$wb.template.keyvalue.base,
+        rowTmpl:$wb.template.keyvalue.row,
+        entry:null,
+        model:null,
+        layout:function() {
+            var labels = this.target().find('.wb-label');
+            var labelW = labels.widest().outerWidth();
+            labels.outerWidth(labelW);
+            var maxW = this.target().innerWidth();
+            this.target().find('.wb-value').outerWidth(maxW-labelW);
+        },
+        Row: $wb.Class('KeyValueRow',{
+            __extends:[$wb.ui.Widget],
+            __defaults:{
+                layout:function() {
+                    
+                }
+            },
+            __construct:function(opts) {
+                this.__super(this.getDefaults(opts));
+                
+                
+            },
+            labelElm:function() {
+                return this.elm().findFirst('.wb-label');
+            },
+            valueElm:function() {
+                return this.elm().findFirst('.wb-value');
+            }
+        })
+    },
+    __construct:function(opts) {
+        this.require(opts,'model');
+        this.__super(this.getDefaults(opts));
+        this._paintEntry();
+    },
+    _paintEntry:function() {
+        if (!this.opts.entry) 
+            return;
+        this.clear();
+        var fields = this.opts.model.getFields();
+        for(var fieldId in fields) {
+            var f = fields[fieldId];
+            
+            if (f.hidden) continue;
+            
+            var val = this.opts.entry[fieldId];
+            if (typeof val == 'undefined')
+                val = null;
+            
+            
+            
+            var row = new this.opts.Row({tmpl:this.opts.rowTmpl});
+            row.labelElm().html(f.name);
+            
+            var fieldType = $wb.ui.FieldType.type(f.valueType)
+            row.valueElm().html(fieldType.format({},val));
+            this.add(row);
+        }
+    },
+    entry:function() {
+        if (arguments.length > 0) {
+            this.opts.entry = arguments[0];
+            this._paintEntry();
+            this.render();
+            return this;
+        }
+        return this.opts.entry;
+    }
+});
 
 $wb.ui.SplitPane = $wb.Class('SplitPane',{
     __defaults: {
@@ -1325,6 +1579,91 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
             this.get(0).elm().outerHeight(h1).outerWidth(width);
             this.get(1).elm().outerHeight(h2).outerWidth(width);
         }
+    }
+});
+
+
+$wb.ui.BreadCrumb = $wb.Class('BreadCrumb',{
+    __extends:[$wb.ui.Widget],
+    __defaults:{
+        tmpl:$wb.template.breadcrumb.container,
+        buttonTmpl:$wb.template.breadcrumb.button,
+        homeCallback:null,
+        homeShow:true,
+        homeClass:'wb-home',
+        homeTitle:_('Home')
+    },
+    _levels:[],
+    __construct:function(opts) {
+        this.__super(this.getDefaults(opts));
+        this.bind('paint',function() {
+            this.elm().disableMarking();
+        });
+        this._buildHomeBtn();
+    },
+    clear:function() {
+        var out = this.__super();
+        this._levels = [];
+        this._buildHomeBtn();
+        return out;
+    },
+    _buildHomeBtn:function() {
+        
+        if (this.opts.homeShow) {
+            var btn = this.push(this.opts.homeTitle,this.opts.homeCallback);
+            btn.elm().addClass(this.opts.homeClass);
+        }
+    },
+    set:function(level,title,callback) {
+        var lvls = this._levels;
+        
+        if (level == lvls.length) {
+            return this.push(title,callback);
+        }
+        
+        if (level > (lvls.length-1)) {
+            throw new $wb.Error('Level not available in breadcrumb');
+        }
+        
+        this.pop(level-1);
+        
+        
+        return this.push(title,callback);
+    },
+    pop:function(level) {
+        
+        var lvls = this._levels;
+        if (typeof level == 'undefined')
+            level = lvls.length-2;
+        
+        this.clear();
+        
+        var offset = this.opts.homeShow ? 1 : 0;
+        for(var i = offset; i <= level;i++) {
+            this.push(lvls[i].title,lvls[i].callback);
+        }
+    },
+    push:function(title,callback) {
+        var btn = new $wb.ui.Button({
+            tmpl:this.opts.buttonTmpl
+        });
+        
+        var curIx = this._levels.length;
+        var self = this;
+        btn.bind('paint',function() {
+            this.title(title);
+            this.elm().unbind('click').bind('click',function(evt) {
+                evt.preventDefault();
+                if ($.type(callback) == 'function')
+                    callback();
+            
+                self.pop(curIx);
+            });
+        });
+        this.add(btn);
+        this._levels.push({title:title,callback:callback});
+        this.render();
+        return btn;
     }
 });
 
@@ -1454,10 +1793,12 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
                 var h,w,tabs;
                 h = this.elm().innerHeight();
                 var btnH = this._tabButtons().outerHeight();
-                this.elm().find('.wb-pane,.wb-panes')
-                            .outerHeight(h-btnH);
-                this.elm().find('.wb-pane,.wb-panes')
-                            .outerWidth(this.elm().innerWidth());
+                var paneContainer = this.elm().find('.wb-panes');
+                paneContainer.outerHeight(h-btnH);
+                paneContainer.outerWidth(this.elm().innerWidth());
+                var panes = paneContainer.children();
+                panes.outerHeight(h-btnH);
+                panes.outerWidth(this.elm().innerWidth());
 
                 if (this._tabButtonFull) {
                     w = this._tabButtons().width();
@@ -1518,10 +1859,9 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
         
         this.bind('render',function() {
             var btns = this._tabButtons().find('.wb-tab');
-            if (btns.length > 0 && this.find('.wb-active').length == 0) {
+            if (btns.length > 0 && this._tabButtons().children('.wb-active').length == 0) {
                 this.showTab(0);
             }
-                
         });
 
     },
@@ -1991,6 +2331,42 @@ $wb.ui.Tree = $wb.Class('Tree',{
 });
 
 
+$wb.ui.Wrapper = $wb.Class('Wrapper',{
+    __extends:[$wb.ui.Widget],
+    __defaults:{
+        tmpl:$wb.template.wrapper,
+        layout:function() {
+            var target = $(this.opts.target);
+            
+            var left = this.elm().find('.wb-left');
+            var right = this.elm().find('.wb-right');
+            var top = this.elm().find('.wb-top');
+            var bottom = this.elm().find('.wb-bottom');
+            
+            this.elm().innerWidth(target.boxWidth());
+            this.elm().innerHeight(target.boxHeight());
+            this.elm().css(target.offset());
+            
+            var sideHeight = this.elm().outerHeight()+top.outerHeight()+bottom.outerHeight();
+            
+            left.outerHeight(sideHeight);
+            right.outerHeight(sideHeight);
+        }
+    },
+    setTarget:function(target) {
+        this.opts.target = target;
+        this._layout();
+    },
+    __construct:function(opts) {
+        this.__super(this.getDefaults(opts));
+        
+        this.require(opts,'target');
+        
+        
+    }
+});
+
+
 $wb.ui.HtmlPane = $wb.Class('HtmlPane',{
     __extends:[$wb.ui.Pane],
     __defaults:{
@@ -2277,29 +2653,36 @@ $wb.ui.TableRow = $wb.Class('TableRow',
             var editActions = this.getTable().option('rowEditActions');
             
             if (this.getTable().hasActions()) {
-                var actionCell = $(bodyCellTmpl());
-                actionCell.addClass('wb-actions');
-                action = new $wb.ui.Action('cancel',function() {
-                        if (this.isNew()) {
-                            this.destroy();
-                        } else {
-                            this.makeStatic();
-                        }
-                    }.bind(this)
-                );
-                actionCell.append(action.render());
+                var actionCellTmpl = this.getTable().option('actionCellTmpl');
+                var actionCell = $(actionCellTmpl());
                 
-                if (editActions) {
-                    for(var name in editActions) {
-                        if (typeof editActions[name] == 'function') {
-                            action = new $wb.ui.Action(name,editActions[name],this);
-                        } else {
-                            action = editActions[name].clone().setContext(this);
+                var self = this;
+                
+                actionCell.click(function(evt) {
+                    evt.stopPropagation();
+                    evt.preventDefault();
+                    var menu = new $wb.ui.DropdownMenu();
+
+                    menu.add(new $wb.ui.Action('cancel',function() {
+                            if (self.isNew()) {
+                                self.destroy();
+                            } else {
+                                self.makeStatic();
+                            }
+                        }.bind(self)
+                    ));
+                    if (editActions) {
+                        for(var name in editActions) {
+                            if (typeof editActions[name] == 'function') {
+                                action = new $wb.ui.Action(name,editActions[name],self);
+                            } else {
+                                action = editActions[name].clone().setContext(self);
+                            }
+                        menu.add(action);
                         }
-                        
-                        actionCell.append(action.render());
                     }
-                }
+                    menu.render(actionCell);
+                });
                 row.append(actionCell);
             }
             return row;
@@ -2338,20 +2721,31 @@ $wb.ui.TableRow = $wb.Class('TableRow',
             var rowActions = this.getTable().option('rowActions');
             
             if (this.getTable().hasActions()) {
-                var actionCell = $(bodyCellTmpl());
-                actionCell.addClass('wb-actions');
+                var actionCellTmpl = this.getTable().option('actionCellTmpl');
+                var actionCell = $(actionCellTmpl());
+                actionCell.addClass('wb-disabled');
                 if (rowActions) {
-                    for(var name in rowActions) {
-                        var action;
-                        if (typeof rowActions[name] == 'function') {
-                            action = new $wb.ui.Action(name,rowActions[name],this);
-                        } else {
-                            action = rowActions[name].clone().setContext(this);
+                    var self = this;
+                    actionCell.removeClass('wb-disabled');
+                    actionCell.click(function(evt) {
+                        evt.stopPropagation();
+                        evt.preventDefault();
+                        var menu = new $wb.ui.DropdownMenu();
+                        for(var name in rowActions) {
+                            var action;
+                            if (typeof rowActions[name] == 'function') {
+                                action = new $wb.ui.Action(name,rowActions[name],self);
+                            } else {
+                                action = rowActions[name].clone().setContext(self);
+                            }
+                            menu.add(action);
                         }
-                        
-                        actionCell.append(action.render());
-                    }
+                        menu.render(actionCell);
+                    });
+                } else {
+                    actionCell.noclick();
                 }
+                
                 row.append(actionCell);
             }
             
@@ -2375,7 +2769,9 @@ $wb.ui.Table = $wb.Class('Table',
             bodyTmpl:$wb.template.table.body,
             rowTmpl:$wb.template.table.row,
             bodyCellTmpl:$wb.template.table.body_cell,
+            actionCellTmpl:$wb.template.table.body_action_cell,
             headerCellTmpl:$wb.template.table.header_cell,
+            headerActionCellTmpl:$wb.template.table.header_action_cell,
             rowReader:function(row) {
                 return row;
             },
@@ -2400,15 +2796,8 @@ $wb.ui.Table = $wb.Class('Table',
                 }
 
                 if (this._hasActionColumn()) {
-                    var actionWidth = Math.floor(Math.max(availWidth/10,120));
-
-                    if (!isNaN(actionWidth) && actionWidth > 0) {
-                        availWidth -= actionWidth;
-                        if (isHeader)
-                            this._header.find('.wb-actions').outerWidth(actionWidth);
-                        else
-                            this._body.find('.wb-table-row:eq(0) .wb-actions').outerWidth(actionWidth);
-                    }
+                    var actionWidth = this.elm().find('.wb-actions:eq(0)').outerWidth();
+                    availWidth -= actionWidth;
                 }
 
                 var cellWidth = Math.floor(availWidth/cells.length);
@@ -2729,21 +3118,31 @@ $wb.ui.Table = $wb.Class('Table',
                 row.append(cell);
             }
             if (this.hasActions()) {
-                var actionCell = $(this.opts.headerCellTmpl());
-                actionCell.addClass('wb-actions');
+                var actionCell = $(this.opts.headerActionCellTmpl());
+                actionCell.addClass('wb-actions wb-disabled');
                 if (this.opts.headerActions) {
-                    for(var name in this.opts.headerActions) {
-                        var action;
-                        
-                        if (typeof this.opts.headerActions[name] == 'function') {
-                            action = new $wb.ui.Action(name,this.opts.headerActions[name],this);
-                        } else {
-                            action = this.opts.headerActions[name].clone().setContext(this);
+                    
+                    actionCell.removeClass('wb-disabled');
+                    actionCell.click(function(evt) {
+                        evt.stopPropagation();
+                        evt.preventDefault();
+                        var menu = new $wb.ui.DropdownMenu();
+                        for(var name in self.opts.headerActions) {
+                            var action;
+
+                            if (typeof self.opts.headerActions[name] == 'function') {
+                                action = new $wb.ui.Action(name,self.opts.headerActions[name],self);
+                            } else {
+                                action = self.opts.headerActions[name].clone().setContext(self);
+                            }
+                            menu.add(action);
                         }
-                        
-                        actionCell.append(action.render());
-                    }
+                        menu.render(actionCell);
+                    });
+                } else {
+                    actionCell.noclick();
                 }
+                
                 row.append(actionCell);
                 
                 if (this.opts.filters.length > 0) {
@@ -2846,11 +3245,12 @@ $wb.ui.Frame = $wb.Class('Frame',
      * @augments $wb.ui.Pane
      */
     {
-        __extends:[$wb.ui.Pane],
+        __extends:[$wb.ui.Pane,$wb.ui.helper.Actionable],
         __defaults:{
             tmpl:$wb.template.frame,
             target:'.wb-content',
             frameHeader:'.wb-frame-header',
+            actionTarget:'.wb-actions',
             icon:null
         },
         
@@ -2873,9 +3273,7 @@ $wb.ui.Frame = $wb.Class('Frame',
                 this.header().hide();
             }
             
-            this.bind('before-layout',function() {
-                var headerHeight = this.elm().innerHeight()-this.target().outerHeight();
-                
+            this.bind('after-layout',function() {
                 var otherElms = this.elm().children().not(this.target());
                 
                 this.target().outerHeight(this.elm().innerHeight()-otherElms.totalOuterHeight());
@@ -3068,6 +3466,10 @@ $wb.ui.Window = $wb.Class('Window',
                     this.target().children().css('height','auto');
                 }
             });
+            
+            this.addAction(new $wb.Action(_('Close'),function() {
+                this.close();
+            }.bind(this),'remove'))
 
         },
         /**

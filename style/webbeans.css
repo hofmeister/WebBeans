@@ -261,22 +261,43 @@ body {
     content: ".";display: block;height: 0;clear: both;visibility: hidden;
     
 }
-.wb-input-container > label > span {
+.wb-input-container > label > .wb-label {
     display:block;
 }
 
-.wb-input-container.wb-label-left > label > span {
+.wb-input-container.wb-label-left > label > .wb-label {
     float:left;
-    width:90px;
 }
 
 
-.wb-input-container.wb-label-right > label > span {
+.wb-input-container.wb-label-right > label > .wb-label {
     text-align:left;
-    display:inline;
+    display:inline-block;
+    vertical-align: top;
 }
 .wb-input-container .wb-input:after {
     clear:both;
+}
+
+/* cron field */
+.wb-input-cron > label > .wb-target {
+    float:right;
+    padding-right:20px;
+}
+.wb-input-cron > label > .wb-target > .wb-input-container {
+    float:left;
+    width:auto;
+    border:0;
+    padding:0px;
+}
+
+.wb-input-cron > label > .wb-target .wb-input-select {
+    width:auto;
+    font-size: 10px;
+    margin-right:0px;
+}
+.wb-input-cron > label > .wb-target .wb-label {
+    display:none;
 }
 
 /* buttons */
@@ -308,6 +329,17 @@ body {
     table-layout: fixed;
 }
 
+.wb-table .wb-table-cell {
+    overflow:hidden;
+}
+.wb-table .wb-actions {
+    cursor: pointer;
+    overflow: visible;
+}
+.wb-table .wb-actions.wb-disabled {
+    cursor: default;
+}
+
 
 .wb-table-head .wb-sortable.wb-asc > .wb-sort {
     -webkit-transform: rotate(-180deg);  /* Saf3.1+, Chrome */
@@ -320,9 +352,6 @@ body {
     display:none;
 }
 
-.wb-table .wb-table-cell {
-    overflow:hidden;
-}
 .wb-table-body-scroll {
     overflow: auto;
 }
@@ -362,3 +391,62 @@ body {
     cursor:pointer;
 }
 
+/* breadcrumb */
+.wb-breadcrumb {
+    display: block;
+}
+
+.wb-breadcrumb > li {
+    float:left;
+    display:block;
+}
+
+/* wrapper */
+.wb-wrapper {
+    position:absolute;
+    z-index: 10;
+}
+.wb-wrapper > .wb-top,
+    .wb-wrapper > .wb-bottom,
+    .wb-wrapper > .wb-left,
+    .wb-wrapper > .wb-right {
+    position:absolute;
+    background-color: #333;
+    opacity: .5;
+}
+.wb-wrapper > .wb-top,
+    .wb-wrapper > .wb-bottom {
+    height:10px;
+    width:100%;
+}
+
+.wb-wrapper > .wb-left,
+    .wb-wrapper > .wb-right {
+    width:10px;
+}
+
+.wb-wrapper > .wb-top {
+    top:-10px;
+    left:0px;
+}
+.wb-wrapper > .wb-bottom {
+    bottom:-10px;
+    left:0px;
+}
+.wb-wrapper > .wb-left {
+    left:-10px;
+    top:-10px;
+    border-radius: 10px 0 0 10px;
+}
+.wb-wrapper > .wb-right {
+    right:-10px;
+    top:-10px;
+    border-radius: 0 10px 10px 0; 
+}
+
+/* key value */
+
+.wb-keyvalue .wb-label,
+    .wb-keyvalue .wb-value {
+    float:left;
+}

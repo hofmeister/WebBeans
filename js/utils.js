@@ -80,6 +80,25 @@
             return cur;
         },
         /**
+        * Generate a range of numbers from start to end - optionally formatted by provided format string
+        * @param {number} start number
+        * @param {number} end number
+        * @param {format} optional format
+        * @example
+        * 
+        * var myRange = $wb.utils.Range(1,10,"%s. place");
+        */
+        Range:function(start,end,format) {
+            var out = {};
+            for(var i = start;i <= end;i++) {
+                if (format)
+                    out[i] = format.format(i);
+                else
+                    out[i] = i;
+            }
+            return out;
+        },
+        /**
         * Sets value using path on object
         * @param {Object} obj the object
         * @param {String} path the path
@@ -260,6 +279,18 @@
                 return elm.closest('.'+clz).data('__widget');
             }
         };
+        
+        $.fn.findFirst = function(selector) {
+            return $($(this).find(selector)[0]);
+        }
+        
+        $.fn.noclick = function() {
+            $(this).click(function(evt) {
+                evt.stopImmediatePropagation();
+                evt.preventDefault();
+                return false;
+            });
+        };
 
         $.fn.fullSize = function() {
             return $wb.utils.fullSize(this);
@@ -284,6 +315,23 @@
             return parseCssSize(el.css('padding-left'))
             +parseCssSize(el.css('padding-right'));
         };
+        
+        
+        $.fn.boxHeight= function() {
+            var el = $(this);
+            return el.height()
+                        +el.paddingHeight()
+                        +parseCssSize(el.css('border-top'))
+                        +parseCssSize(el.css('border-bottom'));
+        };
+
+        $.fn.boxWidth = function() {
+            var el = $(this);
+            return el.width()
+                        +el.paddingWidth()
+                        +parseCssSize(el.css('border-left'))
+                        +parseCssSize(el.css('border-right'));
+        };
 
 
         $.fn.outerEdgeSize = function() {
@@ -295,14 +343,6 @@
                         +parseCssSize(el.css('border-'+this+'-width'));
 
 
-                if (el[0] && el[0].tagName) {
-                    switch(el[0].tagName.toLowerCase()) {
-                        case 'input':
-                        //case 'th': //Padding and border is part of width
-                            size = parseCssSize(el.css('margin-'+this));
-                            break;
-                    }
-                }
                 out += size;
             });
 
@@ -312,19 +352,7 @@
         $.fn.innerEdgeSize = function() {
             var el = $(this);
             var out = 0;
-            $(arguments).each(function() {
-                var size = 0;
-                if (el[0] && el[0].tagName) {
-                    switch(el[0].tagName.toLowerCase()) {
-                        case 'input'://Padding and border is part of width
-                        //case 'th': 
-                            size = parseCssSize(el.css('border-'+this+'-width'))
-                                + parseCssSize(el.css('padding-'+this+''));
-                            break;
-                    }
-                }
-                out += size;
-            });
+            
 
             return out;
         };
@@ -448,6 +476,16 @@
             });
 
         };
+        
+        $.fn.isOutside = function(target) {
+            target = $(target);
+            var box = $(this).boundingBox(false);
+            if (box.top < 0) return 'top';
+            if (box.left < 0) return 'left';
+            if (box.right > target.innerWidth()) return 'right';
+            if (box.bottom > target.innerHeight()) return 'bottom';
+            return null; 
+        }
 
         $.fn.disableMarking = function() {
             $(this).css({
@@ -519,6 +557,28 @@
         $.fn.isOnPage = function() {
             return ($(this).closest('body').length != 0);
         };
+        
+        $.fn.widest = function() {
+            var widest = null,width = 0;
+            $(this).each(function() {
+                if ($(this).outerWidth() > width) {
+                    widest = this;
+                    width = $(this).outerWidth();
+                }
+            });
+            return $(widest);
+        }
+        
+        $.fn.highest = function() {
+            var highest = null,height = 0;
+            $(this).each(function() {
+                if ($(this).outerHeight() > height) {
+                    highest = this;
+                    height = $(this).outerHeight();
+                }
+            });
+            return $(highest);
+        }
 
         //Temporarily detach element to reduce dom changes when doing alot of manipulating. Reintroduce it into the dom 
         //using "putBack"

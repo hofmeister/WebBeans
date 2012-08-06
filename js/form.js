@@ -8,20 +8,36 @@
 
 $wb.ui.form = {};
 
-
-$wb.ui.form.Form = $wb.Class('Form',{
+$wb.ui.form.FieldContainer = $wb.Class('FieldContainer',{
     __extends:[$wb.ui.Pane],
+    __defaults:{
+        data:{},
+        layout:function() {
+            var labels = this.target().find('.wb-input-container.wb-label-left .wb-label:visible:first-child');
+            var widest = labels.widest();
+            labels.outerWidth(widest.outerWidth());
+            
+            var maxW = Math.floor(this.target().innerWidth() / this.opts.cols);
+            var leftover = this.target().innerWidth()-(maxW*this.opts.cols);
+            var nodes = this.children();
+            for(var i = 0; i < nodes.length;i++) {
+                var node = nodes[i];
+                node.elm().outerWidth(maxW);
+                if (this.opts.cols > 1)
+                    node.elm().css('float','left');
+                if (i % this.opts.cols == 0) {
+                    node.elm().outerWidth(maxW+leftover);
+                    node.elm().addClass('wb-first');
+                }
+            }
+        },
+        cols:1,
+        columnClass:'wb-columns'
+    },
     _dirtyData:false,
     _rendered:false,
     __construct:function(opts) {
-        if (!opts) {
-            opts = {};
-        }
-        opts = $.extend({
-            tmpl:$wb.template.form.form,
-            data:{}
-        },opts);
-        this.__super(opts);
+        this.__super(this.getDefaults(opts));
         this.bind('render',function() {
             this._rendered = true;
             this.setData(this.opts.data);
@@ -29,13 +45,19 @@ $wb.ui.form.Form = $wb.Class('Form',{
             if (elm) {
                 elm.focus();
             }
+            if (this.opts.cols > 1) {
+                this.elm().addClass(this.opts.columnClass);
+            } else {
+                this.elm().removeClass(this.opts.columnClass);
+            }
         });
     },
     disable:function() {
         var elms = this.elm().find('.wb-input');
         elms.each(function() {
             var el = $(this);
-            if (el.attr('type') !== 'button' && this.tagName !== 'button') {
+            var type = el.attr('type') ? el.attr('type').toLowerCase() : '';
+            if (type !== 'button' && this.tagName.toLowerCase() !== 'button') {
                 el.widget().disable();
             }
                 
@@ -45,7 +67,8 @@ $wb.ui.form.Form = $wb.Class('Form',{
         var elms = this.elm().find('.wb-input');
         elms.each(function() {
             var el = $(this);
-            if (el.attr('type') !== 'button' && this.tagName !== 'button') {
+            var type = el.attr('type') ? el.attr('type').toLowerCase() : '';
+            if (type !== 'button' && this.tagName.toLowerCase() !== 'button') {
                 el.widget().enable();
             }
         });
@@ -168,6 +191,17 @@ $wb.ui.form.Form = $wb.Class('Form',{
             }
         });
         return out;
+    }
+});
+
+$wb.ui.form.Form = $wb.Class('Form',{
+    __extends:[$wb.ui.form.FieldContainer],
+    __defaults:{
+        tmpl:$wb.template.form.form,
+        data:{}
+    },
+    __construct:function(opts) {
+        this.__super(this.getDefaults(opts));
     },
     submit:function() {
         if (arguments.length == 1) {
@@ -181,6 +215,16 @@ $wb.ui.form.Form = $wb.Class('Form',{
             this.elm().submit();
         }
         return this;
+    }
+});
+
+$wb.ui.form.FieldSet = $wb.Class('FieldSet',{
+    __extends:[$wb.ui.Section,$wb.ui.form.FieldContainer],
+    __defaults:{
+        tmpl:$wb.template.form.fieldset
+    },
+    __construct:function(opts) {
+        this.__super(this.getDefaults(opts));
     }
 });
 
@@ -240,30 +284,33 @@ $wb.ui.form.AutoForm = $wb.Class('AutoForm',{
 
 $wb.ui.form.BaseField = $wb.Class('BaseField',{
     __extends:[$wb.ui.Widget],
+    __defaults:{
+        target:'.wb-input',
+        type:'text',
+        labelElm:'.wb-label',
+        labelPosition:'left',
+        disabled:false,
+        tmpl: function() {
+            return $wb.template.form.container.apply(this,[this.opts.type,opts.inputTmpl()]);
+        },
+        layout:function() {
+            var maxW = this.labelElm().parent().innerWidth();
+            var labelW = this.labelElm().outerWidth();
+            this.target().outerWidth(maxW-labelW);
+        }
+    },
     _labelElm:null,
     _label:null,
     _labelPosition:null,
     _container:null,
     _value:null,
     __construct:function(opts) {
-        if (!opts) opts = {};
-        opts = $.extend({
-            target:'.wb-input',
-            type:'text',
-            labelElm:'.wb-label',
-            labelPosition:'left',
-            disabled:false,
-            tmpl: function() {
-                return $wb.template.form.container.apply(this,[this.opts.type,opts.inputTmpl()]);
-            }
-        },opts);
+        this.__super(this.getDefaults(opts));
         
-        this.__super(opts);
-        
-        this._label = opts.label;
-        this._labelElm = opts.labelElm;
-        this._name = opts.name;
-        this._labelPosition = opts.labelPosition;
+        this._label = this.opts.label;
+        this._labelElm = this.opts.labelElm;
+        this._name = this.opts.name;
+        this._labelPosition = this.opts.labelPosition;
         this._container = this.elm().children('label');
         
         this.target().bind('change',function() {
@@ -365,7 +412,7 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
         this.target().focus();
     },
     labelElm:function() {
-        return this.elm().find(this._labelElm);
+        return this.elm().findFirst(this._labelElm);
     },
     label:function() {
         if (arguments.length > 0) {
@@ -472,9 +519,12 @@ $wb.ui.form.CheckBox = $wb.Class('CheckBox',{
             return this;
         } 
         
-        if (this.target().is(':checked'))
+        if (this.isChecked())
             return this.opts.checkedvalue;
         return this.opts.uncheckedValue;
+    },
+    isChecked:function() {
+        return this.target().is(':checked')
     }
 });
 
@@ -486,6 +536,9 @@ $wb.ui.form.RadioButton = $wb.Class('RadioButton',{
             type:'radio'
         },opts);
         this.__super(opts);
+    },
+    isChecked:function() {
+        return this.target().is(':checked')
     }
 });
 
@@ -519,6 +572,120 @@ $wb.ui.form.DateField = $wb.Class('DateField',{
         if (!opts) opts = {};
         opts = $.extend({
             tmpl: $wb.template.form.date
+        },opts);
+        this.__super(opts);
+    }
+});
+
+$wb.ui.form.CronField = $wb.Class('CronField',{
+    __extends:[$wb.ui.form.InputField],
+    __defaults:{
+        cronElm:'.wb-target',
+        tmpl: $wb.template.form.cron,
+        defaultValue:'* * * * * * *',
+        anyLabels:[
+            _('Every second of'),
+            _('every minute of'),
+            _('every hour of'),
+            _('every day of'),
+            _('every month of'),
+            _('on any day of the week of'),
+            _('any year')
+        ],
+        options:[
+            $wb.utils.Range(0,59,'The %s. second of'),
+            $wb.utils.Range(0,59,'the %s. minute of'),
+            $wb.utils.Range(0,23,'the %s. hour of'),
+            $wb.utils.Range(1,31,"the %s. of"),
+            {
+                1:_('every January'),
+                2:_('every February'),
+                3:_('every March'),
+                4:_('every April'),
+                5:_('every May'),
+                6:_('every June'),
+                7:_('every July'),
+                8:_('every August'),
+                91:_('every September'),
+                10:_('every October'),
+                11:_('every November'),
+                12:_('every December')
+            },
+            {
+                1:_('on Mondays'),
+                2:_('on Tuedays'),
+                3:_('on Wednesdays'),
+                4:_('on Thursdays'),
+                5:_('on Fridays'),
+                6:_('on Saturdays'),
+                0:_('on Sundays')
+            },
+            $wb.utils.Range(new Date().getFullYear()-10,new Date().getFullYear()+10),
+        ],
+        layout:function() {
+            var maxW = this.labelElm().parent().innerWidth();
+            var labelW = this.labelElm().outerWidth();
+            this._cronElm().outerWidth(maxW-labelW);
+        }
+    },
+    _fields:[],
+    __construct:function(opts) {
+        this.__super(this.getDefaults(opts));
+        
+        this.bind('render',function() {
+            for(var i = 0; i < 7;i++) {
+                var label = this.opts.anyLabels[i];
+                var options = $.extend({'*':label},this.opts.options[i]);
+                if (!this._fields[i])
+                    this._fields[i] = new $wb.ui.form.Select({options:options,container:false});
+                this._fields[i].render(this._cronElm());
+            }
+            this.trigger('change');
+        });
+        this.elm().bind('change',function() {
+            this._syncTo();
+        }.bind(this));
+        
+        this.bind('change',function() {
+            this._syncFrom();
+        });
+    },
+    _syncFrom:function() {
+        var value = this.value();
+        if (!value) {
+            this.value(this.opts.defaultValue);
+            return;
+        }
+        var vals = value.trim().split(' ');
+        
+        for(var i = 0; i < 7;i++) {
+            var val = vals[i];
+            if (!val)
+                val = '*'; 
+            this._fields[i].value(val.trim());
+        }
+    },
+    _syncTo:function() {
+        var vals = [];
+        this.elm().find('select').each(function() {
+            vals.push($(this).val());
+        });
+        var value = vals.join(' ');
+        
+        this.value(value);
+    },
+    _cronElm:function() {
+        return this.elm().findFirst(this.opts.cronElm);
+    }
+});
+
+$wb.ui.form.EmailField = $wb.Class('EmailField',{
+    __extends:[$wb.ui.form.InputField],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            tmpl: $wb.template.form.email,
+            validate:/\b[A-Z0-9._%-]+@[A-Z0-9.-]+\.[A-Z]{2,4}\b/i
         },opts);
         this.__super(opts);
     }
@@ -892,8 +1059,39 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
         }
     );
         
+    new $wb.ui.FieldType({
+            type:"email"
+        }
+    );
     
-    $wb.ui.FieldType._default = new $wb.ui.FieldType({
+    new $wb.ui.FieldType({
+            type:"phone"
+        }
+    );
+    new $wb.ui.FieldType({
+            type:"password"
+        }
+    );
+    new $wb.ui.FieldType({
+            type:"int"
+        }
+    );
+    new $wb.ui.FieldType({
+            type:"fullname"
+        }
+    );
+    new $wb.ui.FieldType({
+            type:"name"
+        }
+    );
+    new $wb.ui.FieldType({
+            type:"fieldName"
+        }
+    );
+        
+        
+    
+    new $wb.ui.FieldType({
             type:"number",
             inherits:'string'
         }
@@ -928,11 +1126,50 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
     new $wb.ui.FieldType(
         {
             type:"date",
+            
             format:function(opts,value) {
                 if (value) {
                     if (typeof value == 'number')
                         value = new Date(value);
-                    return value.toString();
+                    return value.format(Date.DATE);
+                }
+                return _('None');
+            },
+            formField:function(opts,value) {
+                var out = new $wb.ui.form.DateField({label:opts.name,name:opts.id});
+                out.value(value);
+                return out;
+            }
+        }
+    );
+    new $wb.ui.FieldType(
+        {
+            type:"datetime",
+            
+            format:function(opts,value) {
+                if (value) {
+                    if (typeof value == 'number')
+                        value = new Date(value);
+                    return value.format(Date.DATETIME);
+                }
+                return _('None');
+            },
+            formField:function(opts,value) {
+                var out = new $wb.ui.form.DateField({label:opts.name,name:opts.id});
+                out.value(value);
+                return out;
+            }
+        }
+    );
+    new $wb.ui.FieldType(
+        {
+            type:"time",
+            
+            format:function(opts,value) {
+                if (value) {
+                    if (typeof value == 'number')
+                        value = new Date(value);
+                    return value.format(Date.TIME);
                 }
                 return _('None');
             },

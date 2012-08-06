@@ -20,6 +20,11 @@ $wb.template = {
             return '<ul class="wb-menu wb-context line"></ul>';
         }
     },
+    dropdown: {
+        menu:function() {
+            return '<ul class="wb-menu wb-dropdown line"></ul>';
+        }
+    },
     header:{
         bar:function() {
             return '<ul class="wb-menu wb-header line"></ul>';
@@ -30,6 +35,20 @@ $wb.template = {
     },
     footer:function() {
         return '<ul class="wb-footer"></ul>';
+    },
+    wrapper:function() {
+        return '<div class="wb-wrapper"><div class="wb-top"></div><div class="wb-bottom"></div><div class="wb-left"></div><div class="wb-right"></div></div>';
+    },
+    section:function() {
+        return '<div class="wb-section" ><h3 class="wb-title" /><div class="wb-target" /></div>';
+    },
+    keyvalue:{
+        base:function() {
+            return '<div class="wb-keyvalue" ></div>';
+        },
+        row:function() {
+            return '<div class="line wb-row"><div class="wb-label" /><div class="wb-value" /></div>';
+        }
     },
     menu: {
         base:function() {
@@ -42,11 +61,19 @@ $wb.template = {
             return '<ul class="wb-submenu line"></ul>';
         }
     },
+    breadcrumb: {
+        container:function() {
+            return '<ul class="wb-breadcrumb line"></ul>';
+        },
+        button:function() {
+            return '<li class="wb-entry"><div class="wb-title" /></li>';
+        }
+    },
     frame: function() {
-        return '<div class="wb-frame wb-pane"><div class="wb-frame-header"><div class="wb-title" /></div><div class="wb-content" /></div>';
+        return '<div class="wb-frame wb-pane"><div class="wb-frame-header"><div class="wb-title" /><div class="wb-actions"/></div><div class="wb-content" /></div>';
     },
     window: function() {
-        return '<div class="wb-window wb-frame wb-pane"><div class="wb-frame-header"><div class="wb-title" /><a href="#" class="wb-close" /></div><div class="wb-content" /></div>';
+        return '<div class="wb-window wb-frame wb-pane"><div class="wb-frame-header"><div class="wb-title" /><div class="wb-actions"/></div><div class="wb-content" /></div>';
     },
     shade: function() {
         return '<div class="wb-shade"></div>';
@@ -98,8 +125,14 @@ $wb.template = {
         body_cell:function() {
             return '<td class="wb-table-cell" />';
         },
+        body_action_cell:function() {
+            return '<td class="wb-table-cell wb-actions" ><a href="">&nbsp;</a></td>';
+        },
         header_cell:function() {
             return '<th class="wb-table-cell" ><div class="wb-icon wb-sort"/><span class="wb-title" /><div class="wb-icon wb-filter"/></th>';
+        },
+        header_action_cell:function() {
+            return '<th class="wb-table-cell wb-actions" ><a href="">&nbsp;</a></th>';
         }
     },
     paging:{
@@ -132,6 +165,12 @@ $wb.template = {
         input:function(type) {
             return $wb.template.form.container(type,'<input class="wb-input" type="'+type+'" value="" />');
         },
+        email:function() {
+            return $wb.template.form.container('email','<input class="wb-input" type="text" value="" />');
+        },
+        cron:function() {
+            return $wb.template.form.container('cron','<input class="wb-input" type="hidden" value="" /><div class="wb-target line" />');
+        },
         color:function() {
             return $wb.template.form.container("color",'#<input class="wb-input" type="text" value="" />');
         },
@@ -155,7 +194,7 @@ $wb.template = {
         },
         
         fieldset:function() {
-            return '<fieldset />';
+            return '<fieldset class="wb-section" ><legend class="wb-title" /><div class="wb-target line" /></fieldset>';
         },
         select_option:function() {
             return '<option />';
@@ -171,6 +210,9 @@ $wb.template = {
         return '<a href="#" />';
     },
     actions:{
+        container:function() {
+            return '<div class="wb-actions"/>';
+        },
         custom:function(title) {
             return '<a href="#" class="wb-action" title="'+title+'" />';
         },
