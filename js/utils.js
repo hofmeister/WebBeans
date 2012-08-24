@@ -285,11 +285,172 @@
         }
         
         $.fn.noclick = function() {
-            $(this).click(function(evt) {
+            $(this).bind('mousedown click mouseup',function(evt) {
                 evt.stopImmediatePropagation();
                 evt.preventDefault();
                 return false;
-            });
+            }).removeAttr('onclick')
+            .removeAttr('onmousedown')
+            .removeAttr('onmouseup');
+        };
+        
+        $.fn.attrs = function() {
+            var attributes = {}; 
+
+            if(!this.length)
+                return attributes;
+
+            $.each(this[0].attributes, function(index, attr) {
+                attributes[attr.name] = attr.value;
+            }); 
+
+            return attributes;
+        };
+        
+        $.fn.clearAttrs = function() {
+            var elm = $(this);
+            var attrs = elm.attrs();
+            
+            for(var name in attrs) {
+                elm.removeAttr(name);
+            }
+
+            return elm;
+        };
+        
+        
+        
+        $.fn.cloneFrom = function(source) {
+            if(!this.length)
+                return this;
+            
+            source = $(source);
+            
+            var elm = $(this);
+            
+            elm.clearAttrs();
+            var newAttrs = source.attrs();
+            
+            if (!newAttrs) 
+                return this;
+            
+            for(var name in newAttrs) {
+                var val = newAttrs[name];
+                elm.attr(name,val);
+            }
+            return this;
+        };
+        
+        $.fn.path = function(ignoreTags,last) {
+            if (!ignoreTags)
+                ignoreTags = [];
+            if (!last) last = '';
+            
+            var el = $(this);
+
+            if (!el[0] || !el[0].tagName) return last;
+            
+            if (el[0].tagName.toUpperCase() == 'HTML') 
+                return last;
+            
+            var tag = el[0].tagName.toLowerCase();
+            
+            if (tag.indexOf(':') > -1)
+                return last;
+
+            if (el.attr('id')) {
+                var id = el.attr('id');
+                
+                //If element has ID that does not look like a generic id... use that
+                if (!/[0-9]/.test(id)) {
+                    return tag+'#'+id+' '+last;
+                } else {
+                    if (/[A-Z]{4,}/i.test(id)) {
+                        //If the generic id ends with some letters - use those
+                        var result = /[A-Z]{4,}/i.exec(id);
+                        return tag+'[id$='+result[0]+"] "+last;
+                    }
+                }
+                
+            }
+            
+            var p = el.parent();
+            
+            var similarCount = p.length > 0 ? p.find(last).length : 1;
+            
+            if (last.length > 0 
+                        && p.length > 0
+                        && similarCount == 1) { 
+                //Parent has only one
+                return p.path(ignoreTags,last);
+            }
+            
+            var out = '';
+            if (p.length == 0 || ignoreTags.indexOf(tag) == -1) {
+                var name = tag;
+
+                var attrs = ['name','rel','type','title','alt'];
+                var found = false;
+                for(var i = 0; i < attrs.length;i++) {
+                    var attr = attrs[i];
+                    var val = $(el[0]).attr(attr);
+                    if (val) {
+                        name += '['+ attr +'="' + val + '"]';
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (!found) {
+                    var className = el[0].className.split(' ')[0];
+                    if (className.length > 0) {
+                        name += '.' + className;
+                        found = true;
+                    }
+                }
+                
+                if (p.length > 0) {
+                    
+                    similarCount = p.find((name+' '+last).trim()).length
+                    
+                    if (similarCount > 1) {
+                        var index = el.prevAll(name).length;
+                        name += ":nth-child(" + (index+1) + ")";
+                        found = true;
+                    }
+                }
+                
+                
+                if (found)
+                    out = name;
+            }
+            if (p) {
+                return p.path(ignoreTags,out+' '+last);
+            }
+                
+            
+            return out.trim()+last;
+        }
+        
+        $.fn.scrollTo = function(elm,margin) {
+            
+            if (typeof elm == 'string') {
+                elm = $(this).find(elm);
+            } else {
+                elm = $(elm);
+            }
+            if (!margin)
+                margin = ($(this).innerHeight()-elm.outerHeight())/2;
+            
+            var pOffset = $(this).offset();
+            if (!pOffset) 
+                return;
+            var offset = elm.offset();
+            if (!offset) 
+                return;
+            offset.top -= pOffset.top;
+            offset.left -= pOffset.left;
+            $(this).scrollTop(Math.max(0,offset.top-margin));
         };
 
         $.fn.fullSize = function() {
@@ -315,6 +476,15 @@
             return parseCssSize(el.css('padding-left'))
             +parseCssSize(el.css('padding-right'));
         };
+        
+        $.fn.cssSize = function() {
+            var el = $(this);
+            var out = 0;
+            $(arguments).each(function() {
+                out += parseCssSize(el.css(""+this));
+            });
+            return out;
+        }
         
         
         $.fn.boxHeight= function() {
@@ -405,7 +575,7 @@
             }
             return $(this);
         };
-
+        
         $.fn.outerHeight= function(height) {
             var el = $(this);
             if (typeof height == 'undefined')
@@ -477,15 +647,39 @@
 
         };
         
-        $.fn.isOutside = function(target) {
-            target = $(target);
-            var box = $(this).boundingBox(false);
-            if (box.top < 0) return 'top';
-            if (box.left < 0) return 'left';
-            if (box.right > target.innerWidth()) return 'right';
-            if (box.bottom > target.innerHeight()) return 'bottom';
-            return null; 
+        $.fn.isOutside = function(container,newOffset) {
+            var thisBBox = $(this).boundingBox(false);
+            
+            if (!thisBBox)
+                return false;
+            
+            if (newOffset) {
+                thisBBox = newOffset;
+                thisBBox.right = thisBBox.left + $(this).outerWidth();
+                thisBBox.bottom = thisBBox.top + $(this).outerHeight();
+            }
+        
+            
+            
+            var containerBBox = $(container).boundingBox(false);
+            
+            if (!containerBBox)
+                return false;
+            
+            if (thisBBox.left < containerBBox.left) 
+                return 'left';
+            
+            if (thisBBox.right > containerBBox.right) 
+                return 'right';
+            
+            if (thisBBox.top < containerBBox.top) 
+                return 'top';
+            
+            if (thisBBox.bottom > containerBBox.bottom) 
+                return 'bottom';
+            return null;
         }
+        
 
         $.fn.disableMarking = function() {
             $(this).css({
@@ -549,6 +743,7 @@
                 out = elm.position();
             else
                 out = elm.offset();
+            if (!out) return null;
             out.right = out.left+elm.outerWidth();
             out.bottom = out.top+elm.outerHeight();
             return out;
@@ -611,7 +806,8 @@
         $.fn.collidesWith = function(elm,tolerance) {
             if (!tolerance)
                 tolerance = 0;
-            var collider = $(elm).boundingBox();
+            elm = $(elm);
+            var collider = elm.boundingBox();
             var out = [];
 
             function between(num,a,b,tolerance) {
@@ -620,6 +816,8 @@
 
             $(this).each(function() {
                 var testElm = $(this);
+                if (testElm[0] == elm[0]) 
+                    return;
                 var bbox = testElm.boundingBox();
                 var horizontal = (between(collider.left,bbox.left,bbox.right,tolerance)
                                     || between(collider.right,bbox.left,bbox.right,tolerance));
@@ -631,6 +829,7 @@
             return $(out);
         };
 
+        
         $.fn.elementAt = function(x,y) {
             var out = [];
             $(this).each(function() {

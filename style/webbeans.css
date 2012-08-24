@@ -109,6 +109,10 @@ body {
     float:left;
 }
 
+.wb-frame > .wb-content {
+    overflow: auto;
+}
+
 /* split pane */
 .wb-splitpane {
     overflow:hidden;
@@ -149,6 +153,15 @@ body {
     .wb-tabpane.wb-bottom > .wb-tabs {
     width:100%;
 }
+
+.wb-tabpane.wb-top > .wb-tabs > .wb-actions {
+    float:right;
+}
+
+.wb-tabpane.wb-bottom > .wb-tabs > .wb-actions {
+    float:right;
+}
+
 .wb-tabpane > .wb-panes > .wb-pane {
     position:relative;
     z-index: 2;
@@ -348,6 +361,14 @@ body {
        -o-transform: rotate(-180deg);  /* Opera 10.5 */
           transform: rotate(-180deg);
 }
+.wb-table-head .wb-sort,.wb-table-head .wb-filter {
+    display:none;
+}
+
+.wb-table-head .wb-sortable .wb-sort,.wb-table-head .wb-filtered .wb-sort {
+    display:block;
+}
+
 .wb-table-head .wb-filter-row {
     display:none;
 }
@@ -449,4 +470,11 @@ body {
 .wb-keyvalue .wb-label,
     .wb-keyvalue .wb-value {
     float:left;
+}
+/* dom pane */
+.wb-dom ul ul {
+    margin-left:20px; 
+}
+.wb-dom .wb-dom-folded {
+    display:none;
 }

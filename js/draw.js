@@ -140,6 +140,13 @@ $wb.draw.Layer = $wb.Class('Layer',{
     },
     clear:function() {
         this.context().clearRect(0,0,parseInt(this.elm().attr('width')),parseInt(this.elm().attr('height')));
+        
+    },
+    empty:function() {
+        while(this._elements.length > 0) {
+            delete this._elements.pop();
+        }
+        this.clear();
     },
     context:function() {
         return this.elm()[0].getContext('2d');

@@ -165,11 +165,12 @@ $wb.ui.FieldType = $wb.Class('FieldType',
                 return "<span>%s</span>".format($wb.utils.htmlentities(value));
             },
             formField:function(opts,value) {
-                var field = new $wb.ui.form.TextField({name:opts.id,label:opts.name});
+                var field = new $wb.ui.form.TextField({name:opts.id,label:opts.name,labelPosition:opts.labelPosition});
                 field.value(value);
                 return field;
             },
             tableField:function(opts,value) {
+                opts = $.extend(opts,{labelPosition:'none'});
                 var out = this.formField(opts,value);
                 //Remove label element (in cells)
                 out.labelElm().detach();
@@ -248,6 +249,10 @@ $wb.ui.helper.Draggable = $wb.Class('Draggable',
     },
     _onStartDrag:function(evt) {
         if (evt.button == 2) return;
+        
+        evt.preventDefault();
+        evt.stopImmediatePropagation();
+        
         var elm = this.dragHandle();
         var opts = this.opts.draggable;
         var self = this;
@@ -268,6 +273,19 @@ $wb.ui.helper.Draggable = $wb.Class('Draggable',
         if (opts.dropZones)
             dropZones = $(opts.dropZones);
         
+        var container = null;
+        if (opts.container) {
+            container = $(opts.container);
+        }
+        
+        var obstacles = null;
+        if (opts.obstacles) {
+            if (container && typeof opts.obstacles == 'string')
+                obstacles = container.find(opts.obstacles);
+            else
+                obstacles = $(opts.obstacles);
+        }
+        
         var active = false;
         var initialize = function() {
             if (opts.copy) {
@@ -285,12 +303,14 @@ $wb.ui.helper.Draggable = $wb.Class('Draggable',
         
         var parent = $('body');
         
+        
         var mouseUp = function(evt) {
             parent.unbind('mousemove',mouseMove);
             if (!active) {
                 return;
             }
             evt.preventDefault();
+            evt.stopImmediatePropagation();
             
             if (dropZones) {
                 var hitElements = dropZones.elementAt(evt.pageX,evt.pageY);
@@ -316,11 +336,54 @@ $wb.ui.helper.Draggable = $wb.Class('Draggable',
             if (!active) {
                 initialize();
             }
-            //evt.preventDefault();
-            elm.offset({
+            
+            if (obstacles) {
+                if (obstacles.collidesWith(elm,0).length > 0) {
+                    return;
+                }
+            }
+            
+            var newOffset = {
                 left:evt.pageX-mouseOffset.x,
                 top:evt.pageY-mouseOffset.y
-            });
+            };
+            
+            if (opts.grid) {
+                newOffset.left = Math.round(newOffset.left/opts.grid[0])*opts.grid[0];
+                newOffset.top = Math.round(newOffset.top/opts.grid[1])*opts.grid[1];
+            }
+        
+            newOffset.left += elm.cssSize('margin-left');
+            newOffset.top += elm.cssSize('margin-top');
+            
+            var bbox = null;
+            if (container) {
+                bbox = container.boundingBox();
+                
+                do {
+                    var outside = elm.isOutside(container,newOffset);
+                    if (outside) {
+                        switch(outside) {
+                            case 'left':
+                                newOffset.left = bbox.left+elm.cssSize('margin-left');
+                                break;
+                            case 'right':
+                                newOffset.left = bbox.right-elm.outerWidth();
+                                break;
+                            case 'top':
+                                newOffset.top = bbox.top+elm.cssSize('margin-top');
+                                break;
+                            case 'bottom':
+                                newOffset.top = bbox.bottom-elm.outerHeight();
+                                break;
+                        }
+                    }
+                } while(outside);
+            }
+            
+            
+            //evt.preventDefault();
+            elm.offset(newOffset);
             if (dropZones) {
                 var hitElements = dropZones.elementAt(evt.pageX,evt.pageY);
                 if (hitElements.length > 0) { 
@@ -338,7 +401,6 @@ $wb.ui.helper.Draggable = $wb.Class('Draggable',
             
         };
       
-        //mouseMove(evt);
         parent.bind('mousemove',mouseMove);
         parent.one('mouseup',mouseUp);
     },
@@ -382,7 +444,7 @@ $wb.ui.helper.Actionable = $wb.Class('Actionable',{
         }
         var self = this;
         this.bind('render',function() {
-            var actionContainer = this.elm().find(this.opts.actionClass);
+            var actionContainer = this.elm().findFirst(this.opts.actionClass);
             if (actionContainer.length == 0) {
                 actionContainer = $($wb.template.actions.container.apply(this));
                 this.actionTarget().append(actionContainer);
@@ -407,7 +469,7 @@ $wb.ui.helper.Actionable = $wb.Class('Actionable',{
         if (!this.opts.actionTarget) {
             return this.target();
         }
-        return this.elm().find(this.opts.actionTarget);
+        return this.elm().findFirst(this.opts.actionTarget);
     },
     addAction:function(action) {
         this._actions.push(action);
@@ -852,6 +914,8 @@ $wb.ui.Widget = $wb.Class('Widget',
             if (this._layoutMethod) {
                 this._layoutMethod.apply(this);
             }
+            
+            this.trigger('before-children-layout');
             for(var i in this._children) {
                 var child = this._children[i];
                 child._layout();
@@ -882,6 +946,160 @@ $wb.ui.Html = $wb.Class('Html',{
             tmpl:function() {return html;},
             target:target?target:null
         });
+    }
+});
+
+$wb.ui.IFrame = $wb.Class('IFrame',{
+    __extends:[$wb.ui.Widget],
+    __defaults:{
+        tmpl:$wb.template.iframe,
+        src:$wbConfig.base+'blank.html',
+        css:null
+    },
+    __construct:function(opts) {
+        this.__super(this.getDefaults(opts));
+        this.bind('render',function() {
+            this.location(this.opts.src);
+        });
+    },
+    location:function() {
+        if (arguments.length > 0) {
+            this.elm().attr('src',arguments[0]);
+            return this;
+        }
+        return this.elm().attr('src');
+    },
+    baseUrl:function() {
+        if (this.opts.baseUrl)
+            return this.opts.baseUrl;
+        return new $wb.Url(new $wb.Url(this.location()).base());
+    },
+    doc:function() {
+        return this.elm().contents().find('html');
+    },
+    body:function() {
+        return this.elm().contents().find('body');
+    },
+    head:function() {
+        return this.elm().contents().find('head');
+    },
+    window:function() {
+        return $(this.elm()[0].contentWindow);
+    },
+    html:function() {
+        var root = this.elm().contents().find('html');
+        var self = this;
+        if (arguments.length > 0) {
+            var html = arguments[0]+"";
+            
+            var makeAbsolute = function(url) {
+                if (url.substr(0,4) == 'http' 
+                        || url.substr(0,2) == '//'
+                        || url.substr(0,11) == 'javascript:'
+                        || url.substr(0,5) == 'data:')
+                    return url;
+                var base = ""+self.baseUrl();
+                var out;
+                if (url[0] == '/')
+                    out = base.substr(0,base.indexOf('/',7)) + url;
+                else if (url.substr(0,3) == '../') 
+                    out = base.substr(0,base.indexOf('/',7)+1) + url;
+                else
+                    out = base + url;
+                return out;
+            }
+            var makeAbsoluter = function(all,start,url,end,offset) {
+                var out = "";
+                out += start
+                out += makeAbsolute(url);
+                out += end
+                return out;
+            }.bind(this);
+            
+            var finalFixes = function(dom) {
+                dom.find('iframe').each(function() {
+                    $(this).attr('src',$wbConfig.base+'blank.html');
+                });
+                return dom;
+            }
+            
+            
+            
+            html = html
+                        .replace(/<!DOCTYPE[\s\S]*?>/i,'')
+                        .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gim,'')
+                        //.replace(/<style.*?>.*?<\/style>/gim,'')
+                        .replace(/on(load|unload|error|click|blur|focus|mousedown|mouseup|mouseover)='[\s\S]*?'/gi,'')
+                        .replace(/on(load|unload|error|click|blur|focus|mousedown|mouseup|mouseover)="[\s\S]*?"/gi,'')
+                        .replace(/(url\()([^'"].*?[^'"])(\))/gi,makeAbsoluter)
+                        .replace(/(url\(')(.*?)('\))/gi,makeAbsoluter)
+                        .replace(/(url\(")(.*?)("\))/gi,makeAbsoluter)
+                        .replace(/(action=')(.*?)(')/gi,makeAbsoluter)
+                        .replace(/(action=")(.*?)(")/gi,makeAbsoluter)
+                        .replace(/(href=')(.*?)(')/gi,makeAbsoluter)
+                        .replace(/(href=")(.*?)(")/gi,makeAbsoluter)
+                        .replace(/(src=')(.*?)(')/gi,makeAbsoluter)
+                        .replace(/(src=")(.*?)(")/gi,makeAbsoluter);
+                        
+                        
+            var htmlTag = /<html\b([\s\S]*?)>/gi.exec(html);
+            var pseudo;
+            if (htmlTag.length > 1) {
+                pseudo = $("<div %s />".format(htmlTag[1]));
+                root.cloneFrom(pseudo);
+            }
+            
+            html.replace(/<\/?html[\s\S]*?>/gi,'')
+            
+            if (/<\/head>/i.test(html)) {
+                var parts = html.split(/<\/head>/i);
+                var bodyTag = /<body\b([\s\S]*?)>/gi.exec(html);
+                
+                if (bodyTag.length > 1) {
+                    pseudo = $("<div %s />".format(bodyTag[1]));
+                    root.find('body').cloneFrom(pseudo);
+                }
+                
+                var headTag = /<head\b([\s\S]*?)>/gi.exec(html);
+                
+                if (headTag.length > 1) {
+                    pseudo = $("<div %s />".format(headTag[1]));
+                    root.find('head').cloneFrom(pseudo);
+                }
+                
+                root.find('head').html(parts[0].replace(/<\/?head[\s\S]*?>/gi,''));
+                root.find('body').html(parts[1].replace(/<\/?body[\s\S]*?>/gi,''));
+                finalFixes(root.find('body'));
+            } else {
+                root.find('body').html(html);
+            }
+            
+            
+            root.find('link,a').each(function() {
+                $(this).attr('href',new $wb.Url($(this).attr('href'),self.baseUrl()));
+            });
+            root.find('img').each(function() {
+                $(this).attr('src',new $wb.Url($(this).attr('src'),self.baseUrl()));
+            });
+            
+            return this;
+        }
+        return root.html();
+    },
+    title:function() {
+        if (arguments.length > 0) {
+            this.head().find('title').html(arguments[0]);
+            return this;
+        } else {
+            var title = this.head().find('title').html();
+            if (!title)
+                return this.baseUrl();
+            return title;
+        }
+    },
+    addCSS:function(cssFile) {
+        var url = new $wb.Url(cssFile,$wb.location);
+        this.head().append('<link href="%s" type="text/css" rel="stylesheet" />'.format(url));
     }
 });
 
@@ -969,42 +1187,37 @@ $wb.ui.Link = $wb.Class('Link',{
     }
 });
 
-$wb.ui.Action = $wb.Class('Action',{
-    __extends:[$wb.ui.Link],
-    __construct:function(type,callback,ctxt) {
-        var tmpl = type;
-        if (typeof tmpl == 'string') {
-            tmpl = $wb.template.actions[type];
-        }
-        
-        if (tmpl)
-            this.__super({tmpl:tmpl,title:"",action:callback,context:ctxt});
-        else
-            this.__super({title:type,action:callback,context:ctxt});
-    }
-});
-
 $wb.ui.Button = $wb.Class('Button',{
     __extends:[$wb.ui.Widget,$wb.ui.helper.Actionable],
     __defaults:{
         titleElm:'.wb-title',
-        actionTarget:'.wb-title'
+        actionTarget:'.wb-title',
+        iconElm:'.wb-icon',
+        iconClass:null,
     },
     _titleElm:null,
     __construct:function(opts) {
         this.__super(this.getDefaults(opts));
-        this._titleElm = this.opts.titleElm;
+        if (this.opts.iconClass) {
+            this.iconElm().addClass(this.opts.iconClass);
+        }
         this.bind('paint',function() {
             this.elm().disableMarking();
         });
     },
     title:function() {
         if (arguments.length > 0) {
-            this.elm().find(this._titleElm).html(arguments[0]);
+            this.titleElm().html(arguments[0]);
             return this;
         } else {
-            return this.elm().find(this._titleElm).html();
+            return this.titleElm().html();
         }
+    },
+    iconElm:function() {
+        return this.elm().find(this.opts.iconElm);
+    },
+    titleElm:function() {
+        return this.elm().find(this.opts.titleElm);
     },
     click:function() {
         this.trigger('click',arguments);
@@ -1042,6 +1255,7 @@ $wb.ui.Menu = $wb.Class('Menu',{
     _itemTmpl:null,
     _subTmpl:null,
     _vertical:null,
+    _rowIx:{},
     __construct:function(opts) {
         
         this.__super(this.getDefaults(opts));
@@ -1092,8 +1306,12 @@ $wb.ui.Menu = $wb.Class('Menu',{
     },
     add: function(title,arg) {
         
-        if (title instanceof $wb.ui.Link) {
-            return this.add(title.title(),title.action().bind(title.context()));
+        if (title instanceof $wb.Action) {
+            var btn = this.add(title.name(),title.method());
+            if (title.type())
+                btn.iconElm().addClass('icon-'+title.type());
+            
+            return btn;
         }
         
         var elm;
@@ -1128,10 +1346,12 @@ $wb.ui.Menu = $wb.Class('Menu',{
                 self.render();
             });
             store.bind('removed',function(rows) {
-                console.log('todo');
+                self._remove(rows);
             });
             store.bind('updated',function(rows) {
-                console.log('todo');
+                self._remove(rows);
+                self._addFromStore(rows);
+                self.render();
             });
         }
     },
@@ -1146,13 +1366,24 @@ $wb.ui.Menu = $wb.Class('Menu',{
             var self = this;
             (function(){
                 var row = self.opts.rowReader(rows[i]);
+                
                 var realRow = rows[i];
                 var menu = self.add(row.name,function() {
                     row.callback(realRow);
                 });
                 if (row.actions)
                     menu.actions(row.actions)
+                self._rowIx[row.id] = menu;
             })()
+        }
+    },
+    _remove:function(rows) {
+        for(var i = 0; i < rows.length;i++) {
+            var row = this.opts.rowReader(rows[i]);
+            if (!this._rowIx[row.id]) 
+                continue;
+            this.remove(this._rowIx[row.id]);
+            delete this._rowIx[row.id];
         }
     }
 });
@@ -1201,7 +1432,7 @@ $wb.ui.ContextMenu = $wb.Class('ContextMenu',{
             return this._source;
         }
     },
-    render:function(evt) {
+    render:function(evt,source) {
         evt.preventDefault();
         evt.stopPropagation();
         if (!evt) throw _("ContextMenu requires first argument to render to be an event");
@@ -1210,10 +1441,11 @@ $wb.ui.ContextMenu = $wb.Class('ContextMenu',{
         elm.addClass($wb.ui.ContextMenu.id);
         $('body').append(elm);
         elm.html('');
-        
-        var source = $(evt.target).widget();
+        if (!source)
+            source = evt.target;
+        source = $(source).widget();
         if (typeof source == 'undefined') {
-            $wb.debug("Could not find widget for element");
+            throw new $wb.Error('No valid source was defined');
             return;
         }
         
@@ -1228,6 +1460,7 @@ $wb.ui.ContextMenu = $wb.Class('ContextMenu',{
         
         if (!this.trigger('before-context')) {
             this.source(null);
+            $wb.ui.ContextMenu.hide();
             return;
         }
     
@@ -1773,7 +2006,7 @@ $wb.ui.TabButton = $wb.Class('TabButton',{
 });
 
 $wb.ui.TabPane = $wb.Class('TabPane',{
-    __extends:[$wb.ui.Pane],
+    __extends:[$wb.ui.Pane,$wb.ui.helper.Actionable],
     __defaults:{
         tmpl:$wb.template.panes.tab,
         tabTmpl:$wb.template.panes.tab_button,
@@ -1865,11 +2098,29 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
         });
 
     },
+    
     showTab:function(ix) {
+        
+        if (ix instanceof $wb.ui.Widget) {
+            var children = this.children();
+            for(var i = 0; i < children.length;i++) {
+                if (children[i] == ix) {
+                    this.showTab(i);
+                    return;
+                }
+            }
+            return;
+        }
+        
+        var panes = this._panes().children();
+        
+        if (!panes[ix]) 
+            return;
+        
         this._tabButtons().find('.wb-tab').removeClass('wb-active');
         var btn = this._tabButtons().find('.wb-tab:eq('+ix+")");
         btn.addClass('wb-active');
-        var panes = this._panes().children();
+        
         
         panes.offscreen();
         $(panes[ix]).onscreen();
@@ -1894,6 +2145,18 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
         });
 
         return btn;
+    },
+    tabButton:function(ix) {
+        if (ix instanceof $wb.ui.Widget) {
+            var children = this.children();
+            for(var i = 0; i < children.length;i++) {
+                if (children[i] == ix) {
+                    return this.tabButton(i);
+                }
+            }
+            return null;
+        }
+        return this._tabButtonWidgets[ix];
     },
     add: function(title,pane) {
         var btn = this._makeTabButton(title,pane,this.children().length);
@@ -2394,6 +2657,7 @@ $wb.ui.HtmlPane = $wb.Class('HtmlPane',{
     }
 });
 
+
 $wb.ui.Accordion = $wb.Class('Accordion',{
     __extends:[$wb.ui.Menu],
     __defaults:{
@@ -2539,703 +2803,6 @@ $wb.ui.Paging = $wb.Class('Paging',
 
 
 
-/* Table */
-
-
-$wb.ui.TableRow = $wb.Class('TableRow',
-    {
-        __extends:[$wb.ui.Widget],
-        __defaults:{
-            editable:false,
-            data:{}
-        },
-        _editMode:false,
-        __construct:function(opts) {
-            this.require(opts,'table');
-            this.__super($.extend({
-                tmpl:opts.table.option('rowTmpl')
-            },this.getDefaults(opts)));
-            var self = this;
-            this.elm().dblclick(function(evt) {
-                if (!self.opts.editable) return;
-                evt.preventDefault();
-                evt.stopPropagation();
-                this.makeEditable();
-            }.bind(this));
-            
-            this.bind('paint',function() {
-                if (this._editMode) {
-                    this._editRow();
-                } else {
-                    this._viewRow();
-                }
-            });
-            this.bind('render',function() {
-                if (this._editMode) {
-                    $wb(this.elm().find('.wb-input:eq(0)')).focus();
-                }
-            });
-            
-            this.elm().bind('keyup',function(evt) {
-                switch(evt.keyCode) {
-                    case 27: //Escape
-                        this.makeStatic();
-                        break;
-                }
-            }.bind(this));
-        },
-        getTable:function() {
-            return this.opts.table;
-        },
-        getStore:function() {
-            return this.opts.table.getStore();
-        },
-        getData:function() {
-            if (this._editMode) {
-                var data = $wb.ui.form.Form.methods.getData.apply(this);
-                this.opts.data = $.extend(this.opts.data,data);
-            }
-            return this.opts.data;
-        },
-        setData:function(data) {
-            this.opts.data = data;
-            $wb.ui.form.Form.methods.setData.apply(this,[data]);
-            return this;
-        },
-        toggleEditable:function() {
-            if (!this.opts.editable) return this;
-            this._editMode = !this._editMode;
-            this.render();
-            this.getTable()._layout();
-            return this;
-        },
-        makeEditable:function() {
-            if (!this.opts.editable || this._editMode) return this;
-            this._editMode = true;
-            this.render();
-            this.getTable()._layout();
-            return this;
-        },
-        makeStatic:function() {
-            if (!this.opts.editable || !this._editMode) return this;
-            this._editMode = false;
-            this.render();
-            this.getTable()._layout();
-            return this;
-        },
-        isNew:function() {
-            return this._isNew;
-        },
-        setIsNew:function(isNew) {
-            this._isNew = isNew;
-            return this;
-        },
-        _editRow:function() {
-            var action;
-            var row = this.target();
-            row.addClass('wb-editing');
-            
-            row.html('');
-            var cols = this.getStore().getColumns();
-            var bodyCellTmpl = this.getTable().option('bodyCellTmpl');
-            
-            var data = this.getData();
-            for(var i in cols) {
-                var col = cols[i];
-                if (col.hidden) continue;
-                var value = $wb.utils.GetValue(data,col.id);
-                var fieldType = $wb.ui.FieldType.type(col.valueType);
-                var cell = $(bodyCellTmpl());
-                cell.append(fieldType.getTableField(col,value).elm());
-                row.append(cell);
-            }
-            
-            var editActions = this.getTable().option('rowEditActions');
-            
-            if (this.getTable().hasActions()) {
-                var actionCellTmpl = this.getTable().option('actionCellTmpl');
-                var actionCell = $(actionCellTmpl());
-                
-                var self = this;
-                
-                actionCell.click(function(evt) {
-                    evt.stopPropagation();
-                    evt.preventDefault();
-                    var menu = new $wb.ui.DropdownMenu();
-
-                    menu.add(new $wb.ui.Action('cancel',function() {
-                            if (self.isNew()) {
-                                self.destroy();
-                            } else {
-                                self.makeStatic();
-                            }
-                        }.bind(self)
-                    ));
-                    if (editActions) {
-                        for(var name in editActions) {
-                            if (typeof editActions[name] == 'function') {
-                                action = new $wb.ui.Action(name,editActions[name],self);
-                            } else {
-                                action = editActions[name].clone().setContext(self);
-                            }
-                        menu.add(action);
-                        }
-                    }
-                    menu.render(actionCell);
-                });
-                row.append(actionCell);
-            }
-            return row;
-        },
-        remove:function() {
-          var data = this.getData();
-          var store = this.getStore();
-          this.__super();
-          store.remove(data);
-        },
-        destroy:function() {
-          var data = this.getData();
-          var store = this.getStore();
-          this.__super();
-          store.remove(data);
-        },
-        _viewRow:function() {
-            var row = this.target();
-            row.removeClass('wb-editing');
-            row.html('');
-            
-            var bodyCellTmpl = this.getTable().option('bodyCellTmpl');
-            var cols = this.getStore().getColumns();
-            for(var i in cols) {
-                var col = cols[i];
-                if (col.hidden) continue;
-                var cell = $(bodyCellTmpl());
-                var value = $wb.utils.GetValue(this.getData(),col.id);
-                
-                var fieldType = $wb.ui.FieldType.type(col.valueType);
-                
-                cell.html(fieldType.format(col,value));
-                row.append(cell);
-            }
-            
-            var rowActions = this.getTable().option('rowActions');
-            
-            if (this.getTable().hasActions()) {
-                var actionCellTmpl = this.getTable().option('actionCellTmpl');
-                var actionCell = $(actionCellTmpl());
-                actionCell.addClass('wb-disabled');
-                if (rowActions) {
-                    var self = this;
-                    actionCell.removeClass('wb-disabled');
-                    actionCell.click(function(evt) {
-                        evt.stopPropagation();
-                        evt.preventDefault();
-                        var menu = new $wb.ui.DropdownMenu();
-                        for(var name in rowActions) {
-                            var action;
-                            if (typeof rowActions[name] == 'function') {
-                                action = new $wb.ui.Action(name,rowActions[name],self);
-                            } else {
-                                action = rowActions[name].clone().setContext(self);
-                            }
-                            menu.add(action);
-                        }
-                        menu.render(actionCell);
-                    });
-                } else {
-                    actionCell.noclick();
-                }
-                
-                row.append(actionCell);
-            }
-            
-            return row;
-        }
-    }
-);
-
-$wb.ui.Table = $wb.Class('Table',
-    /**
-     * @lends $wb.ui.Table.prototype
-     * @augments $wb.ui.Widget
-     */
-    {
-        __extends:[$wb.ui.Widget],
-        __defaults:{
-            target:'.wb-inner-table',
-            tmpl:$wb.template.table.base,
-            headerTmpl:$wb.template.table.header,
-            footerTmpl:$wb.template.table.footer,
-            bodyTmpl:$wb.template.table.body,
-            rowTmpl:$wb.template.table.row,
-            bodyCellTmpl:$wb.template.table.body_cell,
-            actionCellTmpl:$wb.template.table.body_action_cell,
-            headerCellTmpl:$wb.template.table.header_cell,
-            headerActionCellTmpl:$wb.template.table.header_action_cell,
-            rowReader:function(row) {
-                return row;
-            },
-            editable:false,
-            paging:{
-                currentPage:0
-            },
-            filters:[],
-            header:true,
-            footer:true,
-            layout:function() {
-                var availWidth = parseInt(this.elm()[0].style.width);
-                if (availWidth < 1) return;
-                var isHeader = false;
-                
-                var cells = null;
-                if (this.opts.header) {
-                    isHeader = true;
-                    cells = this._header.find('.wb-table-cell').not('.wb-actions');
-                } else {
-                    cells = this._body.find('.wb-table-row:eq(0) .wb-table-cell').not('.wb-actions');
-                }
-
-                if (this._hasActionColumn()) {
-                    var actionWidth = this.elm().find('.wb-actions:eq(0)').outerWidth();
-                    availWidth -= actionWidth;
-                }
-
-                var cellWidth = Math.floor(availWidth/cells.length);
-                
-                var firstWidth = availWidth % (cellWidth*cells.length)
-                
-                if (isHeader) {
-                    cells.outerWidth(cellWidth);
-                    if (firstWidth > 0)
-                        $(cells[0]).outerWidth(firstWidth+cellWidth);
-                }
-
-                var innerCells = this.elm().find('.wb-inner-table .wb-table-row:eq(0) .wb-table-cell').not('.wb-actions');
-                if (innerCells.length > 0) {
-                    innerCells.outerWidth(cellWidth);
-                    if (firstWidth > 0)
-                        $(innerCells[0]).outerWidth(firstWidth+cellWidth);
-                }
-                //Only calculate fixed height if this table has a fixed height
-                //Todo: Add support for min and max height
-                var cssHeight = parseInt(this.elm()[0].style.height, 10);
-                if (cssHeight > 0 && !isNaN(cssHeight)) {
-                    var maxHeight = parseInt(this.elm()[0].style.height,10);
-                    
-                    if (this.opts.header) {
-                        maxHeight -= this._header.outerHeight();
-                    }
-                    if (this.opts.footer) {
-                        maxHeight -= this._footer.outerHeight();
-                    }
-
-                    if (maxHeight > 10) {
-                        var scroller = this.elm().find('.wb-table-body-scroll');
-                        scroller.outerHeight(maxHeight);
-                    }
-                }
-            }
-        },
-        _header:null,
-        _footer:null,
-        _body:null,
-        _sortColumns:{},
-        _filterColumns:{},
-        _filterRow:null,
-        _paging:null,
-        _rows:[],
-        _autoUpdate:true,
-        _dirty:false,
-        /**
-         * @constructs
-         * @param {Object} opts Options
-         * @param {Boolean} [opts.header=true] Show header
-         * @param {Boolean} [opts.footer=true] Show footer
-         * @param {Function} [opts.headerTmpl] Header template function
-         * @param {Function} [opts.footerTmpl] Footer template function
-         * @param {Function} [opts.bodyTmpl] Table body template function
-         * @param {Function} [opts.rowTmpl] Default row renderer
-         * @param {Function} [opts.bodyCellTmpl] Default cell renderer
-         * @param {Function} [opts.headerCellTmpl] Default header cell renderer
-         * @param {Map<Type,Function>} [opts.rowActions] Map of row btn titles along with a callback function
-         * @param {Map<Type,Function>} [opts.headerActions] Map of header btn titles along with a callback function
-         */
-        __construct:function(opts) {
-            this.__super(this.getDefaults(opts));
-
-            this.require(this.opts,'store');
-            if (!$wb.utils.isA(this.opts.store,$wb.data.TableStore))
-                throw "Table widget requires TableStore or descending";
-
-            this._header = $(this.opts.headerTmpl());
-            this._footer = $(this.opts.footerTmpl());
-            this._body = $(this.opts.bodyTmpl());
-            
-            this.bind('paint',function() {
-                var elm = this.elm();
-                elm.append(this._header)
-                .append(this._footer)
-                .append(this._body);
-                if (this.opts.header)
-                    this._paintHeader();
-                this._paintRows();
-                if (this.opts.footer)
-                    this._paintFooter();
-                
-                var totalCellCount = this._getColumnCount();
-                this.elm().find('.wb-inner-table-container').attr('colspan',totalCellCount);
-            });
-            
-            var onChange = function() {
-                this._checkForEditing();
-                if (this._autoUpdate) {
-                    this.repaintRows();
-                } else {
-                    this._dirty = true;
-                    this.trigger('dirty');
-                }
-            }.bind(this);
-            
-            this.opts.store.bind('change',onChange);
-        },
-        _hasActionColumn:function() {
-            return this.elm().find('.wb-actions').length > 0;
-        },
-        getStore:function() {
-            return this.opts.store;
-        },
-        _checkForEditing:function() {
-            if (this.elm().find('.wb-editing').length > 0) {
-                this.setAutoUpdate(false);
-            } else {
-                this.setAutoUpdate(true);
-            }
-        },
-        getRow:function(key) {
-            var i = this.getStore().getIndexByKey(key);
-            if (i > -1)
-                return this._rows[i];
-            return null;
-        },
-        setAutoUpdate:function(autoUpdate) {
-            if (this._autoUpdate == autoUpdate) 
-                return;
-            this._autoUpdate = autoUpdate;
-            if (autoUpdate && this._dirty) {
-                this.repaintRows();
-            }
-        },
-        repaintRows:function() {
-            this._paintRows();
-            if (this.getPaging() != null) {
-                //Update paging - if needed
-                this.getPaging().setTotalPages(this.getStore().getTotalPages());
-            }
-            this._layout();
-        },
-        _getColumnCount:function() {
-            var out = 0;
-            for(var i in this.opts.store.getColumns()) {
-                out++;
-            }
-            if (this.hasActions())
-                out++;
-            
-            return out;
-        },
-        _paintFooter:function() {
-            this._footer.clear();
-            var row = $(this.opts.rowTmpl());
-            this._footer.append(row);
-            if (!this._paging) {
-                this._paging = new $wb.ui.Paging($.extend(this.opts.paging,{
-                    totalPages:this.getStore().getTotalPages()
-                }));
-                this._paging.bind('change',function(page) {
-                    this.trigger('page-change',[page]);
-                }.bind(this));
-            }
-            
-            var col = $('<td class="wb-paging-container"/>');
-            col.append(this._paging.render());
-            row.append(col);
-            col.attr('colspan',this._getColumnCount());
-        },
-        getPaging:function() {
-            return this._paging;
-        },
-        toggleSort:function(field,ascending) {
-            var cell = this._sortColumns[field];
-            if (!cell) return this;
-            if (typeof ascending == 'undefined') {
-                cell.click();
-            } else {
-                var isAscending = cell.hasClass('wb-asc');
-                if (isAscending != ascending)
-                    cell.click();
-            }
-            return this;
-        },
-        toggleFilter:function(field,activate) {
-            var cell = this._filterColumns[field];
-            if (!cell) return this;
-            
-            if (typeof activate == 'undefined') {
-                cell.find('.wb-filter').click();
-            } else {
-                var isActive = cell.hasClass('wb-active');
-                if (isActive != activate) {
-                    cell.find('.wb-filter').click();
-                }
-            }
-            return this;
-        },
-        toggleFilterRow:function(show) {
-            if (!this._filterRow) 
-                return this;
-            var isVisible = this._filterRow.elm().is(':visible');
-            
-            if (typeof show == 'undefined') {
-                if (isVisible) {
-                    this._filterRow.elm().hide();
-                } else {    
-                    this._filterRow.elm().show();
-                }
-                    
-            } else {
-                if (isVisible != show) {
-                    return this.toggleFilterRow();
-                }
-            }
-            this._layout();
-            return this;
-        },
-        setPage:function(page) {
-            if (!this._paging) return this;
-            this._paging.setPage(page);
-            return this;
-        },
-        _paintHeader:function() {
-            this._header.clear();
-            var row = $(this.opts.rowTmpl());
-            this._header.append(row);
-            var self = this;
-            var cols = this.opts.store.getColumns();
-            
-            //Filter row contains any filter options that may exist
-            if (!this._filterRow) {
-                this._filterRow = new $wb.ui.TableRow({table:this});
-                //Hack - to make it think its editing
-                this._filterRow._editMode = true;
-                this._filterRow.elm()
-                    .addClass('wb-filter-row')
-                    .bind('keypress',function(evt) {
-                        if (evt.keyCode == 13) { //On enter
-                            this.trigger('filter-apply',[this._filterRow.getData()]);
-                        }
-                            
-                    }.bind(this));
-            }
-            this._filterRow.elm().clear();
-            this._header.append(this._filterRow.elm());
-            
-            for(var i in cols) {
-                var col = cols[i];
-                if (col.hidden) continue;
-                
-                var cell = $(this.opts.headerCellTmpl());
-                if (col.sortable) {
-                    this._sortColumns[col.id] = cell;
-                    cell.addClass('wb-sortable');
-                    cell.find('.wb-title,.wb-sort').bind('click',function(evt) {
-                        evt.preventDefault();
-                        var elm = this.elm;
-                        row.find('.wb-desc,.wb-asc')
-                            .not(elm)
-                            .removeClass('wb-desc')
-                            .removeClass('wb-asc');
-
-                        if (elm.hasClass('wb-desc')) {
-                            if (self.trigger('sort',['ASC',this.col])) {
-                                elm.addClass('wb-asc').removeClass('wb-desc');
-                            }
-                        } else {
-                            if (self.trigger('sort',['DESC',this.col])) {
-                                elm.addClass('wb-desc').removeClass('wb-asc');
-                            }
-                        }
-                    }.bind({col:col,elm:cell}));
-                }
-                
-                if (this.opts.filters.indexOf(col.id) > -1) {
-                    this._filterColumns[col.id] = cell;
-                    
-                    //Make filter field
-                    var fieldType = $wb.ui.FieldType.type(col.valueType);
-                    var filterCell = $('<td/>');
-                    var filterField = fieldType.getTableField(col,'');
-                    filterField.disable();
-                    filterCell.append(filterField.elm());
-                    this._filterRow.elm().append(filterCell);
-                    
-                    cell.addClass('wb-filtered');
-                    cell.find('.wb-filter').click(function(evt) {
-                        evt.preventDefault();
-                        evt.stopPropagation();
-                        if (this.elm.hasClass('wb-active')) {
-                            if (!self._filterRow.elm().is(':visible')) {
-                                self.toggleFilterRow(true);
-                                return;
-                            }
-                            if (self.trigger('filter-disable',[this.col])) {
-                                this.elm.removeClass('wb-active');
-                                this.field.disable();
-                                if (row.find('.wb-filtered.wb-active').length == 0) {
-                                    self.toggleFilterRow(false);
-                                }
-                                    
-                            }
-                            
-                        } else {
-                            if (self.trigger('filter-enable',[this.col])) {
-                                this.elm.addClass('wb-active');
-                                this.field.enable();
-                                self.toggleFilterRow(true);
-                            }
-                        }
-                        
-                    }.bind({col:col,elm:cell,field:filterField}));
-                    
-                } else {
-                    //Add empty cell
-                    this._filterRow.elm().append('<td class="wb-empty" />');
-                }
-                
-                    
-                
-                cell.attr('rel',col.id);
-                cell.find('.wb-title').html(col.name);
-                row.append(cell);
-            }
-            if (this.hasActions()) {
-                var actionCell = $(this.opts.headerActionCellTmpl());
-                actionCell.addClass('wb-actions wb-disabled');
-                if (this.opts.headerActions) {
-                    
-                    actionCell.removeClass('wb-disabled');
-                    actionCell.click(function(evt) {
-                        evt.stopPropagation();
-                        evt.preventDefault();
-                        var menu = new $wb.ui.DropdownMenu();
-                        for(var name in self.opts.headerActions) {
-                            var action;
-
-                            if (typeof self.opts.headerActions[name] == 'function') {
-                                action = new $wb.ui.Action(name,self.opts.headerActions[name],self);
-                            } else {
-                                action = self.opts.headerActions[name].clone().setContext(self);
-                            }
-                            menu.add(action);
-                        }
-                        menu.render(actionCell);
-                    });
-                } else {
-                    actionCell.noclick();
-                }
-                
-                row.append(actionCell);
-                
-                if (this.opts.filters.length > 0) {
-                    
-                    var filterActionCell = $('<td class="wb-actions" />');
-                    
-                    var applyBtn = new $wb.ui.Action('apply',function() {
-                            this.trigger('filter-apply',[this._filterRow.getData()]);
-                        },this
-                    );
-                    
-                    filterActionCell.append(applyBtn.render());
-                    
-                    var hideBtn = new $wb.ui.Action('hide',function() {
-                            this.toggleFilterRow(false);
-                        },this
-                    );
-                    
-                    filterActionCell.append(hideBtn.render());
-                    
-                    var clearBtn = new $wb.ui.Action('clear',function() {
-                            var elms = this._filterRow.elm().find('.wb-input');
-                            for(var i = 0; i < elms.length;i++) {
-                                var elm = elms[i];
-                                $(elm).widget().value('');
-                                this.toggleFilter($(elm).attr('name'),false);
-                            }
-                            this.trigger('filter-apply',[{}]);
-                        },this
-                    );
-                    
-                    filterActionCell.append(clearBtn.render());
-                    this._filterRow.elm().append(filterActionCell);
-                }
-            }
-        },
-        hasActions:function() {
-            return (this.opts.headerActions 
-                    || this.opts.rowActions
-                    || this.opts.filters.length > 0);
-        },
-        _paintRows:function() {
-            this.elm().putAway();
-            this.elm().find('.wb-inner-table').clear();
-            //this.target().clear();
-            var rows = this.opts.store.getRows().toArray();
-            var odd = true;
-            this._rows = [];
-            for(var i in rows) {
-                var row = this.addRow(rows[i]);
-                this._rows.push(row);
-                row.render();
-                if (odd)
-                    row.elm().addClass('wb-odd');
-                odd = !odd;
-            }
-            this._dirty = false; 
-            this.elm().putBack();
-        },
-        /**
-         * @description Add row to table. Typically you should either add rows on the TableStore or use the newRow() 
-         * method to make a new row form.
-         * 
-         * @returns {$wb.ui.TableRow} A row
-         */
-        addRow:function(data,prepend) {
-            var target = this.elm().find('.wb-inner-table');
-            if (!data)
-                data = {};
-            var row = new $wb.ui.TableRow({
-                table:this,
-                data:data?this.opts.rowReader(data):null,
-                editable:this.opts.editable}
-            );
-            if (prepend)
-                target.prepend(row.elm());
-            else
-                target.append(row.elm());
-            return row;
-        },
-        /**
-         * @description Add new row form to table. Destroy this form when you're done (and add the resulting data to
-         * the store)
-         * @returns {$wb.ui.TableRow} An editable row
-         */
-        newRow:function() {
-            var row = this.addRow(null,true).setIsNew(true).makeEditable(true);
-            this._layout();
-            return row;
-        }
-
-    }
-);
 
 /* Frame */
 $wb.ui.Frame = $wb.Class('Frame',
@@ -3273,7 +2840,7 @@ $wb.ui.Frame = $wb.Class('Frame',
                 this.header().hide();
             }
             
-            this.bind('after-layout',function() {
+            this.bind('before-layout',function() {
                 var otherElms = this.elm().children().not(this.target());
                 
                 this.target().outerHeight(this.elm().innerHeight()-otherElms.totalOuterHeight());

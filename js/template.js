@@ -39,6 +39,9 @@ $wb.template = {
     wrapper:function() {
         return '<div class="wb-wrapper"><div class="wb-top"></div><div class="wb-bottom"></div><div class="wb-left"></div><div class="wb-right"></div></div>';
     },
+    iframe:function() {
+        return '<iframe src="about:none;" allowTransparency="true" frameborder="0"></iframe>';
+    },
     section:function() {
         return '<div class="wb-section" ><h3 class="wb-title" /><div class="wb-target" /></div>';
     },
@@ -55,7 +58,7 @@ $wb.template = {
             return '<ul class="wb-menu line"></ul>';
         },
         menuItem:function() {
-            return '<li class="wb-menuitem"><div class="wb-title" /></li>';
+            return '<li class="wb-menuitem"><span class="wb-icon"/><span class="wb-title"/></li>';
         },
         subMenu:function() {
             return '<ul class="wb-submenu line"></ul>';
@@ -66,7 +69,7 @@ $wb.template = {
             return '<ul class="wb-breadcrumb line"></ul>';
         },
         button:function() {
-            return '<li class="wb-entry"><div class="wb-title" /></li>';
+            return '<li class="wb-entry"><span class="wb-icon"/><span class="wb-title"/></li>';
         }
     },
     frame: function() {
@@ -79,7 +82,7 @@ $wb.template = {
         return '<div class="wb-shade"></div>';
     },
     button: function() {
-        return '<a href="#" class="wb-button"></a>';
+        return '<a href="#" class="wb-button"><span class="wb-icon"/><span class="wb-title" /></a>';
     },
     draw:{
         canvas:function() {
@@ -97,7 +100,7 @@ $wb.template = {
             return '<div class="wb-pane wb-splitpane"><div class="wb-splitter"></div></div>';
         },
         tab:function() {
-            return '<div class="wb-pane wb-tabpane"><ul class="wb-tabs line" /><div class="wb-panes" /></div>';
+            return '<div class="wb-pane wb-tabpane"><ul class="wb-tabs line" ><li class="wb-actions" /></ul><div class="wb-panes" /></div>';
         },
         tab_button:function() {
             return '<li class="wb-tab"><div class="wb-title" /></li>';
@@ -217,7 +220,7 @@ $wb.template = {
             return '<a href="#" class="wb-action" title="'+title+'" />';
         },
         base:function(type,title) {
-            return '<a href="#" class="wb-action icon-'+type+'" title="'+title+'" />';
+            return '<a href="#" class="wb-action type-'+type+'" title="'+title+'" ><span class="wb-icon icon-'+type+'"/><span class="wb-title">'+title+'</span></a>';
         },
         hide:function() {
             return $wb.template.actions.base.apply(this,['eye-close',_('Hide')]);
@@ -244,7 +247,7 @@ $wb.template = {
             return $wb.template.actions.base.apply(this,['user',_('User')]);
         },
         upload:function() {
-            return $wb.template.actions.base.apply(this,['upload-at',_('Upload')]);
+            return $wb.template.actions.base.apply(this,['upload-alt',_('Upload')]);
         },
         download:function() {
             return $wb.template.actions.base.apply(this,['download-alt',_('Download')]);

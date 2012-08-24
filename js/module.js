@@ -23,7 +23,8 @@ $wb.Module = new $wb.Class('Module',{
         controller:null,
         
         //Other modes can be readonly, writeonly
-        mode:'readwrite'
+        mode:'readwrite',
+        actions:[]
     },
     opts:{},
     _readyListeners:[],
@@ -49,13 +50,14 @@ $wb.Module = new $wb.Class('Module',{
     controller:function()  {
         return this.opts.controller;
     },
-    listView:function() {
+    listView:function(opts) {
         if (this.opts.views.list)
             return this.opts.views.list.apply(this);
-        return new $wb.ui.Table({
+        return new $wb.ui.Table($.extend({
             store:this.tableStore(),
-            fields:this.opts.listFields
-        });
+            fields:this.opts.listFields,
+            actions:this.opts.actions
+        },opts));
     },
     formView:function(data) {
         if (this.opts.views.form)
@@ -81,7 +83,8 @@ $wb.Module = new $wb.Class('Module',{
         var keyVal = new $wb.ui.KeyValuePane({
             model:this.model(),
             entry:entry,
-            fields:this.opts.detailFields
+            fields:this.opts.detailFields,
+            actions:this.opts.actions
         });
         var title = entry[this.opts.nameField];
         var out = new $wb.ui.Frame({title:title});
@@ -151,11 +154,11 @@ $wb.Module = new $wb.Class('Module',{
             this._setReady(true);
             this.source().startListening();
         }.bind(this));
-        this.trigger('enabled');
+        this.trigger('enable');
     },
     disable:function() {
         this.source().stopListening();
         this._setReady(false);
-        this.trigger('disabled');
+        this.trigger('disable');
     }
 });

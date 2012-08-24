@@ -71,6 +71,9 @@ $wb.data.Model = $wb.Class('Model',{
         }
         return out;
     },
+    getFieldCount:function() {
+        return this.getFieldNames().length;
+    },
     create:function(data) {
         if (!data) data = {};
         var row = {};
@@ -288,6 +291,12 @@ $wb.data.JsonSocket = $wb.Class('JsonSocket',{
                 throw new $wb.Error('Failed to contact server',{socket:this,error:e});
             }
         });
+    },
+    close:function() {
+        if (this._ws) {
+            this._ws.close();
+            delete this._ws;
+        }
     }
 });
 
@@ -675,7 +684,7 @@ $wb.data.ListStore = $wb.Class('ListStore',{
     add:function(row) {
         this.addAll([row]);
     },
-    addAll:function(rows) {
+    _addRows:function(rows) {
         for(var i = 0; i < rows.length;i++) {
             if (this._model)
                 rows[i] = this._model.create(rows[i]);
@@ -698,6 +707,9 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         }
 
         this._makeDirty();
+    },
+    addAll:function(rows) {
+        this._addRows(rows);
         this._data.total += rows.length;
         this.trigger('change');
         this.trigger('added',[rows]);
@@ -708,9 +720,9 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         if (!totalRows)
             totalRows = rows.length;
         this._data.total = totalRows;
-        this.addAll(rows);
-        //Add all also increases row count - compensate.
-        this._data.total -= rows.length
+        this._addRows(rows);
+        this.trigger('change');
+        this.trigger('added',[rows]);
     },
     getTotalRows:function() {
         return this._data.total;
@@ -776,6 +788,8 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         return this.getIndexByKey(key);
     },
     get:function(ix) {
+        if ($.type(ix) == 'object')
+            ix = this.indexOf(ix);
         return this._data.rows.get(ix);
     },
     remove:function(ix) {
@@ -797,7 +811,7 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         
         this._makeDirty();
         this.trigger('change');
-        this.trigger('remove',[ixs]);
+        this.trigger('removed',[ixs]);
     },
     addFilter:function(filterFunction) {
         this._filters.push(filterFunction);
@@ -906,11 +920,11 @@ $wb.data.TableStore = $wb.Class('TableStore',{
     },
     getColumns:function() {
         var fields = this._model.getFields();
-        if (!this.opts.columns)
+        if (!this.opts.fields)
             return fields;
         var out = {};
-        for(var i in this.opts.columns) {
-            var colId = this.opts.columns[i];
+        for(var i in this.opts.fields) {
+            var colId = this.opts.fields[i];
             if (fields[colId])
                 out[colId] = fields[colId];
         }

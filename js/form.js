@@ -9,30 +9,9 @@
 $wb.ui.form = {};
 
 $wb.ui.form.FieldContainer = $wb.Class('FieldContainer',{
-    __extends:[$wb.ui.Pane],
+    __extends:[$wb.ui.Widget],
     __defaults:{
-        data:{},
-        layout:function() {
-            var labels = this.target().find('.wb-input-container.wb-label-left .wb-label:visible:first-child');
-            var widest = labels.widest();
-            labels.outerWidth(widest.outerWidth());
-            
-            var maxW = Math.floor(this.target().innerWidth() / this.opts.cols);
-            var leftover = this.target().innerWidth()-(maxW*this.opts.cols);
-            var nodes = this.children();
-            for(var i = 0; i < nodes.length;i++) {
-                var node = nodes[i];
-                node.elm().outerWidth(maxW);
-                if (this.opts.cols > 1)
-                    node.elm().css('float','left');
-                if (i % this.opts.cols == 0) {
-                    node.elm().outerWidth(maxW+leftover);
-                    node.elm().addClass('wb-first');
-                }
-            }
-        },
-        cols:1,
-        columnClass:'wb-columns'
+        data:{}
     },
     _dirtyData:false,
     _rendered:false,
@@ -41,15 +20,6 @@ $wb.ui.form.FieldContainer = $wb.Class('FieldContainer',{
         this.bind('render',function() {
             this._rendered = true;
             this.setData(this.opts.data);
-            var elm = $wb(this.find('.wb-input:eq(0)'));
-            if (elm) {
-                elm.focus();
-            }
-            if (this.opts.cols > 1) {
-                this.elm().addClass(this.opts.columnClass);
-            } else {
-                this.elm().removeClass(this.opts.columnClass);
-            }
         });
     },
     disable:function() {
@@ -87,6 +57,8 @@ $wb.ui.form.FieldContainer = $wb.Class('FieldContainer',{
         return $wb(el);
     },
     setData:function(data) {
+        if (typeof data != 'object') 
+            return this;
         if (this._rendered) {
             var elms = this.elm().find('.wb-input');
             elms.each(function() {
@@ -125,7 +97,7 @@ $wb.ui.form.FieldContainer = $wb.Class('FieldContainer',{
         }
         
         this.opts.data = data;
-        
+        return this;
     },
     getData:function() {
         var elms = this.elm().find('.wb-input'),
@@ -194,14 +166,60 @@ $wb.ui.form.FieldContainer = $wb.Class('FieldContainer',{
     }
 });
 
+$wb.ui.form.FieldPane = $wb.Class('FieldPane',{
+    __extends:[$wb.ui.Pane,$wb.ui.form.FieldContainer],
+    __defaults:{
+        layout:function() {
+            var labels = this.target().find('.wb-input-container.wb-label-left .wb-label:visible:first-child');
+            var widest = labels.widest();
+            labels.outerWidth(widest.outerWidth());
+            
+            var maxW = Math.floor(this.target().innerWidth() / this.opts.cols);
+            var leftover = this.target().innerWidth()-(maxW*this.opts.cols);
+            var nodes = this.children();
+            for(var i = 0; i < nodes.length;i++) {
+                var node = nodes[i];
+                node.elm().outerWidth(maxW);
+                if (this.opts.cols > 1)
+                    node.elm().css('float','left');
+                if (i % this.opts.cols == 0) {
+                    node.elm().outerWidth(maxW+leftover);
+                    node.elm().addClass('wb-first');
+                }
+            }
+        },
+        cols:1,
+        columnClass:'wb-columns'
+    },
+    
+    __construct:function(opts) {
+        this.__super(this.getDefaults(opts));
+        this.bind('render',function() {
+            var elm = $wb(this.find('.wb-input:eq(0)'));
+            if (elm) {
+                elm.focus();
+            }
+            if (this.opts.cols > 1) {
+                this.elm().addClass(this.opts.columnClass);
+            } else {
+                this.elm().removeClass(this.opts.columnClass);
+            }
+        });
+    }
+});
+
 $wb.ui.form.Form = $wb.Class('Form',{
-    __extends:[$wb.ui.form.FieldContainer],
+    __extends:[$wb.ui.form.FieldPane],
     __defaults:{
         tmpl:$wb.template.form.form,
         data:{}
     },
     __construct:function(opts) {
         this.__super(this.getDefaults(opts));
+        
+        this.bind('render',function() {
+            var self = this;
+        })
     },
     submit:function() {
         if (arguments.length == 1) {
@@ -219,7 +237,7 @@ $wb.ui.form.Form = $wb.Class('Form',{
 });
 
 $wb.ui.form.FieldSet = $wb.Class('FieldSet',{
-    __extends:[$wb.ui.Section,$wb.ui.form.FieldContainer],
+    __extends:[$wb.ui.Section,$wb.ui.form.FieldPane],
     __defaults:{
         tmpl:$wb.template.form.fieldset
     },
@@ -255,6 +273,10 @@ $wb.ui.form.AutoForm = $wb.Class('AutoForm',{
             this.add(fieldWidget);
         }
         
+        this.bind('submit',function() {
+            this.trigger('ok');
+        });
+        
         if (this.opts.showButtons) {
             var btnPane = new $wb.ui.form.ButtonPane();
             if (this.opts.showOk)
@@ -270,13 +292,16 @@ $wb.ui.form.AutoForm = $wb.Class('AutoForm',{
             });
         }
     },
-    _onOk:function() {
+    _onOk:function(evt) {
+        evt.preventDefault();
         this.trigger('ok');
     },
-    _onCancel:function() {
+    _onCancel:function(evt) {
+        evt.preventDefault();
         this.trigger('cancel');
     },
-    _onReset:function() {
+    _onReset:function(evt) {
+        evt.preventDefault();
         this.reset();
         this.trigger('reset');
     }
@@ -295,8 +320,15 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
         },
         layout:function() {
             var maxW = this.labelElm().parent().innerWidth();
+            if (maxW < 1)
+                maxW = this.elm().innerWidth();
             var labelW = this.labelElm().outerWidth();
-            this.target().outerWidth(maxW-labelW);
+            if (this._labelPosition == 'none') {
+                labelW = 0;
+            }
+            var w = maxW-labelW;
+            if (w > 0)
+                this.target().outerWidth(w);
         }
     },
     _labelElm:null,
@@ -367,6 +399,9 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
                     });
                     self.value(self._label);
                     this.target().addClass('wb-empty');
+                    break;
+                case 'none':
+                    this.labelElm().detach();
                     break;
             }
         });
@@ -762,7 +797,7 @@ $wb.ui.form.Button = $wb.Class('Button',{
         this.elm().click(function(evt) {
             evt.preventDefault();
             if (self.opts.action) {
-                self.opts.action(evt);
+                self.opts.action.apply(self,[evt]);
             }
         });
     },
@@ -779,15 +814,15 @@ $wb.ui.form.Button = $wb.Class('Button',{
 
 $wb.ui.form.SubmitButton = $wb.Class('SubmitButton',{
     __extends:[$wb.ui.form.Button],
-    __construct:function(opts) {
-        if (!opts) opts = {};
-        opts = $.extend({
-            type:'submit'
-        },opts);
-        this.__super(opts);
+    __defaults:{
+        type:'submit',
+        action:function() {
+            var form = $wb(this.elm().closest('form'));
+            form.submit();
+        }
     },
-    _bind:function() {
-        
+    __construct:function(opts) {
+        this.__super(this.getDefaults(opts));
     }
 });
 
@@ -861,10 +896,11 @@ $wb.ui.form.Select = $wb.Class('Select',{
             for(var i = 0; i < options.length;i++) {
                 var option = options[i];
                 if (!option) continue;
-                if (typeof option == 'string')
-                    this.add(option);
-                else
+                if (typeof option == 'object')
                     this.add(option.value,option.name);
+                else
+                    this.add(option);
+                    
             }
         }
         if ($.type(options) == 'object') {
@@ -1199,14 +1235,18 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
         {
             type:"enum",
             format:function(opts,value) {
-                if ($.type(this.values) == 'array') {
+                var options = this.options;
+                if (!options) 
+                    return value
+                if ($.type(options) == 'array') {
                     return value;
                 }
                 
-                return this.values[value];
+                return options[value];
             },
             formField:function(opts,value) {
-                var out = new $wb.ui.form.Select({label:opts.name,name:opts.id,options:this.values});
+                var options = this.options;
+                var out = new $wb.ui.form.Select({label:opts.name,name:opts.id,options:options});
                 out.value(value);
                 return out;
             }

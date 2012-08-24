@@ -96,7 +96,7 @@ var require = function(path,cb,async) {
     }
     if (requireAllIx > -1) {
         paths.splice(requireAllIx,0,
-                "jquery-ui","utils","localization","data","template","widget","form",'module','draw','geo');
+                "jquery-ui","utils","localization","data","template","widget","form",'widget-ext','module','draw','geo');
     }
     
     var oks = new Array(paths.length);
@@ -773,6 +773,9 @@ require($wbConfig.jQuery,function() {
              * @param {Object} obj
              */
             fromObject:function(obj) {
+                if (!obj) {
+                    return;
+                }
                 for(var i = 0;i < this.opts.key.length;i++) {
                     var key = this.opts.key[i];
                     this[key] = obj[key];
@@ -783,6 +786,31 @@ require($wbConfig.jQuery,function() {
                     }
                 }
 
+            },
+            base:function() {
+                var out = "";
+                if (this.host) {
+                    out += this.protocol+"://";
+                    if (this.username) {
+                        out += this.username;
+                        if (this.password) {
+                            out += ":"+this.password;
+                        }
+                        out += "@";
+                    }
+                    out += this.host;
+
+                    var defPort = $wb.Url.protocols[this.protocol];
+                    if (!defPort || this.port && this.port != defPort) {
+                        out += ":"+this.port;
+                    }
+                }
+
+                if (!this.path)
+                    this.path = "/";
+                out += this.path;
+                
+                return out.substr(0,out.lastIndexOf('/')+1);
             },
             /**
              * @description Read url from string
@@ -1146,10 +1174,12 @@ require($wbConfig.jQuery,function() {
         _name:'',
         _type:'default',
         _context:null,
-        __construct:function(name,method,type) {
+        __construct:function(name,method,type,ctxt) {
             this._name = name;
             this._method = method;
             this._type = type;
+            if (ctxt)
+                this._context = ctxt;
         },
         context:function() {
             if (arguments.length > 0) {
