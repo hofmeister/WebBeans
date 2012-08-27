@@ -327,6 +327,10 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
                 labelW = 0;
             }
             var w = maxW-labelW;
+            if (this.opts.type == 'checkbox' 
+                    || this.opts.type == 'radio') {
+               return;
+            }
             if (w > 0)
                 this.target().outerWidth(w);
         }

@@ -32,6 +32,11 @@ body {
 }
 
 
+div,td,table,tbody,thead,tfoot,th {
+    overflow:hidden;
+}
+
+
 /* tools */
 .wb-rounded {
     -webkit-border-radius: 5px ;
@@ -67,6 +72,7 @@ body {
     z-index: 10;
     background-color: white;
     border:1px solid black;
+    overflow: auto;
 }
 
 .wb-menuitem {
@@ -93,7 +99,6 @@ body {
 
 /* pane */
 .wb-pane {
-    overflow:auto;
     white-space:nowrap;
 }
 /* html pane */
@@ -270,6 +275,7 @@ body {
     zoom:1;
     display:block;
 }
+
 .wb-input-container > label:after {
     content: ".";display: block;height: 0;clear: both;visibility: hidden;
     
@@ -291,6 +297,15 @@ body {
 .wb-input-container .wb-input:after {
     clear:both;
 }
+
+.wb-input-checkbox.wb-label-left .wb-input {
+    float:left;
+}
+
+.wb-input-radio.wb-label-left .wb-input {
+    float:left;
+}
+
 
 /* cron field */
 .wb-input-cron > label > .wb-target {
@@ -478,3 +493,50 @@ body {
 .wb-dom .wb-dom-folded {
     display:none;
 }
+
+/* scrollbar */
+
+.wb-scrollbar {
+    display:none;
+    position:absolute;
+    top:0px;
+    left:0px;
+    cursor: pointer;
+    z-index: 10;
+    background-color: white;
+    opacity: .8;
+}
+
+.wb-scrollbar.wb-vertical,
+    .wb-scrollbar.wb-vertical > .wb-scroller {
+    width:10px;
+}
+.wb-scrollbar.wb-vertical {
+    border-left: 1px solid #ccc;
+}
+
+.wb-scrollbar.wb-horizontal,
+    .wb-scrollbar.wb-horizontal > .wb-scroller {
+    height:10px;
+}
+.wb-scrollbar.wb-horizontal {
+    border-top: 1px solid #ccc;
+}
+
+.wb-scrollbar.wb-dummy {
+    height:10px;
+    position: static;
+    width:100%;
+    background-color: transparent;
+}
+
+.wb-scrollbar > .wb-scroller {
+    background-color: #333;
+    position: absolute;
+}
+
+
+
+
+
+

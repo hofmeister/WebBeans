@@ -447,7 +447,7 @@ $wb.ui.helper.Actionable = $wb.Class('Actionable',{
             var actionContainer = this.elm().findFirst(this.opts.actionClass);
             if (actionContainer.length == 0) {
                 actionContainer = $($wb.template.actions.container.apply(this));
-                this.actionTarget().append(actionContainer);
+                this.actionTarget().prepend(actionContainer);
             } else {
                 actionContainer.html('');
             }
@@ -481,6 +481,260 @@ $wb.ui.helper.Actionable = $wb.Class('Actionable',{
             return this;
         }
         return this._actions;
+    }
+});
+
+$wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
+    __defaults:{
+        scrollContainer:null,
+        scrollable:false
+        
+    },
+    _scrollable:null,
+    __construct:function(opts) {
+        this.bind('hide',function() {
+            this.hideScrollbar();
+        });
+        
+        this.bind('show',function() {
+            if (!this._scrollable) return;
+            this.showScrollbar();
+        });
+        
+        this.bind('after-layout',function() {
+            this.showScrollbar();
+        });
+    },
+    hideScrollbar:function() {
+        if (!this._scrollable) return;
+        this._scrollable.h.hide();
+        this._scrollable.v.hide();
+        this.trigger('scrolling');
+    },
+    showScrollbar:function() {
+        var elm = this.scrollContainer();
+            
+        if (!this.opts.scrollable) 
+            return;
+
+        elm.css({overflow:'hidden'});
+
+        var availHeight = elm[0].scrollHeight;
+        var availWidth = elm[0].scrollWidth;
+        var height = elm.height();
+        var width = elm.width();
+
+        var scrollbarH,scrollbarV;
+
+        if (!this._scrollable)  {
+
+            this._scrollable = {
+                h:$('<div class="wb-scrollbar wb-horizontal"><div class="wb-scroller"/></div>'),
+                v:$('<div class="wb-scrollbar wb-vertical"><div class="wb-scroller"/></div>')
+            };
+
+            this.bind('detach',function() {
+                this._scrollable.h.detach();
+                this._scrollable.v.detach();
+            });
+
+            $('body').append(this._scrollable.h)
+                    .append(this._scrollable.v);
+
+            elm.mousewheel(function(evt,delta,deltaX,deltaY) {
+                evt.preventDefault();
+
+                var top = elm.scrollTop();
+                var left = elm.scrollLeft();
+                elm.scrollTop(top-(deltaY*2));
+                elm.scrollLeft(left+(deltaX*2));
+                elm.trigger('scroll');                    
+            });
+
+            scrollbarH = this._scrollable.h;
+            scrollbarV = this._scrollable.v;
+
+            elm.bind('scroll',function() {
+                var availHeight = elm[0].scrollHeight;
+                var availWidth = elm[0].scrollWidth;
+
+                if (scrollbarV.is(':visible')) {
+                    scrollbarV.find('.wb-scroller').css({
+                        top:Math.floor(scrollbarV.innerHeight()*(elm.scrollTop()/availHeight))
+                    });
+                }
+
+                if (scrollbarH.is(':visible')) {
+                    scrollbarH.find('.wb-scroller').css({
+                        left:Math.floor(scrollbarH.innerWidth()*(elm.scrollLeft()/availWidth))
+                    });
+                }
+            });
+
+            this._bindHScroll();
+            this._bindVScroll();
+
+            elm.scrollTop(0);
+            elm.scrollLeft(0);
+            elm.trigger('scroll');
+
+        }
+
+
+
+        availHeight = elm[0].scrollHeight;
+        availWidth = elm[0].scrollWidth;
+        height = elm.height();
+        width = elm.width();
+
+        scrollbarH = this._scrollable.h;
+        scrollbarV = this._scrollable.v;
+
+
+
+        var bbox = elm.boundingBox();
+
+        scrollbarV.css({
+            top:bbox.top,
+            left:bbox.right-scrollbarV.outerWidth()
+        });
+
+        scrollbarH.css({
+            left:bbox.left,
+            top:bbox.bottom-scrollbarH.outerHeight()
+        });
+
+        scrollbarV.hide();
+        scrollbarH.hide();
+
+        if (!elm.is(':visible')) {
+            return;
+        }
+
+        if (availHeight < 1 || height < 1 || width < 0 || availWidth < 0) 
+            return;
+
+        if (availHeight <= height 
+                && availWidth <= width) {
+            this.trigger('scrolling');
+            return;
+        }
+
+        var ratio = this._scrollRatio();
+
+        //Vertical scrolling
+
+        if (this.isScrollingV()) {
+            scrollbarV.show();
+            scrollbarV.outerHeight(elm.outerHeight());
+            scrollbarV.find('.wb-scroller').outerHeight(scrollbarV.innerHeight()*ratio.v);
+        } else {
+            scrollbarV.hide();
+        }
+
+        //Horizontal scrolling
+
+        if (this.isScrollingH()) {
+            if (this.isScrollingV()) {
+                scrollbarH.css('margin-right',scrollbarV.outerWidth());
+            } else {
+                scrollbarH.css('margin-right',0);
+            }
+            scrollbarH.show();
+            scrollbarH.outerWidth(elm.outerWidth());
+            scrollbarH.find('.wb-scroller').outerWidth(scrollbarH.innerWidth()*ratio.h);
+        } else {
+            scrollbarH.hide();
+        }
+
+        elm.trigger('scroll');
+
+        this.trigger('scrolling');
+    },
+    _bindVScroll:function() {
+        var elm = this.scrollContainer();
+        var scrollbarV = this._scrollable.v;
+            
+        var scrollV = false;
+
+        var doScrollV = function(evt) {
+            var offset = evt.pageY-scrollbarV.offset().top;
+            var ratio = offset / scrollbarV.height();
+
+            elm.scrollTop((elm[0].scrollHeight-elm.height())*ratio);
+            elm.trigger('scroll');
+        }
+
+        scrollbarV.mousedown(function(evt) {
+            scrollV = true;                
+        });
+
+        $('body')
+            .mouseup(function(evt) {
+                scrollV = false;                
+            })
+            .mousemove(function(evt) {
+                if (!scrollV) return;
+                doScrollV(evt);
+            });
+        scrollbarV.click(doScrollV);
+        
+    },
+    _bindHScroll:function() {
+        var elm = this.scrollContainer();
+        var scrollbarH = this._scrollable.h;
+                    
+        var scrollH = false;
+
+        var doScrollH = function(evt) {
+            var offset = evt.pageX-scrollbarH.offset().left;
+            var ratio = offset / scrollbarH.width();
+
+            elm.scrollLeft((elm[0].scrollWidth-elm.width())*ratio);
+            elm.trigger('scroll');
+        }
+
+        scrollbarH.mousedown(function(evt) {
+            scrollH = true;                
+        });
+
+        $('body')
+            .mouseup(function(evt) {
+                scrollH = false;                
+            })
+            .mousemove(function(evt) {
+                if (!scrollH) return;
+                doScrollH(evt);
+            });
+        scrollbarH.click(doScrollH);
+    },
+    _scrollRatio:function() {
+        var elm = this.scrollContainer();
+        return {
+            v:elm.outerHeight()/elm[0].scrollHeight,
+            h:elm.outerWidth()/elm[0].scrollWidth
+                
+        }
+    },
+    getScrollbarSize:function() {
+        if (!this._scrollable) return null;
+        return {
+            v:this._scrollable.v.outerWidth(),
+            h:this._scrollable.h.outerHeight()
+        }
+    },
+    isScrollingV:function() {
+        return this._scrollRatio().v < 1;
+    },
+    isScrollingH:function() {
+        return this._scrollRatio().h < 1;
+    },
+    
+    scrollContainer:function() {
+        if (!this.opts.scrollContainer) {
+            return this.target();
+        }
+        return this.elm().findFirst(this.opts.scrollContainer);
     }
 });
 
@@ -908,8 +1162,10 @@ $wb.ui.Widget = $wb.Class('Widget',
         * @private
         */
         _layout: function() {
-            if (!this.elm().isOnPage()) 
+            if (!this.elm().isOnPage() 
+                    || !this.elm().is(':visible')) 
                 return;
+            
             this.trigger('before-layout');
             if (this._layoutMethod) {
                 this._layoutMethod.apply(this);
@@ -920,7 +1176,11 @@ $wb.ui.Widget = $wb.Class('Widget',
                 var child = this._children[i];
                 child._layout();
             }
+            
             this.trigger('after-layout');
+        },
+        layout:function() {
+            this._layout();
         },
         /**
         * @private
@@ -1193,7 +1453,7 @@ $wb.ui.Button = $wb.Class('Button',{
         titleElm:'.wb-title',
         actionTarget:'.wb-title',
         iconElm:'.wb-icon',
-        iconClass:null,
+        iconClass:null
     },
     _titleElm:null,
     __construct:function(opts) {
@@ -1244,7 +1504,7 @@ $wb.ui.MenuButton = $wb.Class('MenuButton',{
 }); 
 
 $wb.ui.Menu = $wb.Class('Menu',{
-    __extends:[$wb.ui.Widget],
+    __extends:[$wb.ui.Widget,$wb.ui.helper.Scrollable],
     __defaults:{
         tmpl:$wb.template.menu.base,
         itemTmpl:$wb.template.menu.menuItem,
@@ -1270,7 +1530,6 @@ $wb.ui.Menu = $wb.Class('Menu',{
             this.elm().addClass(this._vertical ? 'wb-vertical' : 'wb-horizontal');
             this.elm().disableMarking();
         });
-
     },
     _makeButton:function(title,callback) {
         var btn = new $wb.ui.MenuButton({
@@ -1292,7 +1551,8 @@ $wb.ui.Menu = $wb.Class('Menu',{
             tmpl:this._subTmpl,
             itemTmpl:this._itemTmpl,
             subTmpl:this._subTmpl,
-            vertical:true
+            vertical:true,
+            scrollable:true
         });
         for(var i in menus) {
             var m = menus[i];
@@ -1568,7 +1828,7 @@ $wb.ui.Header = $wb.Class('Header',{
 });
 
 $wb.ui.Pane = $wb.Class('Pane',{
-    __extends:[$wb.ui.Widget],
+    __extends:[$wb.ui.Widget,$wb.ui.helper.Scrollable],
     __defaults:{
         tmpl:$wb.template.panes.pane,
         layout:$wb.ui.layout.Box
@@ -1600,6 +1860,13 @@ $wb.ui.Section = $wb.Class('Section',{
            } else {
                this._titleElm().hide();
            }
+        });
+        this.bind('before-layout',function() {
+            this._titleElm().css('width','auto');
+        });
+        
+        this.bind('after-layout',function() {
+            this._titleElm().outerWidth(this.elm().innerWidth());
         });
     },
     _titleElm:function() {
@@ -2121,9 +2388,16 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
         var btn = this._tabButtons().find('.wb-tab:eq('+ix+")");
         btn.addClass('wb-active');
         
+        var visiblePane = this._panes().children();
         
-        panes.offscreen();
+        if (visiblePane.length > 0) {
+            for(i = 0; i < visiblePane.length;i++) {
+                $wb(visiblePane[i]).hideScrollbar()
+            }
+            visiblePane.offscreen();
+        }
         $(panes[ix]).onscreen();
+        $wb(panes[ix]).showScrollbar();
     },
     _tabButtons:function() {
         return this.elm().children('.wb-tabs');
@@ -2674,8 +2948,16 @@ $wb.ui.Accordion = $wb.Class('Accordion',{
                 menu.addClass('wb-active');
 
                 var submenu = menu.find('.wb-submenu');
-                self.find('.wb-submenu').not(submenu).slideUp('fast');
-                submenu.slideDown('fast');
+                var others = self.find('.wb-submenu:visible').not(submenu);
+                for(var i = 0; i < others.length;i++) {
+                    $wb(others).hideScrollbar();
+                }
+                others.slideUp('fast');
+                
+                
+                submenu.slideDown('fast',function() {
+                    $wb(submenu).showScrollbar();
+                });
             });
             this.elm().disableMarking();
 
@@ -2689,6 +2971,7 @@ $wb.ui.Accordion = $wb.Class('Accordion',{
             this.elm().find('.wb-submenu').outerHeight(availH);
         });
         this.bind('after-layout',function() {
+           
             if (this.elm().find('.wb-active').length > 0) 
                 return; 
             var first = $(this.elm().children('.wb-menuitem')[0]);

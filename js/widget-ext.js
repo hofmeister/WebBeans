@@ -236,9 +236,10 @@ $wb.ui.Table = $wb.Class('Table',
      * @augments $wb.ui.Widget
      */
     {
-        __extends:[$wb.ui.Widget],
+        __extends:[$wb.ui.Widget,$wb.ui.helper.Scrollable],
         __defaults:{
             target:'.wb-inner-table',
+            scrollContainer:'.wb-table-body-scroll',
             tmpl:$wb.template.table.base,
             headerTmpl:$wb.template.table.header,
             footerTmpl:$wb.template.table.footer,
@@ -252,6 +253,7 @@ $wb.ui.Table = $wb.Class('Table',
                 return row;
             },
             editable:false,
+            scrollable:true,
             paging:{
                 currentPage:0
             },
@@ -297,12 +299,19 @@ $wb.ui.Table = $wb.Class('Table',
                         }
                     }
                     
+                    
                 } else {
 
                     var availWidth = parseInt(this.elm()[0].style.width);
                     if (availWidth < 1) return;
                     var isHeader = false;
 
+                    var scrollbarSize = this.getScrollbarSize();
+                    if (scrollbarSize && this.isScrollingV()) {
+                        availWidth -= scrollbarSize.v;
+                    }
+                    
+                    this.elm().findFirst('.wb-table-body-scroll > table').outerWidth(availWidth);
 
                     var cells = null;
                     if (this.opts.header) {
@@ -450,6 +459,22 @@ $wb.ui.Table = $wb.Class('Table',
                 var totalCellCount = this._getColumnCount();
                 this.elm().find('.wb-inner-table-container').attr('colspan',totalCellCount);
             });
+            
+            this.bind('scrolling',function() {
+                var innerTbl = this.elm().findFirst('.wb-table-body-scroll > table');
+
+                var scrollbarSize = this.getScrollbarSize();
+                if (scrollbarSize && this.isScrollingV()) {
+                    innerTbl.css('padding-right',scrollbarSize.v);
+                } else {
+                    innerTbl.css('padding-right',0);
+                }
+                if (scrollbarSize && this.isScrollingH()) {
+                    innerTbl.css('padding-bottom',scrollbarSize.h);
+                } else {
+                    innerTbl.css('padding-right',0);
+                }
+            })
             
             var onChange = function() {
                 this._checkForEditing();

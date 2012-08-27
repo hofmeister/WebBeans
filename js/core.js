@@ -96,7 +96,7 @@ var require = function(path,cb,async) {
     }
     if (requireAllIx > -1) {
         paths.splice(requireAllIx,0,
-                "jquery-ui","utils","localization","data","template","widget","form",'widget-ext','module','draw','geo');
+                "jquery-ui","jquery-mousewheel","utils","localization","data","template","widget","form",'widget-ext','module','draw','geo');
     }
     
     var oks = new Array(paths.length);
