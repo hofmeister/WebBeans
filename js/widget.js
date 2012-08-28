@@ -1042,7 +1042,8 @@ $wb.ui.Widget = $wb.Class('Widget',
             delete this.opts;
             this.detach();
             this.trigger('destroy');
-            delete this;
+            if (!$.browser.msie) //Not allowed in IE
+                delete this;
         },
         /**
          * Detach this widget
