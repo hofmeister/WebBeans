@@ -227,7 +227,7 @@ $wb.draw.Element = $wb.Class('Element',{
     },
     
     _setOptions:function(ctxt) {
-        for(var i in this._ctxtOpts) {
+        for(var i = 0; i < this._ctxtOpts.length;i++) {
             var opt = this._ctxtOpts[i];
             ctxt[opt] = this.opts[opt];
         }

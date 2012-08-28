@@ -227,7 +227,7 @@ $wb.data.JsonSocket = $wb.Class('JsonSocket',{
     _opening:false,
     _waitModal:null,
     __construct:function(url) {
-        this._url = new $wb.Url(url,$wb.location);
+        this._url = new $wb.Url(url,$wb.location());
         this._url.protocol = 'ws';
         this._url.anchor = '';
         this._url.params = {};
@@ -240,7 +240,7 @@ $wb.data.JsonSocket = $wb.Class('JsonSocket',{
         }
         this._opening = true;
         
-        this._ws = new WebSocket(this._url.toString());
+        this._ws = new WebSocket(this._url.asString());
         this._ws.onopen = function() {
             this._opened = true;
             this._opening = false;
@@ -380,7 +380,7 @@ $wb.data.JsonService = $wb.Class('JsonService',{
     load:function() {
         var self = this;
         $.getJSON(this.opts.schema,function(data) {
-            var baseUrl = new $wb.Url(data.url,self.opts.schema);
+            var baseUrl = new $wb.Url(data.url,self.opts.schema).asString();
             if (data.sockets) {
                 for(var socketName in data.sockets) {
                     var socket = data.sockets[socketName];
@@ -404,6 +404,7 @@ $wb.data.JsonService = $wb.Class('JsonService',{
                         
                         self[controllerName][methodName] = function(args,callback) {
                             var url = baseUrl+method.url;
+                            
                             var data = null;
                             
                             //@TODO: Validate body against model and generate Model's from schema
@@ -481,6 +482,7 @@ $wb.data.JsonService = $wb.Class('JsonService',{
                             if (data) {
                                 data = JSON.stringify(data);
                             }
+                            
 
                             return $.ajax({
                                 url:url,
@@ -923,7 +925,7 @@ $wb.data.TableStore = $wb.Class('TableStore',{
         if (!this.opts.fields)
             return fields;
         var out = {};
-        for(var i in this.opts.fields) {
+        for(var i  = 0; i < this.opts.fields.length;i++) {
             var colId = this.opts.fields[i];
             if (fields[colId])
                 out[colId] = fields[colId];

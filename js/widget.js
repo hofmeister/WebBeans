@@ -21,7 +21,7 @@ $wb.ui.layout.Stack = function() {
     var width = this.target().innerWidth();
     var height = this.target().innerHeight();
     var nodes = this.children();
-    for(var i in nodes) {
+    for(var i = 0; i < nodes.length;i++) {
         nodes[i].elm().css({
             position:'absolute',
             top:0,
@@ -34,7 +34,7 @@ $wb.ui.layout.Stack = function() {
 };
 $wb.ui.layout.Flow = function() {
     var nodes = this.children();
-    for(var i in nodes) {
+    for(var i = 0; i < nodes.length;i++) {
         nodes[i].elm().css({
             'float':'left'
         });
@@ -43,7 +43,7 @@ $wb.ui.layout.Flow = function() {
 
 $wb.ui.layout.FlowReverse = function() {
     var nodes = this.children();
-    for(var i in nodes) {
+    for(var i = 0; i < nodes.length;i++) {
         nodes[i].elm().css({
             'float':'right'
         });
@@ -83,7 +83,7 @@ $wb.ui.layout.Centered = function() {
         this.target().css('position','relative');
     }
     
-    for(var i in nodes) {
+    for(var i = 0; i < nodes.length;i++) {
         var elm = nodes[i].elm();
         var left = (width-elm.outerWidth()) / 2;
         var top = (height-elm.outerHeight()) / 2;
@@ -129,7 +129,7 @@ $wb.ui.layout.GridBag = function() {
         return;
 
     var last = null;
-    for(var i in nodes) {
+    for(var i = 0; i < nodes.length;i++) {
         var isLast = i == (nodes.length-1);
         if (isLast) {
             last = nodes[i].elm();
@@ -500,10 +500,72 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
             if (!this._scrollable) return;
             this.showScrollbar();
         });
+        this.bind('before-layout',function() {
+            this._buildScrollbar();
+        });
         
         this.bind('after-layout',function() {
             this.showScrollbar();
         });
+    },
+    _buildScrollbar:function() {
+        if (!this.opts.scrollable) 
+            return;
+        if (this._scrollable)
+            return;
+        
+        var elm = this.scrollContainer();
+        var scrollbarH,scrollbarV;
+        
+        this._scrollable = {
+            h:$('<div class="wb-scrollbar wb-horizontal"><div class="wb-scroller"/></div>'),
+            v:$('<div class="wb-scrollbar wb-vertical"><div class="wb-scroller"/></div>')
+        };
+
+        this.bind('detach',function() {
+            this._scrollable.h.detach();
+            this._scrollable.v.detach();
+        });
+
+        $('body').append(this._scrollable.h)
+                .append(this._scrollable.v);
+
+        elm.mousewheel(function(evt,delta,deltaX,deltaY) {
+            evt.preventDefault();
+
+            var top = elm.scrollTop();
+            var left = elm.scrollLeft();
+            elm.scrollTop(top-(deltaY*2));
+            elm.scrollLeft(left+(deltaX*2));
+            elm.trigger('scroll');                    
+        });
+
+        scrollbarH = this._scrollable.h;
+        scrollbarV = this._scrollable.v;
+
+        elm.bind('scroll',function() {
+            var availHeight = elm[0].scrollHeight;
+            var availWidth = elm[0].scrollWidth;
+
+            if (scrollbarV.is(':visible')) {
+                scrollbarV.find('.wb-scroller').css({
+                    top:Math.floor(scrollbarV.innerHeight()*(elm.scrollTop()/availHeight))
+                });
+            }
+
+            if (scrollbarH.is(':visible')) {
+                scrollbarH.find('.wb-scroller').css({
+                    left:Math.floor(scrollbarH.innerWidth()*(elm.scrollLeft()/availWidth))
+                });
+            }
+        });
+
+        this._bindHScroll();
+        this._bindVScroll();
+
+        elm.scrollTop(0);
+        elm.scrollLeft(0);
+        elm.trigger('scroll');
     },
     hideScrollbar:function() {
         if (!this._scrollable) return;
@@ -526,61 +588,7 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
 
         var scrollbarH,scrollbarV;
 
-        if (!this._scrollable)  {
-
-            this._scrollable = {
-                h:$('<div class="wb-scrollbar wb-horizontal"><div class="wb-scroller"/></div>'),
-                v:$('<div class="wb-scrollbar wb-vertical"><div class="wb-scroller"/></div>')
-            };
-
-            this.bind('detach',function() {
-                this._scrollable.h.detach();
-                this._scrollable.v.detach();
-            });
-
-            $('body').append(this._scrollable.h)
-                    .append(this._scrollable.v);
-
-            elm.mousewheel(function(evt,delta,deltaX,deltaY) {
-                evt.preventDefault();
-
-                var top = elm.scrollTop();
-                var left = elm.scrollLeft();
-                elm.scrollTop(top-(deltaY*2));
-                elm.scrollLeft(left+(deltaX*2));
-                elm.trigger('scroll');                    
-            });
-
-            scrollbarH = this._scrollable.h;
-            scrollbarV = this._scrollable.v;
-
-            elm.bind('scroll',function() {
-                var availHeight = elm[0].scrollHeight;
-                var availWidth = elm[0].scrollWidth;
-
-                if (scrollbarV.is(':visible')) {
-                    scrollbarV.find('.wb-scroller').css({
-                        top:Math.floor(scrollbarV.innerHeight()*(elm.scrollTop()/availHeight))
-                    });
-                }
-
-                if (scrollbarH.is(':visible')) {
-                    scrollbarH.find('.wb-scroller').css({
-                        left:Math.floor(scrollbarH.innerWidth()*(elm.scrollLeft()/availWidth))
-                    });
-                }
-            });
-
-            this._bindHScroll();
-            this._bindVScroll();
-
-            elm.scrollTop(0);
-            elm.scrollLeft(0);
-            elm.trigger('scroll');
-
-        }
-
-
+        this._buildScrollbar();
 
         availHeight = elm[0].scrollHeight;
         availWidth = elm[0].scrollWidth;
@@ -896,14 +904,14 @@ $wb.ui.Widget = $wb.Class('Widget',
             this.trigger('after-element');
         },
         isAsync:function() {
-            for(var i in this._children) {
+            for(var i = 0; i < this._children.length;i++) {
                 if (this._children[i].isAsync())
                     return true;
             }
             return this.opts.async;
         },
         isReady:function() {
-            for(var i in this._children) {
+            for(var i = 0; i < this._children.length;i++) {
                 if (!this._children[i].isReady()) {
                     return false;
                 }
@@ -1172,7 +1180,7 @@ $wb.ui.Widget = $wb.Class('Widget',
             }
             
             this.trigger('before-children-layout');
-            for(var i in this._children) {
+            for(var i = 0; i < this._children.length;i++) {
                 var child = this._children[i];
                 child._layout();
             }
@@ -1190,7 +1198,7 @@ $wb.ui.Widget = $wb.Class('Widget',
             
             this.elm().putAway();
                 
-            for(var i in this._children) {
+            for(var i = 0; i < this._children.length;i++) {
                 this._children[i].render();
             }
             
@@ -1358,7 +1366,7 @@ $wb.ui.IFrame = $wb.Class('IFrame',{
         }
     },
     addCSS:function(cssFile) {
-        var url = new $wb.Url(cssFile,$wb.location);
+        var url = new $wb.Url(cssFile,$wb.location());
         this.head().append('<link href="%s" type="text/css" rel="stylesheet" />'.format(url));
     }
 });
@@ -1554,7 +1562,7 @@ $wb.ui.Menu = $wb.Class('Menu',{
             vertical:true,
             scrollable:true
         });
-        for(var i in menus) {
+        for(var i = 0; i < menus.length;i++) {
             var m = menus[i];
             submenu.add(m.title,m.arg);
         }
@@ -2350,7 +2358,7 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
             }
         });
         this.bind('beforerenderchildren',function() {
-            for(var i in this._tabButtonWidgets) {
+            for(var i = 0; i < this._tabButtonWidgets.length;i++) {
                 var btn = this._tabButtonWidgets[i];
                 btn.render();
                 this._tabButtons().append(btn.elm());
@@ -2857,7 +2865,7 @@ $wb.ui.Tree = $wb.Class('Tree',{
         var subTree = this._newSubTree(id);
         
         if (nodes) {
-            for(var i in nodes) {
+            for(var i = 0; i < nodes.length;i++) {
                 var m = nodes[i];
                 subTree.add(m.title,m.arg,m.data,m.id);
             }

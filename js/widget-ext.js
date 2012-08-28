@@ -131,8 +131,8 @@ $wb.ui.TableRow = $wb.Class('TableRow',
             }
             
             var data = this.getData();
-            for(var i in cols) {
-                var col = cols[i];
+            for(var colId in cols) {
+                var col = cols[colId];
                 if (col.hidden) continue;
                 var value = $wb.utils.GetValue(data,col.id);
                 var fieldType = $wb.ui.FieldType.type(col.valueType);
@@ -177,8 +177,8 @@ $wb.ui.TableRow = $wb.Class('TableRow',
             
             var bodyCellTmpl = this.getTable().option('bodyCellTmpl');
             var cols = this.getStore().getColumns();
-            for(var i in cols) {
-                var col = cols[i];
+            for(var colId in cols) {
+                var col = cols[colId];
                 if (col.hidden) continue;
                 var cell = $(bodyCellTmpl());
                 var value = $wb.utils.GetValue(this.getData(),col.id);
@@ -188,6 +188,7 @@ $wb.ui.TableRow = $wb.Class('TableRow',
                 cell.html(fieldType.format(col,value));
                 row.append(cell);
             }
+            
             if (this.getTable().option('actionPosition') == 'right')
                 this._paintActions(row,'rowActions');
             
@@ -317,6 +318,7 @@ $wb.ui.Table = $wb.Class('Table',
                     if (this.opts.header) {
                         isHeader = true;
                         cells = this._header.find('.wb-table-cell').not('.wb-actions');
+                        
                     } else {
                         cells = this._body.find('.wb-table-row:eq(0) .wb-table-cell').not('.wb-actions');
                     }
@@ -457,24 +459,8 @@ $wb.ui.Table = $wb.Class('Table',
                 this._paintRows();
                 
                 var totalCellCount = this._getColumnCount();
-                this.elm().find('.wb-inner-table-container').attr('colspan',totalCellCount);
+                this.elm().find('.wb-inner-table-container').attr('colspan',totalCellCount+1);
             });
-            
-            this.bind('scrolling',function() {
-                var innerTbl = this.elm().findFirst('.wb-table-body-scroll > table');
-
-                var scrollbarSize = this.getScrollbarSize();
-                if (scrollbarSize && this.isScrollingV()) {
-                    innerTbl.css('padding-right',scrollbarSize.v);
-                } else {
-                    innerTbl.css('padding-right',0);
-                }
-                if (scrollbarSize && this.isScrollingH()) {
-                    innerTbl.css('padding-bottom',scrollbarSize.h);
-                } else {
-                    innerTbl.css('padding-right',0);
-                }
-            })
             
             var onChange = function() {
                 this._checkForEditing();
@@ -525,9 +511,14 @@ $wb.ui.Table = $wb.Class('Table',
         },
         _getColumnCount:function() {
             var out = 0;
-            for(var i in this.opts.store.getColumns()) {
+            var cols = this.opts.store.getColumns();
+            for(var colId in cols) {
+                var col = cols[colId];
+                if (col.hidden) 
+                    continue;
                 out++;
             }
+            
             if (this.hasActions())
                 out++;
             
@@ -553,7 +544,7 @@ $wb.ui.Table = $wb.Class('Table',
             var col = $('<td class="wb-paging-container"/>');
             col.append(this._paging.render());
             row.append(col);
-            col.attr('colspan',this._getColumnCount());
+            col.attr('colspan',this._getColumnCount()+1);
         },
         getPaging:function() {
             return this._paging;
@@ -636,8 +627,8 @@ $wb.ui.Table = $wb.Class('Table',
             if (this.opts.actionPosition == 'left')
                 this._paintHeaderActions(row);
             
-            for(var i in cols) {
-                var col = cols[i];
+            for(var colId in cols) {
+                var col = cols[colId];
                 if (col.hidden) continue;
                 
                 var cell = $(this.opts.headerCellTmpl());
@@ -810,7 +801,7 @@ $wb.ui.Table = $wb.Class('Table',
             
             var odd = true;
             this._rows = [];
-            for(var i in rows) {
+            for(var i = 0; i < rows.length;i++) {
                 var row = this.addRow(rows[i]);
                 this._rows.push(row);
                 row.render();

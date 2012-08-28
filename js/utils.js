@@ -65,7 +65,7 @@
         GetValue:function(obj,path) {
             var parts = path.split('.');
             var cur = obj;
-            for(var i in parts) {
+            for(var i = 0; i < parts.length;i++) {
 
                 try {
                     var p = parts[i];
@@ -112,7 +112,7 @@
         SetValue:function(obj,path,value) {
             var parts = path.split('.');
             var cur = obj;
-            for(var i in parts) {
+            for(var i = 0; i < parts.length;i++) {
                 var p = parts[i];
                 if (i == (parts.length-1))
                     break;

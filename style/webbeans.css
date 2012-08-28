@@ -115,7 +115,7 @@ div,td,table,tbody,thead,tfoot,th {
 }
 
 .wb-frame > .wb-content {
-    overflow: auto;
+    overflow: hidden;
 }
 
 /* split pane */

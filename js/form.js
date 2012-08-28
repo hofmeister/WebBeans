@@ -1022,7 +1022,7 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
             this._codeMirrorElm().addClass('wb-input');
             
             //Copy most of the code mirror methods directly onto this widget
-            for(var i in this._copyMethods) {
+            for(var i = 0; i < this._copyMethods.length;i++) {
                 var m = this._copyMethods[i];
                 this[m] = this._codemirror[m].bind(this._codemirror);
             }
