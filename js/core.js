@@ -1281,6 +1281,9 @@ if (!$wbConfig.noCSS) {
 
 
         window.$wb = $wb;
+        
+        //jQuery setup
+        $.ajaxSetup({ cache: false });
     };
 
     /**
