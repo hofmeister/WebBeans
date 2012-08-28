@@ -473,11 +473,13 @@ div,td,table,tbody,thead,tfoot,th {
     left:-10px;
     top:-10px;
     border-radius: 10px 0 0 10px;
+    -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box;
 }
 .wb-wrapper > .wb-right {
     right:-10px;
     top:-10px;
     border-radius: 0 10px 10px 0; 
+    -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box;
 }
 
 /* key value */
@@ -505,6 +507,7 @@ div,td,table,tbody,thead,tfoot,th {
     z-index: 10;
     background-color: white;
     opacity: .8;
+    filter: alpha(opacity=80);
 }
 
 .wb-scrollbar.wb-vertical,

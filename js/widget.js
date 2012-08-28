@@ -1562,8 +1562,10 @@ $wb.ui.Menu = $wb.Class('Menu',{
             vertical:true,
             scrollable:true
         });
+        
         for(var i = 0; i < menus.length;i++) {
             var m = menus[i];
+            if (!m) continue;
             submenu.add(m.title,m.arg);
         }
 

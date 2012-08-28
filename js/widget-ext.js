@@ -301,6 +301,8 @@ $wb.ui.Table = $wb.Class('Table',
                     }
                     
                     
+                    
+                    
                 } else {
 
                     var availWidth = parseInt(this.elm()[0].style.width);
@@ -460,6 +462,25 @@ $wb.ui.Table = $wb.Class('Table',
                 
                 var totalCellCount = this._getColumnCount();
                 this.elm().find('.wb-inner-table-container').attr('colspan',totalCellCount+1);
+            });
+            
+            this.bind('scrolling',function() {
+                if (this.opts.layoutMode != 'auto') 
+                    return;
+                
+                var tbl = this.elm().findFirst('.wb-table-body-scroll > table');
+                var scrollbarSize = this.getScrollbarSize();
+                if (scrollbarSize && this.isScrollingV()) {
+                    tbl.css({
+                        'padding-right':scrollbarSize.v,
+                        'padding-bottom':scrollbarSize.h
+                    });
+                } else {
+                    tbl.css({
+                        'padding-right':0,
+                        'padding-bottom':0
+                    });
+                } 
             });
             
             var onChange = function() {
