@@ -592,6 +592,66 @@ $wb.ui.form.PasswordField = $wb.Class('PasswordField',{
     }
 });
 
+$wb.ui.form.FileField = $wb.Class('FileField',{
+    __extends:[$wb.ui.form.InputField],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            type:'file'
+        },opts);
+        this.__super(opts);
+    }
+});
+
+$wb.ui.form.FileUploader = $wb.Class('FileUploader',{
+    __defaults:{
+        tmpl:function() {
+            var frameId = $wb.utils.uuid().replace(/\-/g,'');
+            var html = 
+            '<div class="wb-fileuploader" ><form class="wb-target" method="post" enctype="multipart/form-data" target="$1" /><iframe name="$1" class="wb-offscreen" /></div>'
+                .format(frameId);
+            return html;
+        },
+        target:'> .wb-target',
+        type:'json'
+    },
+    __extends:[$wb.ui.Pane],
+    __construct:function(opts) {
+        this.require(opts,'url');
+        this.__super(this.getDefaults(opts));
+        
+        var self = this;
+        
+        var fileField = new $wb.ui.form.FileField({name:this.opts.name,label:this.opts.label || null});
+        this.add(fileField);
+        
+        this.bind('render',function() {
+            var form = this.target();
+            form.attr('action',this.opts.url);
+            
+        });
+        
+        fileField.bind('change',function() {
+            if (!this.value()) return;
+            var form = self.target();
+            self.elm().find('iframe').one('load',function() {
+                var content = this.contentWindow.document;
+                var result;
+                if (self.opts.type == 'json')
+                    result = JSON.parse(content.body.innerText);
+                else if (self.opts.type == 'text')
+                    result = content.body.innerText;
+                else if (self.opts.type == 'html' || self.opts.type == 'xml')
+                    result = content.body.innerHTML;
+
+                self.trigger('data',[result]);
+                fileField.value('');
+            });
+            form.submit();
+        });
+    }
+})
+
 
 $wb.ui.form.SearchField = $wb.Class('SearchField',{
     __extends:[$wb.ui.form.InputField],

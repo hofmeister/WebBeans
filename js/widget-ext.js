@@ -51,7 +51,10 @@ $wb.ui.TableRow = $wb.Class('TableRow',
             this.elm().bind('keyup',function(evt) {
                 switch(evt.keyCode) {
                     case 27: //Escape
-                        this.makeStatic();
+                        if (!this.opts.editable && !this._editMode) 
+                            return;
+                        
+                        this.cancel();
                         break;
                 }
             }.bind(this));
@@ -104,6 +107,13 @@ $wb.ui.TableRow = $wb.Class('TableRow',
             this._isNew = isNew;
             return this;
         },
+        cancel:function() {
+            if (this.isNew()) {
+                this.destroy();
+            } else {
+                this.makeStatic();
+            }
+        },
         _editRow:function() {
             while(this._fields.length > 0) {
                 this._fields.pop().detach();
@@ -117,11 +127,7 @@ $wb.ui.TableRow = $wb.Class('TableRow',
             
             var actionAddons = {
                 'cancel':new $wb.Action(_('Cancel'),function() {
-                        if (this.isNew()) {
-                            this.destroy();
-                        } else {
-                            this.makeStatic();
-                        }
+                        this.cancel()
                     },'ban-circle',this
                 )
             };

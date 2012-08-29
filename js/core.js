@@ -1333,8 +1333,8 @@ if (!$wbConfig.noCSS) {
         if (!out)
             throw "Missing text argument from translation method";
         for(var i = 0;i < arguments.length;i++) {
-            out = out.replace('%s', arguments[i])
-                    .replace('$'+(i+1), arguments[i]);
+            out = out.replace(/\%s/, arguments[i])
+                    .replace(new RegExp('\\$'+(i+1),'g'), arguments[i]);
         }
         return out;
     };

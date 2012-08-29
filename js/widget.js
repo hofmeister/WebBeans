@@ -1887,10 +1887,12 @@ $wb.ui.Section = $wb.Class('Section',{
         });
         this.bind('before-layout',function() {
             this._titleElm().css('width','auto');
+            this.target().css('height','auto');
         });
         
         this.bind('after-layout',function() {
             this._titleElm().outerWidth(this.elm().innerWidth());
+            this.target().outerHeight(this.elm().innerHeight()-this._titleElm().outerHeight());
         });
     },
     _titleElm:function() {
@@ -3125,7 +3127,8 @@ $wb.ui.Frame = $wb.Class('Frame',
             target:'.wb-content',
             frameHeader:'.wb-frame-header',
             actionTarget:'.wb-actions',
-            icon:null
+            icon:null,
+            scrollable:true
         },
         
         /**
