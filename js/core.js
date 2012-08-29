@@ -570,6 +570,13 @@ if (!$wbConfig.noCSS) {
             push:function(elm) {
                 this._arr.push(elm);
             },
+            
+            shift:function() {
+                return this._arr.shift();
+            },
+            unshift:function(elm) {
+                this._arr.splice(0,0,elm);
+            },
             /**
             * @description Push several elements onto end
             * @param {Object[]} elms
@@ -1283,7 +1290,7 @@ if (!$wbConfig.noCSS) {
         window.$wb = $wb;
         
         //jQuery setup
-        $.ajaxSetup({ cache: false });
+        $.ajaxSetup({cache: false});
     };
 
     /**

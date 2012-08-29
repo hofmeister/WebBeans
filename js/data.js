@@ -226,6 +226,7 @@ $wb.data.JsonSocket = $wb.Class('JsonSocket',{
     _opened:false,
     _opening:false,
     _waitModal:null,
+    _pinger:null,
     __construct:function(url) {
         this._url = new $wb.Url(url,$wb.location());
         this._url.protocol = 'ws';
@@ -254,6 +255,14 @@ $wb.data.JsonSocket = $wb.Class('JsonSocket',{
                 
             }
             this.trigger('open');
+            if (this._pinger)
+                clearInterval(this._pinger);
+            this._pinger = null;
+            
+            this._pinger = setInterval(function() {
+                this._ws.send("{}");
+            }.bind(this),30000);
+            
             if (callback)
                 callback();
         }.bind(this);
@@ -263,6 +272,9 @@ $wb.data.JsonSocket = $wb.Class('JsonSocket',{
             this._opened = false;
             this._opening = false;
             this.trigger('close');
+            if (this._pinger)
+                clearInterval(this._pinger);
+            this._pinger = null;
             if (!evt.wasClean) {
                 if (!this._waitModal) {
                     var info = new $wb.ui.Pane();
@@ -339,7 +351,7 @@ $wb.data.PubSub = $wb.Class('PubSub',{
                     callback(data.action,data.data,data.context);
             }
         });
-        
+        //console.log('subscribe to '+contexts);
         this.send({type:'subscribe',args:[contexts]});
     },
     unsubscribe:function() {
@@ -354,6 +366,7 @@ $wb.data.PubSub = $wb.Class('PubSub',{
         if (contexts.length == 0)
             throw _('Unsubscribe method requires atleast 1 context argument');
         
+        //console.log('unsubscribe to '+contexts);
         this.send({type:'unsubscribe',args:[contexts]});
     }
 });
@@ -670,7 +683,7 @@ $wb.data.ListStore = $wb.Class('ListStore',{
 
         this.getSource().bind('added',function(ok,data) {
             if (!ok) return;
-            this.add(data);
+            this.add(data,true);
         }.bind(this));
 
         this.getSource().bind('updated',function(ok,data) {
@@ -683,10 +696,10 @@ $wb.data.ListStore = $wb.Class('ListStore',{
             this.remove(data);
         }.bind(this));
     },
-    add:function(row) {
-        this.addAll([row]);
+    add:function(row,prepend) {
+        this.addAll([row],prepend);
     },
-    _addRows:function(rows) {
+    _addRows:function(rows,prepend) {
         for(var i = 0; i < rows.length;i++) {
             if (this._model)
                 rows[i] = this._model.create(rows[i]);
@@ -704,14 +717,19 @@ $wb.data.ListStore = $wb.Class('ListStore',{
                 rows[i][this._autoKey] = this._data.rows.length();
             }
             
-            if (!found)
-                this._data.rows.push(rows[i]);
+            if (!found) {
+                if (prepend)
+                    this._data.rows.unshift(rows[i]);
+                else
+                    this._data.rows.push(rows[i]);
+            }
+                
         }
 
         this._makeDirty();
     },
-    addAll:function(rows) {
-        this._addRows(rows);
+    addAll:function(rows,prepend) {
+        this._addRows(rows,prepend);
         this._data.total += rows.length;
         this.trigger('change');
         this.trigger('added',[rows]);

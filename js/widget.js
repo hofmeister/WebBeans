@@ -798,6 +798,10 @@ $wb.ui.Widget = $wb.Class('Widget',
          */
         _ready:true,
         /**
+         * Indicates if the widget has been placed on page
+         */
+        _attached:false,
+        /**
          * The provided options.
          * @type Object
          */
@@ -1054,6 +1058,7 @@ $wb.ui.Widget = $wb.Class('Widget',
                 //Detach children but dont remove them from the widget
                 this._children[i].detach();
             }
+            this._attached = false;
             this.trigger('detach');
             this.elm().detach();
             return this;
@@ -1124,6 +1129,11 @@ $wb.ui.Widget = $wb.Class('Widget',
             this._layout();
 
             this.trigger('render');
+            
+            if (!this._attached) {
+                this._attached = true;
+                this.trigger('attach');
+            }
             return this.elm();
         },
         /**

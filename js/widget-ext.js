@@ -813,10 +813,8 @@ $wb.ui.Table = $wb.Class('Table',
                     //Local store
                     var page = this._paging.getPage();
                     offset = rowsPrPage*page;
-                } else if (rows.length > rowsPrPage) {
-                    throw new $wb.Error(_('Store contains too many rows. Does server return more rows than rowsPerPage option?'));
+                    rows = rows.slice(offset,offset+rowsPrPage);
                 }
-                rows = rows.slice(offset,offset+rowsPrPage);
             }
             
             
