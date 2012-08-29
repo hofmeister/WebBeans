@@ -118,6 +118,9 @@ $wb.ui.layout.Fill = function() {
     
 };
 
+$wb.ui.layout.None = function() {
+    
+}
 
 $wb.ui.layout.GridBag = function() {
 
