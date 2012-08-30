@@ -491,6 +491,7 @@ $wb.ui.Table = $wb.Class('Table',
             
             var onChange = function() {
                 this._checkForEditing();
+                
                 if (this._autoUpdate) {
                     this.repaintRows();
                 } else {

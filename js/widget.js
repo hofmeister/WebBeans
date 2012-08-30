@@ -490,10 +490,11 @@ $wb.ui.helper.Actionable = $wb.Class('Actionable',{
 $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
     __defaults:{
         scrollContainer:null,
-        scrollable:false
-        
+        scrollable:false,
+        scrollParent:'.wb-window'
     },
     _scrollable:null,
+    _scrollParent:null,
     __construct:function(opts) {
         this.bind('hide',function() {
             this.hideScrollbar();
@@ -529,10 +530,20 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
             this._scrollable.h.detach();
             this._scrollable.v.detach();
         });
-
-        $('body').append(this._scrollable.h)
+        var parent = null;
+        if (typeof this.opts.scrollParent == 'string') {
+            parent = this.elm().closest(this.opts.scrollParent);
+            if (parent.length == 0)
+                parent = $('body');
+        } else if (this.opts.scrollParent)
+            parent = $(this.opts.scrollParent);
+        else
+            parent = $('body');
+        parent.append(this._scrollable.h)
                 .append(this._scrollable.v);
-
+        
+        this._scrollParent = parent;        
+        
         elm.mousewheel(function(evt,delta,deltaX,deltaY) {
             evt.preventDefault();
 
@@ -601,18 +612,19 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
         scrollbarH = this._scrollable.h;
         scrollbarV = this._scrollable.v;
 
-
-
         var bbox = elm.boundingBox();
+        
+        var parentOffset = this._scrollParent.offset();
+        
 
         scrollbarV.css({
-            top:bbox.top,
-            left:bbox.right-scrollbarV.outerWidth()
+            top:bbox.top-parentOffset.top,
+            left:bbox.right-scrollbarV.outerWidth()-parentOffset.left
         });
 
         scrollbarH.css({
-            left:bbox.left,
-            top:bbox.bottom-scrollbarH.outerHeight()
+            top:bbox.bottom-scrollbarH.outerHeight()-parentOffset.top,
+            left:bbox.left-parentOffset.left
         });
 
         scrollbarV.hide();
@@ -3229,8 +3241,9 @@ $wb.ui.Window = $wb.Class('Window',
          */
         __construct:function(opts) {
             opts = this.getDefaults(opts);
-            
             this.__super(opts);
+            
+            this.opts.scrollParent = this.elm();
 
             $wb.ui.Window._windows.push(this);
 

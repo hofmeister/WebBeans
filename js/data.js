@@ -76,13 +76,15 @@ $wb.data.Model = $wb.Class('Model',{
     },
     create:function(data) {
         if (!data) data = {};
-        var row = {};
+        
         for(var id in this._fields) {
             var f = this._fields[id];
-            row[id] = f.defaultValue;
+            
+            if (!data[id])
+                data[id] = f.defaultValue || null;
         }
-        var out = $.extend({},row,data);
-        return out;
+        
+        return data;
     },
     getKey:function(row) {
         var key = [];
@@ -779,17 +781,23 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         this.addAll([row],prepend);
     },
     _addRows:function(rows,prepend) {
+        var bigResult = rows.length > 100;
+        
         for(var i = 0; i < rows.length;i++) {
-            if (this._model)
-                rows[i] = this._model.create(rows[i]);
             var found = false;
             
-            var key = this.getKey(rows[i]);
-            if (key) {
-                var oldRow = this.getByKey(key);
-                if (oldRow) {
-                    $.extend(oldRow,rows[i]);
-                    found = true;
+            if (!bigResult) {
+                //Only process rows for small results - performance reasons.
+                if (this._model)
+                    rows[i] = this._model.create(rows[i]);
+                
+                var key = this.getKey(rows[i]);
+                if (key) {
+                    var oldRow = this.getByKey(key);
+                    if (oldRow) {
+                        $.extend(oldRow,rows[i]);
+                        found = true;
+                    }
                 }
             }
             if (!this._hasKey) {
@@ -804,7 +812,6 @@ $wb.data.ListStore = $wb.Class('ListStore',{
             }
                 
         }
-
         this._makeDirty();
     },
     addAll:function(rows,prepend) {
@@ -815,7 +822,7 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         
     },
     setRows:function(rows,totalRows) {
-        this.clear();
+        this._clear();
         if (!totalRows)
             totalRows = rows.length;
         this._data.total = totalRows;
@@ -922,10 +929,14 @@ $wb.data.ListStore = $wb.Class('ListStore',{
         this._makeDirty();
         this.trigger('change');
     },
-    clear:function() {
+    _clear:function() {
         this._data.rows.clear();
         this._data.total = 0;
         this._clearFiltered();
+    },
+    clear:function() {
+        this._clear();
+        this.trigger('change');
     },
     find:function(fieldName,value) {
         return this._filtered.find(fieldName,value);
