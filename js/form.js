@@ -97,6 +97,7 @@ $wb.ui.form.FieldContainer = $wb.Class('FieldContainer',{
         }
         
         this.opts.data = data;
+        this.trigger('data',[data]);
         return this;
     },
     getData:function() {
