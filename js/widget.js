@@ -545,8 +545,6 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
         this._scrollParent = parent;        
         
         elm.mousewheel(function(evt,delta,deltaX,deltaY) {
-            evt.preventDefault();
-
             var top = elm.scrollTop();
             var left = elm.scrollLeft();
             elm.scrollTop(top-(deltaY*2));

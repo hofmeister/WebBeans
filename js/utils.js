@@ -7,6 +7,111 @@
 
 (function() {
     
+    JSON.pretty = function(val,options) {
+        options = $.extend({
+            escapeStrings: true,
+            indent: 4,
+            linesep: "\n",
+            quoteKeys: true
+        }, options || {});
+        var itemsep = options.linesep.length ? "," + options.linesep : ", ";
+
+        function format(val, depth) {
+            var tab = [];
+            for (var i = 0; i < options.indent * depth; i++) tab.push("");
+            tab = tab.join(" ");
+
+            var type = typeof val;
+            switch (type) {
+                case "boolean":
+                case "number":
+                case "string":
+                    var retval = val;
+                    if (type == "string" && !options.escapeStrings) {
+                        retval = indentLines(retval.replace(/\r\n/g, "\n"), tab.substr(options.indent));
+                    } else {
+                        if (options.html) {
+                            retval = JSON.stringify(val);
+                        } else {
+                            retval = JSON.stringify(val);
+                        }
+                    }
+                    if (options.html) {
+                        retval = "<code class='" + type + "'>" + retval + "</code>";
+                    }
+                    return retval;
+
+                case "object": {
+                    if (val === null) {
+                        if (options.html) {
+                            return "<code class='null'>null</code>";
+                        }
+                        return "null";
+                    }
+                    if (val.constructor == Date) {
+                        return JSON.stringify(val);
+                    }
+
+                    var buf = [];
+
+                    if (val.constructor == Array) {
+                        buf.push("[");
+                        for (var index = 0; index < val.length; index++) {
+                            buf.push(index > 0 ? itemsep : options.linesep);
+                            buf.push(tab, format(val[index], depth + 1));
+                        }
+                        if (index >= 0) {
+                            buf.push(options.linesep, tab.substr(options.indent));
+                        }
+                        buf.push("]");
+                        if (options.html) {
+                            return "<code class='array closed'>[ ... ]</code><code class='array'>" + buf.join("") + "</code>";
+                        }
+
+                    } else {
+                        buf.push("{");
+                        var index = 0;
+                        for (var key in val) {
+                            buf.push(index > 0 ? itemsep : options.linesep);
+                            var keyDisplay = options.quoteKeys ? JSON.stringify(key) : key;
+                            if (options.html) {
+                                if (options.quoteKeys) {
+                                    keyDisplay = keyDisplay.substr(1, keyDisplay.length - 2);
+                                }
+                                keyDisplay = "<code class='key'>" + keyDisplay + "</code>";
+                                if (options.quoteKeys) {
+                                    keyDisplay = '"' + keyDisplay + '"';
+                                }
+                            }
+                            buf.push(tab, keyDisplay,
+                                ": ", format(val[key], depth + 1));
+                            index++;
+                        }
+                        if (index >= 0) {
+                            buf.push(options.linesep, tab.substr(options.indent));
+                        }
+                        buf.push("}");
+                        if (options.html) {
+                            return "<code class='object closed'>{ ... }</code><code class='object'>" + buf.join("") + "</code>";
+                        }
+                    }
+
+                    return buf.join("");
+                }
+            }
+        }
+
+        function indentLines(text, tab) {
+            var lines = text.split("\n");
+            for (var i in lines) {
+                lines[i] = (i > 0 ? tab : "") + lines[i];
+            }
+            return lines.join("<br>");
+
+        }
+        return format(val, 1);
+    };
+    
     var parseCssSize = function(size) {
         if (!size) return 0;
         var out = parseInt(size, 10);

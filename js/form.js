@@ -316,7 +316,8 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
         labelPosition:'left',
         disabled:false,
         tmpl: function() {
-            return $wb.template.form.container.apply(this,[this.opts.type,opts.inputTmpl()]);
+            var inputHtml = this.opts.inputTmpl ? this.opts.inputTmpl() : '';
+            return $wb.template.form.container.apply(this,[this.opts.type,inputHtml]);
         },
         layout:function() {
             var maxW = this.labelElm().parent().innerWidth();
@@ -981,12 +982,11 @@ $wb.ui.form.Select = $wb.Class('Select',{
 
 $wb.ui.form.TextArea = $wb.Class('TextArea',{
     __extends:[$wb.ui.form.BaseField],
+    __defaults:{
+        tmpl:$wb.template.form.textarea
+    },
     __construct:function(opts) {
-        if (!opts) opts = {};
-        opts = $.extend({
-            tmpl:$wb.template.form.textarea
-        },opts);
-        this.__super(opts);
+        this.__super(this.getDefaults(opts));
     }
 });
 
@@ -994,11 +994,12 @@ $wb.ui.form.TextArea = $wb.Class('TextArea',{
 $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
     __extends:[$wb.ui.form.TextArea],
     __defaults:{
-        mode:null,
+        mode:'javascript',
         indentUnit:4,
         lineWrapping:true,
         lineNumbers:true,
-        codemirrorBase:$wbConfig.base+"js/3rdparty/codemirror/"
+        codemirrorBase:$wbConfig.base+"js/3rdparty/codemirror/",
+        layout:$wb.ui.layout.None
     },
     _codemirror:null,
     _rendered:false,
@@ -1011,6 +1012,7 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
         'getRange','replaceRange','posFromIndex','indexFromPos'
     ],
     __construct:function(opts) {
+        
         opts = $.extend({
             onFocus:function() {
                 this._codeMirrorElm().addClass('wb-focus');
@@ -1032,7 +1034,6 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
         this.bind('render',function() {
             this._rendered = true;
         });
-        
         this._loadCodeMirror();
     },
     _codeMirrorElm:function() {
@@ -1079,7 +1080,7 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
         this.bind('render',function() {
             destroyIt();
             this._codemirror = CodeMirror.fromTextArea(this.target()[0],this.opts);
-            this._codeMirrorElm().addClass('wb-input');
+            //this._codeMirrorElm().addClass('wb-input');
             
             //Copy most of the code mirror methods directly onto this widget
             for(var i = 0; i < this._copyMethods.length;i++) {
@@ -1091,7 +1092,7 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
             //@TODO: Find root cause and fix
             setTimeout(function() {
                 this._codemirror.refresh()
-            }.bind(this),100);
+            }.bind(this),500);
             
             this._rendered = false;
         });

@@ -48,7 +48,6 @@ if (typeof $wbConfig.base === 'undefined') {
     @type Void
 */
 var require = function(path,cb,async) {
-    console.log("path:"+path);
     var i,paths = null;
     if (!async) async = false;
     

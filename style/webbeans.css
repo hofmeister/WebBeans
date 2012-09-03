@@ -537,9 +537,10 @@ div,td,table,tbody,thead,tfoot,th {
     background-color: #333;
     position: absolute;
 }
+.CodeMirror * {
+    overflow: visible;
+}
 
-
-
-
-
-
+.CodeMirror-scroll {
+    overflow: auto;
+}
