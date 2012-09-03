@@ -1897,11 +1897,16 @@ $wb.ui.Section = $wb.Class('Section',{
         });
         this.bind('before-layout',function() {
             this._titleElm().css('width','auto');
+            var elm = this.elm()[0];
+            if (!elm.style.height) return;
             this.target().css('height','auto');
         });
         
         this.bind('after-layout',function() {
             this._titleElm().outerWidth(this.elm().innerWidth());
+            var elm = this.elm()[0];
+            if (!elm.style.height) return;
+            
             this.target().outerHeight(this.elm().innerHeight()-this._titleElm().outerHeight());
         });
     },
