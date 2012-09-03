@@ -1485,7 +1485,8 @@ $wb.ui.Button = $wb.Class('Button',{
         titleElm:'.wb-title',
         actionTarget:'.wb-title',
         iconElm:'.wb-icon',
-        iconClass:null
+        iconClass:null,
+        action:null
     },
     _titleElm:null,
     __construct:function(opts) {
@@ -1496,6 +1497,9 @@ $wb.ui.Button = $wb.Class('Button',{
         this.bind('paint',function() {
             this.elm().disableMarking();
         });
+        if (this.opts.action) {
+            this.elm().bind('click',this.opts.action);
+        }
     },
     title:function() {
         if (arguments.length > 0) {
@@ -2132,9 +2136,13 @@ $wb.ui.BreadCrumb = $wb.Class('BreadCrumb',{
         homeCallback:null,
         homeShow:true,
         homeClass:'wb-home',
-        homeTitle:_('Home')
+        homeTitle:_('Home'),
+        backBtnShow:false,
+        backBtnTitle:_('Back'),
+        backBtnClass:'wb-back',
     },
     _levels:[],
+    _backBtn:null,
     __construct:function(opts) {
         this.__super(this.getDefaults(opts));
         this.bind('paint',function() {
@@ -2153,6 +2161,35 @@ $wb.ui.BreadCrumb = $wb.Class('BreadCrumb',{
         if (this.opts.homeShow) {
             var btn = this.push(this.opts.homeTitle,this.opts.homeCallback);
             btn.elm().addClass(this.opts.homeClass);
+        }
+    },
+    _handleBackBtn:function() {
+        var min = this.opts.homeShow ? 1 : 0;
+        if (this.opts.backBtnShow && this._levels.length > min) {
+            if (!this._backBtn) {
+                
+                this._backBtn = new $wb.ui.Button({
+                    tmpl:this.opts.buttonTmpl,
+                    'class':this.opts.backBtnClass,
+                    action:function() {
+                        var last = this._levels[this._levels.length-(1+min)];
+                        if (last.callback) {
+                            last.callback();
+                        }
+                        this.pop();
+                    }.bind(this)
+                });
+                
+                this._backBtn.bind('paint',function() {
+                    this._backBtn.elm().removeClass('wb-entry');
+                    this._backBtn.title(this.opts.backBtnTitle);
+                }.bind(this))
+                this.add(this._backBtn);
+            }
+            this.target().prepend(this._backBtn.elm());
+        } else {
+            if (this._backBtn)
+                this._backBtn.elm().detach();
         }
     },
     set:function(level,title,callback) {
@@ -2185,9 +2222,11 @@ $wb.ui.BreadCrumb = $wb.Class('BreadCrumb',{
         }
     },
     push:function(title,callback) {
+        
         var btn = new $wb.ui.Button({
             tmpl:this.opts.buttonTmpl
         });
+        
         
         var curIx = this._levels.length;
         var self = this;
@@ -2201,8 +2240,10 @@ $wb.ui.BreadCrumb = $wb.Class('BreadCrumb',{
                 self.pop(curIx);
             });
         });
-        this.add(btn);
+        
         this._levels.push({title:title,callback:callback});
+        this._handleBackBtn();
+        this.add(btn);
         this.render();
         return btn;
     }
