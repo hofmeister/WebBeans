@@ -796,6 +796,11 @@
                 '-o-user-select': 'none',
                 'user-select': 'none'
             });
+            $(this).each(function() {
+                this.onselectstart = function() {
+                    return false;
+                };
+            });
             //$(this).attr('unselectable','true');
         };
 
@@ -809,6 +814,11 @@
                 '-ms-user-select': val,
                 '-o-user-select':val,
                 'user-select':val
+            });
+            $(this).each(function() {
+                this.onselectstart = function() {
+                    return true;
+                };
             });
         };
         $.fn.rotate = function(degrees) {

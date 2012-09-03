@@ -541,6 +541,9 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
             parent = $('body');
         parent.append(this._scrollable.h)
                 .append(this._scrollable.v);
+                
+        this._scrollable.h.disableMarking();        
+        this._scrollable.v.disableMarking();
         
         this._scrollParent = parent;        
         
