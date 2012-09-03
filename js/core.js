@@ -163,7 +163,7 @@ var loadCSS = function(path) {
 if (!$wbConfig.noCSS) {
     //Load the base webbeans css
     loadCSS("webbeans");
-    loadCSS($wbConfig.base+"style/font-awesome.css");
+    //loadCSS($wbConfig.base+"style/font-awesome.css");
     loadCSS($wbConfig.base+"style/jquery-ui.css");
 
     if ($wbConfig.skin) {
