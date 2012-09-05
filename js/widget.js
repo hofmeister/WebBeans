@@ -2477,12 +2477,14 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
         
         if (visiblePane.length > 0) {
             for(i = 0; i < visiblePane.length;i++) {
-                $wb(visiblePane[i]).hideScrollbar()
+                if ($wb(visiblePane[i]).hideScrollbar)
+                    $wb(visiblePane[i]).hideScrollbar()
             }
             visiblePane.offscreen();
         }
         $(panes[ix]).onscreen();
-        $wb(panes[ix]).showScrollbar();
+        if ($wb(panes[ix]).showScrollbar)
+            $wb(panes[ix]).showScrollbar();
     },
     _tabButtons:function() {
         return this.elm().children('.wb-tabs');
