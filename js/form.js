@@ -640,10 +640,8 @@ $wb.ui.form.FileUploader = $wb.Class('FileUploader',{
                 var content = this.contentWindow.document;
                 var result;
                 if (self.opts.type == 'json')
-                    result = JSON.parse(content.body.innerText);
-                else if (self.opts.type == 'text')
-                    result = content.body.innerText;
-                else if (self.opts.type == 'html' || self.opts.type == 'xml')
+                    result = JSON.parse(content.body.innerHTML);
+                else
                     result = content.body.innerHTML;
 
                 self.trigger('data',[result]);
