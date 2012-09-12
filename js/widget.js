@@ -1318,11 +1318,10 @@ $wb.ui.IFrame = $wb.Class('IFrame',{
                 return dom;
             }
             
-            
-            
             html = html
                         .replace(/<!DOCTYPE[\s\S]*?>/i,'')
-                        .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gim,'')
+                        .replace(/<script[^<>]*\/>/gim,'')
+                        .replace(/<script[^>]*>[\s\S]*?<\/script>/gim,'')
                         //.replace(/<style.*?>.*?<\/style>/gim,'')
                         .replace(/on(load|unload|error|click|blur|focus|mousedown|mouseup|mouseover)='[\s\S]*?'/gi,'')
                         .replace(/on(load|unload|error|click|blur|focus|mousedown|mouseup|mouseover)="[\s\S]*?"/gi,'')
@@ -1984,8 +1983,6 @@ $wb.ui.KeyValuePane = $wb.Class('KeyValuePane',{
             var val = this.opts.entry[fieldId];
             if (typeof val == 'undefined')
                 val = null;
-            
-            
             
             var row = new this.opts.Row({tmpl:this.opts.rowTmpl});
             row.labelElm().html(f.name);
