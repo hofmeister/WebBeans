@@ -53,8 +53,19 @@ $wb.ui.form.FieldContainer = $wb.Class('FieldContainer',{
         });
     },
     getField:function(name) {
-        var el = this.elm().find('[name="'+name+'"]');
-        return $wb(el);
+        if (this._rendered) {
+            var el = this.elm().find('[name="'+name+'"]');
+            return $wb(el);
+        }
+        var result = this.findWidgets(function(widget) {
+            if (!(widget instanceof $wb.ui.form.BaseField)) 
+                return false;
+            if (widget.name() == name) 
+                return true;
+        });
+        if (result.length > 0)
+            return result[0];
+        return null;
     },
     setData:function(data) {
         if (typeof data != 'object') 
@@ -315,13 +326,14 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
         type:'text',
         labelElm:'.wb-label',
         labelPosition:'left',
+        containerElm:'label',
         disabled:false,
         tmpl: function() {
             var inputHtml = this.opts.inputTmpl ? this.opts.inputTmpl() : '';
             return $wb.template.form.container.apply(this,[this.opts.type,inputHtml]);
         },
         layout:function() {
-            var maxW = this.labelElm().parent().innerWidth();
+            var maxW = this._container.innerWidth();
             if (maxW < 1)
                 maxW = this.elm().innerWidth();
             var labelW = this.labelElm().outerWidth();
@@ -349,7 +361,10 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
         this._labelElm = this.opts.labelElm;
         this._name = this.opts.name;
         this._labelPosition = this.opts.labelPosition;
-        this._container = this.elm().children('label');
+        if (this.opts.containerElm)
+            this._container = this.elm().children(this.opts.containerElm);
+        if (!this._container || this._container.length == 0)
+            this._container = this.elm();
         
         this.target().bind('change',function() {
             this.trigger('change');
@@ -837,6 +852,7 @@ $wb.ui.form.ColorField = $wb.Class('ColorField',{
     }
 });
 
+
 $wb.ui.form.Button = $wb.Class('Button',{
     __extends:[$wb.ui.Widget],
     __construct:function(opts) {
@@ -875,6 +891,8 @@ $wb.ui.form.Button = $wb.Class('Button',{
         }
     }
 });
+
+
 
 $wb.ui.form.SubmitButton = $wb.Class('SubmitButton',{
     __extends:[$wb.ui.form.Button],
@@ -928,6 +946,11 @@ $wb.ui.form.SelectOption = $wb.Class('SelectOption',{
 
 $wb.ui.form.Select = $wb.Class('Select',{
     __extends:[$wb.ui.form.BaseField],
+    __defaults:{
+        emptyText:_('Choose...'),
+        emptyValue:'',
+        showEmpty:false
+    },
     __construct:function(opts) {
         if (!opts) opts = {};
         opts = $.extend({
@@ -956,6 +979,11 @@ $wb.ui.form.Select = $wb.Class('Select',{
     setOptions:function(options) {
         this.opts.options = options;
         this.clear();
+        
+        if (this.opts.showEmpty) {
+            this.add(this.opts.emptyValue,this.opts.emptyText);
+        }
+        
         if ($.type(options) == 'array') {
             for(var i = 0; i < options.length;i++) {
                 var option = options[i];
@@ -972,10 +1000,14 @@ $wb.ui.form.Select = $wb.Class('Select',{
                 this.add(value,options[value]);
             }
         }
+        //If this has already been painted - just update instantly
+        if (this.isAttached()) {
+            this.render();
+        }
     },
     add:function(value,name) {
         var opt = new $wb.ui.form.SelectOption({name:name,value:value});
-        this.children().push(opt);
+        this.__super(opt);
     }
 });
 
@@ -1169,7 +1201,15 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
         }
     );
     new $wb.ui.FieldType({
-            type:"password"
+            type:"password",
+            formField:function(opts,value) {
+                var out = new $wb.ui.form.PasswordField({label:opts.name,name:opts.id});
+                out.value(value);
+                return out;
+            },
+            format:function(opts,value) {
+                return "*****";
+            }
         }
     );
     new $wb.ui.FieldType({
@@ -1309,7 +1349,7 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
                 return options[value];
             },
             formField:function(opts,value) {
-                var options = this.options;
+                var options = opts.options;
                 var out = new $wb.ui.form.Select({label:opts.name,name:opts.id,options:options});
                 out.value(value);
                 return out;

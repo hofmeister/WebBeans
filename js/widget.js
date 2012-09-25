@@ -457,13 +457,14 @@ $wb.ui.helper.Actionable = $wb.Class('Actionable',{
             for(var i = 0; i < this._actions.length;i++) {
                 (function() {
                     var a = this._actions[i];
-                    var btn = $($wb.template.actions.base.apply(this,[a.type(),a.name()]));
-                    btn.click(function(evt) {
-                        evt.preventDefault();
-                        evt.stopPropagation();
-                        a.method().apply(self);
+                    var btn = new $wb.ui.Action({
+                        type:a.type(),
+                        title:a.name(),
+                        action:function() {
+                            a.method().apply(self);
+                        }
                     });
-                    actionContainer.append(btn);
+                    actionContainer.append(btn.render());
                 }).apply(this);
             }
         });
@@ -487,6 +488,8 @@ $wb.ui.helper.Actionable = $wb.Class('Actionable',{
     }
 });
 
+
+
 $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
     __defaults:{
         scrollContainer:null,
@@ -495,6 +498,7 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
     },
     _scrollable:null,
     _scrollParent:null,
+    _scrollState:{top:0,left:0},
     __construct:function(opts) {
         this.bind('hide',function() {
             this.hideScrollbar();
@@ -511,6 +515,11 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
         this.bind('after-layout',function() {
             this.showScrollbar();
         });
+        this.bind('render',function() {
+            var elm = this.scrollContainer();
+            elm.scrollTop(this._scrollState.top);
+            elm.scrollLeft(this._scrollState.left);
+        })
     },
     _buildScrollbar:function() {
         if (!this.opts.scrollable) 
@@ -519,6 +528,7 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
             return;
         
         var elm = this.scrollContainer();
+        var self = this;
         var scrollbarH,scrollbarV;
         
         this._scrollable = {
@@ -552,16 +562,22 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
             var left = elm.scrollLeft();
             elm.scrollTop(top-(deltaY*2));
             elm.scrollLeft(left+(deltaX*2));
+            
             elm.trigger('scroll');                    
         });
 
         scrollbarH = this._scrollable.h;
         scrollbarV = this._scrollable.v;
-
+        
         elm.bind('scroll',function() {
             var availHeight = elm[0].scrollHeight;
             var availWidth = elm[0].scrollWidth;
-
+            
+            if (self.isContentReady()) {
+                self._scrollState.left = elm.scrollLeft();
+                self._scrollState.top = elm.scrollTop();
+            }
+            
             if (scrollbarV.is(':visible')) {
                 scrollbarV.find('.wb-scroller').css({
                     top:Math.floor(scrollbarV.innerHeight()*(elm.scrollTop()/availHeight))
@@ -578,8 +594,6 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
         this._bindHScroll();
         this._bindVScroll();
 
-        elm.scrollTop(0);
-        elm.scrollLeft(0);
         elm.trigger('scroll');
     },
     hideScrollbar:function() {
@@ -818,6 +832,10 @@ $wb.ui.Widget = $wb.Class('Widget',
          */
         _attached:false,
         /**
+         * Indicates that the widget is rendering (and contents cannot be trusted). Use render event to ensure you can
+         */
+        _rendering:false,
+        /**
          * The provided options.
          * @type Object
          */
@@ -939,6 +957,18 @@ $wb.ui.Widget = $wb.Class('Widget',
             }
             return this._ready;
         },
+        isRendering:function() {
+            return this._rendering;
+        },
+        isAttached:function() {
+            return this._attached;
+        },
+        /**
+         * if this returns true - contents has been rendered fully and can be trusted
+         */
+        isContentReady:function() {
+            return this._attached && !this._rendering;
+        },
         /**
          * Add child 
          * @params {$wb.ui.Widget} child
@@ -1032,6 +1062,7 @@ $wb.ui.Widget = $wb.Class('Widget',
          */
         show:function() {
             this.elm().show();
+            this._layout();
             this.trigger('show');
             return this;
         },
@@ -1100,6 +1131,25 @@ $wb.ui.Widget = $wb.Class('Widget',
             return this.elm().find(path);
         },
         /**
+         * find DOM element within widget
+         * @returns {jQueryElement}
+         */
+        findWidgets: function(searcher) {
+            var nodes = this.children();
+            var out = [];
+            for(var i = 0;i < nodes.length;i++) {
+                if (searcher(nodes[i])) {
+                    out.push(nodes[i]);
+                }
+                var subResult = nodes[i].findWidgets(searcher);
+                for(var j = 0; j < subResult.length;j++) {
+                    out.push(subResult[j]);
+                }
+            }
+            return out;
+        },
+        
+        /**
          * Get base element
          * @returns {jQueryElement}
          */
@@ -1115,11 +1165,11 @@ $wb.ui.Widget = $wb.Class('Widget',
                 if (this.opts.target) {
                     this._target = this._elm.findFirst(this.opts.target);
                     if (!this._target || this._target.length == 0) {
-                        throw new $wb.Error('Target not found in widget: %s in %s'.format(this.opts.target,this._clz));
+                        throw new $wb.Error('Target not found in widget: %s in %s'.format(this.opts.target,this._clz),this);
                     }
                 } else {
                     if (!this._elm) {
-                        throw new $wb.Error('Element not yet created when attempting to access target in widget: %s'.format(this._clz));
+                        throw new $wb.Error('Element not yet created when attempting to access target in widget: %s'.format(this._clz),this);
                     }
                     this._target = this._elm;
                 }
@@ -1133,6 +1183,7 @@ $wb.ui.Widget = $wb.Class('Widget',
          * @returns {jQueryElement} the base element of this widget
          */
         render: function(container) {
+            this._rendering = true;
             if (!this._ready) 
                 return false;
             if (this._paint() === false) 
@@ -1144,13 +1195,19 @@ $wb.ui.Widget = $wb.Class('Widget',
             
             this._layout();
 
-            this.trigger('render');
+            this._rendering = false;
             
             if (!this._attached) {
                 this._attached = true;
                 this.trigger('attach');
             }
+            
+            this.trigger('render');
+            
             return this.elm();
+        },
+        isAttached:function() {
+            return this._attached;
         },
         /**
          * Set context menu
@@ -1441,17 +1498,23 @@ $wb.ui.Link = $wb.Class('Link',{
     __extends:[$wb.ui.Widget],
     __defaults:{
         tmpl:$wb.template.link,
-        context:this
+        context:this,
+        titleElm:null
     },
     __construct:function(opts) {
         this.require(opts,'title');
         
         this.__super(this.getDefaults(opts));
         
+        if (opts.action)
+            this.action(opts.action);
         
         var self = this;
         this.elm().click(function(evt) {
             evt.preventDefault();
+            if ($(this).tipsy) {
+                $(this).tipsy("hide");
+            }
             if (self.opts.action) {
                 self.opts.action.apply(self.opts.context,[evt]);
             }
@@ -1463,13 +1526,26 @@ $wb.ui.Link = $wb.Class('Link',{
     },
     title:function(title) {
         if (title) {
-            this.elm().html(title).attr('title',title);
+            if (this.opts.titleElm) {
+                this.elm().findFirst(this.opts.titleElm).html(title)
+            } else {
+                this.elm().html(title)
+            }
+            this.elm().attr('title',title);
             this.opts.title = title;
             return this;
         }
         return this.opts.title;
     },
     action:function() {
+        
+        if (arguments.length > 0) {
+            if (typeof arguments[0] != 'function')
+                throw new $wb.Error('Link action must be of type function');
+            
+            this.opts.action = arguments[0];
+            return this;
+        }
         return this.opts.action;
     },
     context:function() {
@@ -1480,6 +1556,21 @@ $wb.ui.Link = $wb.Class('Link',{
         return this;
     }
 });
+
+$wb.ui.Action = $wb.Class('Action',{
+    __extends:[$wb.ui.Link],
+    __defaults:{
+        tmpl:function() {
+            return $wb.template.actions.base.apply(this,[this.opts.type,this.opts.title]);
+        },
+        titleElm:'.wb-title'
+    },
+    __construct:function(opts) {
+        this.require(opts,'type');
+        this.__super(this.getDefaults(opts));
+    }
+    
+})
 
 $wb.ui.Button = $wb.Class('Button',{
     __extends:[$wb.ui.Widget,$wb.ui.helper.Actionable],

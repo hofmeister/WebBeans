@@ -351,6 +351,7 @@
                 return false;
             return obj instanceof clz;
         },
+       
         /**
         * Type resolving of value
         * @param {Object} v value
@@ -452,6 +453,25 @@
             if (!last) last = '';
             
             var el = $(this);
+            
+            var nonGenericPart = function(tag,attr,val) {
+                if (!/[^A-Z0-9]/i.test(val)) {
+                    return tag+'['+attr+'="'+val+'"] '+last;
+                } else {
+                    if (/[A-Z0-9]{4,}$/i.test(val)) {
+                        //If the generic id ends with some letters - use those
+                        var result = /[A-Z0-9]{4,}$/i.exec(val);
+                        if (result)
+                            return tag+'['+attr+'$='+result[0]+"] "+last;
+                    } else if (/^[A-Z0-9]{4,}/i.test(val)) {
+                        //If the generic id starts with some letters - ^use those
+                        var result = /^[A-Z0-9]{4,}/i.exec(val);
+                        if (result)
+                            return tag+'['+attr+'^='+result[0]+"] "+last;
+                    }
+                }
+                return null;
+            }
 
             if (!el[0] || !el[0].tagName) return last;
             
@@ -470,11 +490,9 @@
                 if (!/[0-9]/.test(id)) {
                     return tag+'#'+id+' '+last;
                 } else {
-                    if (/[A-Z]{4,}/i.test(id)) {
-                        //If the generic id ends with some letters - use those
-                        var result = /[A-Z]{4,}/i.exec(id);
-                        return tag+'[id$='+result[0]+"] "+last;
-                    }
+                    var out = nonGenericPart(tag,'id',id);
+                    if (out)
+                        return out;
                 }
                 
             }
@@ -492,7 +510,7 @@
             
             var out = '';
             if (p.length == 0 || ignoreTags.indexOf(tag) == -1) {
-                var name = tag;
+                var name = '';
 
                 var attrs = ['name','rel','type','title','alt'];
                 var found = false;
@@ -500,13 +518,17 @@
                     var attr = attrs[i];
                     var val = $(el[0]).attr(attr);
                     if (val) {
-                        name += '['+ attr +'="' + val + '"]';
-                        found = true;
-                        break;
+                        var test = nonGenericPart(tag,attr,val);
+                        if (test) {
+                            name += test;
+                            found = true;
+                            break;
+                        }
                     }
                 }
                 
                 if (!found) {
+                    name = tag;
                     var className = el[0].className.split(' ')[0];
                     if (className.length > 0) {
                         name += '.' + className;
@@ -537,15 +559,17 @@
             return out.trim()+last;
         }
         
-        $.fn.scrollTo = function(elm,margin) {
+        $.fn.scrollTo = function(elm,marginH,marginW) {
             
             if (typeof elm == 'string') {
                 elm = $(this).find(elm);
             } else {
                 elm = $(elm);
             }
-            if (!margin)
-                margin = ($(this).innerHeight()-elm.outerHeight())/2;
+            if (!marginH)
+                marginH = ($(this).innerHeight()-elm.outerHeight())/2;
+            if (!marginW)
+                marginW = ($(this).innerWidth()-elm.outerWidth())/2;
             
             var pOffset = $(this).offset();
             if (!pOffset) 
@@ -554,9 +578,17 @@
             if (!offset) 
                 return;
             offset.top -= pOffset.top;
+            offset.top += $(this).scrollTop();
             offset.left -= pOffset.left;
-            $(this).scrollTop(Math.max(0,offset.top-margin));
+            offset.left +=$(this).scrollLeft()
+            var top = Math.max(0,offset.top-marginH);
+            var left = Math.max(0,offset.left-marginW);
+            $(this).scrollTop(top);
+            $(this).scrollLeft(left);
+            $(this).trigger('scroll');
         };
+        
+        
 
         $.fn.fullSize = function() {
             return $wb.utils.fullSize(this);

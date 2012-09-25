@@ -128,6 +128,9 @@ $wb.draw.Layer = $wb.Class('Layer',{
             }
         }
     },
+    elements:function() {
+        return this._elements;
+    },
     getOrder:function() {
         return this.opts.order;
     },

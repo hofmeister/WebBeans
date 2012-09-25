@@ -118,6 +118,12 @@ div,td,table,tbody,thead,tfoot,th {
     overflow: hidden;
 }
 
+/* window */
+
+.wb-window {
+    position:absolute;
+}
+
 /* split pane */
 .wb-splitpane {
     overflow:hidden;
