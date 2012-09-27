@@ -1313,13 +1313,20 @@ $wb.ui.IFrame = $wb.Class('IFrame',{
         this.bind('render',function() {
             this.location(this.opts.src);
         });
+        this.target().bind('load',function() {
+            this.trigger('load');
+        }.bind(this));
     },
     location:function() {
         if (arguments.length > 0) {
             this.elm().attr('src',arguments[0]);
+            //this.window().location = arguments[0];
             return this;
         }
         return this.elm().attr('src');
+    },
+    reload:function() {
+        this.window().location.reload();
     },
     baseUrl:function() {
         if (this.opts.baseUrl)

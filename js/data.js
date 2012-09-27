@@ -270,6 +270,7 @@ $wb.data.JsonSocket = $wb.Class('JsonSocket',{
         }.bind(this);
         
         this._ws.onmessage = this._onMessage.bind(this);
+        
         this._ws.onclose = function(evt) {
             this._opened = false;
             this._opening = false;

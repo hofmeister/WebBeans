@@ -730,6 +730,40 @@ $wb.draw.Circle = $wb.Class('Circle',{
 });
 
 
+$wb.draw.Image = $wb.Class('Image',{
+    __extends:[$wb.draw.Element],
+    __defaults:{
+        data:'',
+        x:0,
+        y:0
+    },
+    __construct:function(opts) {
+        this.__super(opts);
+    },
+    setData:function(data) {
+        this.opts.data = 'data:image/jpeg;base64,'+data;
+        return this;
+    },
+    setOffset:function(x,y) {
+        this.opts.x = x;
+        this.opts.y = y;
+    },
+    _paint:function(ctxt) {
+        var imgObj = new Image();
+        var self = this;
+        var timeStart = new Date().getTime();
+        imgObj.onload = function() {
+            ctxt.drawImage(imgObj,self.opts.x,self.opts.y);
+            var timeTaken = new Date().getTime()-timeStart
+            console.log("IMGSIZE:"+self.opts.data.length);
+            console.log("Time Taken:"+timeTaken+"ms");
+        };
+        
+        imgObj.src = this.opts.data;
+    }
+});
+
+
 //Extensions to the default API
 var CP = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
 if (CP && CP.lineTo){
