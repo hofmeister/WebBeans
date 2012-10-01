@@ -487,6 +487,17 @@ div,td,table,tbody,thead,tfoot,th {
     border-radius: 0 10px 10px 0; 
     -moz-background-clip: padding; -webkit-background-clip: padding-box; background-clip: padding-box;
 }
+/* IFrame */
+.wb-iframe {
+    position: relative;
+}
+.wb-iframe > .wb-loader {
+    display:none;
+    position:absolute;
+    left:0px;
+    top:0px;
+    z-index: 2;
+}
 
 /* key value */
 

@@ -1125,6 +1125,11 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
                 this._codemirror.refresh()
             }.bind(this),500);
             
+            var parentWindow = this.elm().closest('.wb-window');
+            if (parentWindow.length > 0) {
+                $wb(parentWindow).layout();
+            }
+            
             this._rendered = false;
         });
         /**

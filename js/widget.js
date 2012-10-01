@@ -835,11 +835,7 @@ $wb.ui.Widget = $wb.Class('Widget',
          * Indicates that the widget is rendering (and contents cannot be trusted). Use render event to ensure you can
          */
         _rendering:false,
-        /**
-         * The provided options.
-         * @type Object
-         */
-        opts:{},
+        
         
         /**
         * @constructs
@@ -982,13 +978,6 @@ $wb.ui.Widget = $wb.Class('Widget',
             }
             this.children().push(child);
             return this;
-        },
-        option:function(name) {
-            if (arguments.length > 1) {
-                this.opts[name] = arguments[1];
-                return this;
-            }
-            return this.opts[name];
         },
         /**
          * Get all child widgets of this widget
@@ -1304,28 +1293,91 @@ $wb.ui.Html = $wb.Class('Html',{
 $wb.ui.IFrame = $wb.Class('IFrame',{
     __extends:[$wb.ui.Widget],
     __defaults:{
+        layout:function() {
+            this.target().outerWidth(this.elm().innerWidth());
+            this.target().outerHeight(this.elm().innerHeight());
+        },
         tmpl:$wb.template.iframe,
         src:$wbConfig.base+'blank.html',
-        css:null
+        blankSrc:$wbConfig.base+'blank.html',
+        css:null,
+        showLoadScreen:false,
+        showBlankScreen:true,
+        loadScreenText:_('Please wait while loading...'),
+        blankScreenText:_('Waiting for input...'),
+        target:'.wb-target'
     },
+    _loadScreen:null,
+    _blankScreenForced:false,
     __construct:function(opts) {
         this.__super(this.getDefaults(opts));
         this.bind('render',function() {
             this.location(this.opts.src);
         });
+        this._loadScreen = this.elm().findFirst('.wb-loader');
+        
+        this.bind('render',function() {
+            this._showLoadScreen();
+            if (this.window())
+                this.window().location = this.opts.src;
+            this.showBlankScreen();
+        });
         this.target().bind('load',function() {
             this.trigger('load');
+            if (!this.showBlankScreen()) {
+                this._hideScreen();
+            }
+            
         }.bind(this));
     },
     location:function() {
         if (arguments.length > 0) {
-            this.elm().attr('src',arguments[0]);
-            //this.window().location = arguments[0];
+            this._showLoadScreen();
+            this.opts.src = ""+arguments[0];
+            if (this.window())
+                this.window().location = this.opts.src;
+            if (this.opts.src == this.opts.blankSrc)
+                this.showBlankScreen();
             return this;
         }
-        return this.elm().attr('src');
+        return this.window().location;
+    },
+    _hideScreen:function() {
+        if (this._blankScreenForced) return;
+        this._loadScreen.fadeOut('fast');
+    },
+    hideBlankScreen:function() {
+        this._blankScreenForced = false;
+        this._hideScreen();
+    },
+    showBlankScreen:function(force) {
+        if (typeof force == 'boolean') {
+            this._blankScreenForced = force;
+        }
+        if (this.opts.showBlankScreen 
+            && ((this.opts.src == this.opts.blankSrc) || force)) {
+            this._loadScreen.html(this.opts.blankScreenText);
+            this._loadScreen.outerWidth(this.target().outerWidth());
+            this._loadScreen.outerHeight(this.target().outerHeight());
+            this._loadScreen.fadeIn('fast');
+            return true;
+        }
+        return false;
+    },
+    _showLoadScreen:function() {
+        if (this._blankScreenForced) 
+            return;
+        if (this.opts.showLoadScreen) {
+            this._loadScreen.html(this.opts.loadScreenText);
+            this._loadScreen.outerWidth(this.target().outerWidth());
+            this._loadScreen.outerHeight(this.target().outerHeight());
+            this._loadScreen.fadeIn('fast');
+        }
     },
     reload:function() {
+        if (!this.window()) 
+            return;
+        this._showLoadScreen();
         this.window().location.reload();
     },
     baseUrl:function() {
@@ -1334,19 +1386,19 @@ $wb.ui.IFrame = $wb.Class('IFrame',{
         return new $wb.Url(new $wb.Url(this.location()).base());
     },
     doc:function() {
-        return this.elm().contents().find('html');
+        return this.target().contents().find('html');
     },
     body:function() {
-        return this.elm().contents().find('body');
+        return this.target().contents().find('body');
     },
     head:function() {
-        return this.elm().contents().find('head');
+        return this.target().contents().find('head');
     },
     window:function() {
-        return $(this.elm()[0].contentWindow);
+        return this.target()[0].contentWindow;
     },
     html:function() {
-        var root = this.elm().contents().find('html');
+        var root = this.target().contents().find('html');
         var self = this;
         if (arguments.length > 0) {
             var html = arguments[0]+"";
@@ -1671,6 +1723,7 @@ $wb.ui.Menu = $wb.Class('Menu',{
         var btn = new $wb.ui.MenuButton({
             tmpl:this._itemTmpl
         });
+        var self = this;
         btn.bind('paint',function() {
             this.title(title);
             if ($.type(callback) == 'function')
@@ -1885,6 +1938,11 @@ $wb.ui.ContextMenu.hide = function() {
     var w = $wb('.'+id);
     if (w)
         w.detach();
+};
+
+$wb.ui.ContextMenu.instance = function() {
+    var id = $wb.ui.ContextMenu.id;
+    return $wb('.'+id);
 };
 
 $wb.ui.DropdownMenu = $wb.Class('DropdownMenu',{
@@ -2237,7 +2295,7 @@ $wb.ui.BreadCrumb = $wb.Class('BreadCrumb',{
         homeTitle:_('Home'),
         backBtnShow:false,
         backBtnTitle:_('Back'),
-        backBtnClass:'wb-back',
+        backBtnClass:'wb-back'
     },
     _levels:[],
     _backBtn:null,

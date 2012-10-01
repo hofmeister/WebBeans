@@ -935,8 +935,10 @@ $wb.ui.DomPane = $wb.Class('DomPane',{
             jQueryNode.removeClass('-wb-dom-highlight');
             out += " class=\"wb-active\" ";
         }
-        out += '><a class="wb-dom-tag-start" rel="%s">&lt;'.format(jQueryNode.path());
+        
         var tag = node.tagName.toLowerCase();;
+        
+        out += '><a class="wb-dom-tag-start" rel="%s">&lt;'.format(tag);
         
         out += tag;
         

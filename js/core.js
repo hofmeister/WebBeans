@@ -1073,6 +1073,11 @@ if (!$wbConfig.noCSS) {
             */
             {
                 /**
+                * The provided options.
+                * @type Object
+                */
+                opts:{},
+                /**
                 * @description require certain keys to be present within map
                 * @param {Object} obj the map
                 * @param {String ...} arguments additional arguments will all be checked against the map
@@ -1093,6 +1098,13 @@ if (!$wbConfig.noCSS) {
                     if (!obj) 
                         throw new $wb.Error(msg,this);
                     return this;
+                },
+                option:function(name) {
+                    if (arguments.length > 1) {
+                        this.opts[name] = arguments[1];
+                        return this;
+                    }
+                    return this.opts[name];
                 }
             }
         );

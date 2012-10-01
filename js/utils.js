@@ -146,6 +146,22 @@
             html = html.replace(/>/g,"&gt;");
             return html;
         },
+        isEmpty:function(obj) {
+            var type = $.type(obj);
+            switch(type) {
+                case 'array':
+                    return obj.length == 0;
+                case 'object':
+                    for(var i in obj) {
+                        if ($.type(obj[i]) == 'function') 
+                            continue;
+                        if (obj.hasOwnProperty(i))
+                            return false;
+                    }
+                    return true;
+            }
+            return !!obj;
+        },
         /**
          * Generate a random UUID. 
          * Copy / pasted from http://www.broofa.com/Tools/Math.uuid.js
@@ -455,19 +471,20 @@
             var el = $(this);
             
             var nonGenericPart = function(tag,attr,val) {
-                if (!/[^A-Z0-9]/i.test(val)) {
-                    return tag+'['+attr+'="'+val+'"] '+last;
+                val = val.trim();
+                if (/^[A-Z0-9_\-]+$/i.test(val)) {
+                    return tag+'['+attr+'="'+val+'"]';
                 } else {
-                    if (/[A-Z0-9]{4,}$/i.test(val)) {
+                    if (/[A-Z0-9_\-]{4,}$/i.test(val)) {
                         //If the generic id ends with some letters - use those
-                        var result = /[A-Z0-9]{4,}$/i.exec(val);
+                        var result = /[A-Z0-9_\-]{4,}$/i.exec(val);
                         if (result)
-                            return tag+'['+attr+'$='+result[0]+"] "+last;
-                    } else if (/^[A-Z0-9]{4,}/i.test(val)) {
+                            return tag+'['+attr+'$="'+result[0]+'"]';
+                    } else if (/^[A-Z0-9_\-]{4,}/i.test(val)) {
                         //If the generic id starts with some letters - ^use those
-                        var result = /^[A-Z0-9]{4,}/i.exec(val);
+                        var result = /^[A-Z0-9_\-]{4,}/i.exec(val);
                         if (result)
-                            return tag+'['+attr+'^='+result[0]+"] "+last;
+                            return tag+'['+attr+'^="'+result[0]+'"]';
                     }
                 }
                 return null;
@@ -488,11 +505,11 @@
                 
                 //If element has ID that does not look like a generic id... use that
                 if (!/[0-9]/.test(id)) {
-                    return tag+'#'+id+' '+last;
+                    return (tag+'#'+id+' '+last).trim();
                 } else {
-                    var out = nonGenericPart(tag,'id',id);
-                    if (out)
-                        return out;
+                    var idPart = nonGenericPart(tag,'id',id);
+                    if (idPart)
+                        return (idPart+' '+last).trim();
                 }
                 
             }
@@ -512,7 +529,7 @@
             if (p.length == 0 || ignoreTags.indexOf(tag) == -1) {
                 var name = '';
 
-                var attrs = ['name','rel','type','title','alt'];
+                var attrs = ['class','name','rel','type','title','alt','value'];
                 var found = false;
                 for(var i = 0; i < attrs.length;i++) {
                     var attr = attrs[i];
@@ -520,20 +537,16 @@
                     if (val) {
                         var test = nonGenericPart(tag,attr,val);
                         if (test) {
-                            name += test;
+                            name = test;
                             found = true;
                             break;
                         }
                     }
                 }
-                
                 if (!found) {
                     name = tag;
-                    var className = el[0].className.split(' ')[0];
-                    if (className.length > 0) {
-                        name += '.' + className;
+                    if (!last)
                         found = true;
-                    }
                 }
                 
                 if (p.length > 0) {
@@ -541,7 +554,7 @@
                     similarCount = p.find((name+' '+last).trim()).length
                     
                     if (similarCount > 1) {
-                        var index = el.prevAll(name).length;
+                        var index = el.prevAll().length;
                         name += ":nth-child(" + (index+1) + ")";
                         found = true;
                     }
@@ -550,13 +563,15 @@
                 
                 if (found)
                     out = name;
+                
             }
+            
             if (p) {
-                return p.path(ignoreTags,out+' '+last);
+                return p.path(ignoreTags,(out+' '+last).trim());
             }
                 
             
-            return out.trim()+last;
+            return (out.trim()+' '+last).trim();
         }
         
         $.fn.scrollTo = function(elm,marginH,marginW) {

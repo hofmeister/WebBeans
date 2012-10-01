@@ -175,7 +175,6 @@ $wb.draw.Element = $wb.Class('Element',{
     },
     _ctxtOpts:[ 'fillStyle','strokeStyle','lineWidth','miterLimit',
                 'shadowColor','shadowOffsetX','shadowOffsetY','shadowBlur'],
-    opts:{},
     _cached:null,
     _layer:null,
     __construct:function(opts) {
@@ -267,7 +266,8 @@ $wb.draw.Element = $wb.Class('Element',{
 $wb.draw.PolyLine = $wb.Class('PolyLine',{
     __extends:[$wb.draw.Element],
     __defaults:{
-        lineEnding:null
+        lineEnding:null,
+        style:'normal' //normal or dashed
     },
     _points:[],
     __construct:function(opts) {
@@ -308,8 +308,14 @@ $wb.draw.PolyLine = $wb.Class('PolyLine',{
         ctxt.beginPath();
         
         ctxt.moveTo(first.x,first.y);
+        var last = first;
         for(var i = 1;i < this._points.length;i++) {
-            ctxt.lineTo(this._points[i].x,this._points[i].y);
+            
+            if (this.opts.style == 'dashed')
+                ctxt.dashedLineTo(last.x,last.y,this._points[i].x,this._points[i].y);
+            else
+                ctxt.lineTo(this._points[i].x,this._points[i].y);
+            last = this._points[i];
         }
         this._paintLineEnding(ctxt,canvas);
         ctxt.stroke();
@@ -755,8 +761,6 @@ $wb.draw.Image = $wb.Class('Image',{
         imgObj.onload = function() {
             ctxt.drawImage(imgObj,self.opts.x,self.opts.y);
             var timeTaken = new Date().getTime()-timeStart
-            console.log("IMGSIZE:"+self.opts.data.length);
-            console.log("Time Taken:"+timeTaken+"ms");
         };
         
         imgObj.src = this.opts.data;
@@ -767,24 +771,29 @@ $wb.draw.Image = $wb.Class('Image',{
 //Extensions to the default API
 var CP = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
 if (CP && CP.lineTo){
-  CP.dashedLine = function(x,y,x2,y2,dashArray){
-    if (!dashArray) dashArray=[10,5];
-    if (dashLength==0) dashLength = 0.001; // Hack for Safari
-    var dashCount = dashArray.length;
-    this.moveTo(x, y);
-    var dx = (x2-x), dy = (y2-y);
-    var slope = dy/dx;
-    var distRemaining = Math.sqrt( dx*dx + dy*dy );
-    var dashIndex=0, draw=true;
-    while (distRemaining>=0.1){
-      var dashLength = dashArray[dashIndex++%dashCount];
-      if (dashLength > distRemaining) dashLength = distRemaining;
-      var xStep = Math.sqrt( dashLength*dashLength / (1 + slope*slope) );
-      x += xStep;
-      y += slope*xStep;
-      this[draw ? 'lineTo' : 'moveTo'](x,y);
-      distRemaining -= dashLength;
-      draw = !draw;
-    }
-  };
+    CP.dashedLineTo = function(x,y,x2,y2,dashArray) {
+        if (!dashArray) 
+            dashArray=[5];
+        if (dashLength==0) 
+            dashLength = 0.001; // Hack for Safari
+        
+        var dashCount = dashArray.length;
+        this.moveTo(x, y);
+        var dx = (x2-x), dy = (y2-y);
+        var slope = dy/dx;
+        var distRemaining = Math.sqrt( dx*dx + dy*dy );
+        
+        var dashIndex=0, draw=true;
+        while (distRemaining>=0.1){
+            var dashLength = dashArray[dashIndex++%dashCount];
+            if (dashLength > distRemaining) 
+                dashLength = distRemaining;
+            var xStep = Math.sqrt( dashLength*dashLength / (1 + slope*slope) );
+            x += xStep;
+            y += slope*xStep;
+            this[draw ? 'lineTo' : 'moveTo'](x,y);
+            distRemaining -= dashLength;
+            draw = !draw;
+        }
+    };
 }

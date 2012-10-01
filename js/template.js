@@ -40,7 +40,7 @@ $wb.template = {
         return '<div class="wb-wrapper"><div class="wb-top"></div><div class="wb-bottom"></div><div class="wb-left"></div><div class="wb-right"></div></div>';
     },
     iframe:function() {
-        return '<iframe src="about:none;" allowTransparency="true" frameborder="0"></iframe>';
+        return '<div class="wb-iframe wb-pane"><div class="wb-loader"></div><iframe class="wb-target" src="about:none;" allowTransparency="true" frameborder="0"></iframe></div>';
     },
     section:function() {
         return '<div class="wb-section" ><h3 class="wb-title" /><div class="wb-target" /></div>';
