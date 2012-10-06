@@ -816,11 +816,12 @@ $wb.ui.Table = $wb.Class('Table',
             if (this._paging) {
                 var offset = 0;
                 var rowsPrPage = this.opts.store.getRowsPerPage();
-                if (!this.opts.store.getSource()) {
+                if (rows.length > rowsPrPage && !this.opts.store.getSource()) {
                     //Local store
                     var page = this._paging.getPage();
                     offset = rowsPrPage*page;
                     rows = rows.slice(offset,offset+rowsPrPage);
+                    
                 }
             }
             

@@ -1354,7 +1354,7 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
                 return options[value];
             },
             formField:function(opts,value) {
-                var options = opts.options;
+                var options = this.options;
                 var out = new $wb.ui.form.Select({label:opts.name,name:opts.id,options:options});
                 out.value(value);
                 return out;
