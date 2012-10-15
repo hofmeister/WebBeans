@@ -1345,8 +1345,10 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
             type:"enum",
             format:function(opts,value) {
                 var options = this.options;
-                if (!options) 
-                    return value
+                if (!options && opts.options) 
+                    options = opts.options;
+                if (!options)
+                    return value;
                 if ($.type(options) == 'array') {
                     return value;
                 }
@@ -1355,6 +1357,9 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
             },
             formField:function(opts,value) {
                 var options = this.options;
+                if (!options && opts.options) 
+                    options = opts.options;
+                
                 var out = new $wb.ui.form.Select({label:opts.name,name:opts.id,options:options});
                 out.value(value);
                 return out;
