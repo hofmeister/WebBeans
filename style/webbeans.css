@@ -27,13 +27,21 @@ body{font:13px/1.231 arial,helvetica,clean,sans-serif;*font-size:small;*font:x-s
 .lastUnit {display: table-cell; *display:block;*zoom:1;float:none;_position:relative; _left:-3px; _margin-right: -3px;width:auto;}
 
 /* global */
-body {
-    overflow:hidden;
+html {
+    box-sizing: border-box;
+    width:100%;
+    height:100%;
 }
-
+body,.wb-base,.wb-pane,.wb-panes {
+    overflow:hidden;
+    width:100%;
+    height:100%;
+    box-sizing: border-box;
+}
 
 div,td,table,tbody,thead,tfoot,th {
     overflow:hidden;
+    box-sizing: border-box;
 }
 
 
@@ -79,6 +87,14 @@ div,td,table,tbody,thead,tfoot,th {
     cursor: pointer;
 }
 
+.wb-menuitem > .wb-icon {
+    display:none;
+}
+
+.wb-menuitem > .wb-title > .wb-actions {
+    display:none;
+}
+
 .wb-menu.wb-horizontal > .wb-menuitem,
     .wb-submenu.wb-horizontal  > .wb-menuitem {
     float:left;
@@ -105,6 +121,9 @@ div,td,table,tbody,thead,tfoot,th {
 .wb-pane-html > .wb-inner {
     outline: none;
     overflow: auto;
+    height:100%;
+    width:100%;
+    box-sizing: border-box;
 }
 
 /* frame */
@@ -134,6 +153,8 @@ div,td,table,tbody,thead,tfoot,th {
 .wb-splitpane.wb-vertical > .wb-pane,
     .wb-splitpane.wb-vertical > .wb-splitter {
     float:left;
+    height:100%;
+    box-sizing: border-box;
 }
 .wb-splitpane.wb-horizontal > .wb-pane,
     .wb-splitpane.wb-horizontal > .wb-splitter {
@@ -184,6 +205,7 @@ div,td,table,tbody,thead,tfoot,th {
 
 .wb-tabs > .wb-tab {
     cursor: pointer;
+    box-sizing: border-box;
 }
 
 
@@ -300,6 +322,12 @@ div,td,table,tbody,thead,tfoot,th {
     display:inline-block;
     vertical-align: top;
 }
+.wb-input {
+    width:100%;
+    height:100%;
+    box-sizing: border-box;
+}
+
 .wb-input-container .wb-input:after {
     clear:both;
 }
@@ -311,6 +339,8 @@ div,td,table,tbody,thead,tfoot,th {
 .wb-input-radio.wb-label-left .wb-input {
     float:left;
 }
+
+
 
 
 /* cron field */

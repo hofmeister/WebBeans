@@ -641,6 +641,13 @@
         
         $.fn.boxHeight= function() {
             var el = $(this);
+            var sizing = el.css('box-sizing');
+            if (sizing == 'border-box') 
+                return el.height();
+            if (sizing == 'padding-box') 
+                return el.height()
+                        +parseCssSize(el.css('border-top'))
+                        +parseCssSize(el.css('border-bottom'));
             return el.height()
                         +el.paddingHeight()
                         +parseCssSize(el.css('border-top'))
@@ -649,6 +656,15 @@
 
         $.fn.boxWidth = function() {
             var el = $(this);
+            
+            var sizing = el.css('box-sizing');
+            if (sizing == 'border-box') 
+                return el.width();
+            if (sizing == 'padding-box') 
+                return el.width()
+                        +parseCssSize(el.css('border-left'))
+                        +parseCssSize(el.css('border-right'));
+                    
             return el.width()
                         +el.paddingWidth()
                         +parseCssSize(el.css('border-left'))
@@ -658,11 +674,20 @@
 
         $.fn.outerEdgeSize = function() {
             var el = $(this);
+            var sizing = el.css('box-sizing');
+            
             var out = 0;
             $(arguments).each(function() {
-                var size = parseCssSize(el.css('padding-'+this))
-                        +parseCssSize(el.css('margin-'+this))
-                        +parseCssSize(el.css('border-'+this+'-width'));
+                var size = 0;
+                if (sizing == 'border-box') 
+                    size = parseCssSize(el.css('margin-'+this))
+                else if (sizing == 'padding-box') 
+                    size = parseCssSize(el.css('margin-'+this))
+                            +parseCssSize(el.css('border-'+this+'-width'));
+                else
+                    size = parseCssSize(el.css('padding-'+this))
+                            +parseCssSize(el.css('margin-'+this))
+                            +parseCssSize(el.css('border-'+this+'-width'));
 
 
                 out += size;
@@ -673,8 +698,21 @@
 
         $.fn.innerEdgeSize = function() {
             var el = $(this);
-            var out = 0;
+            var sizing = el.css('box-sizing');
             
+            var out = 0;
+            $(arguments).each(function() {
+                var size = 0;
+                if (sizing == 'border-box') 
+                    size = parseCssSize(el.css('padding-'+this))
+                            +parseCssSize(el.css('border-'+this+'-width'));
+                else if (sizing == 'padding-box') 
+                    size = parseCssSize(el.css('padding-'+this));
+                else
+                    size = 0
+
+                out += size;
+            });
 
             return out;
         };

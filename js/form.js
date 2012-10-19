@@ -191,11 +191,11 @@ $wb.ui.form.FieldPane = $wb.Class('FieldPane',{
             var nodes = this.children();
             for(var i = 0; i < nodes.length;i++) {
                 var node = nodes[i];
-                node.elm().outerWidth(maxW);
+                //node.elm().outerWidth(maxW);
                 if (this.opts.cols > 1)
                     node.elm().css('float','left');
                 if (i % this.opts.cols == 0) {
-                    node.elm().outerWidth(maxW+leftover);
+                    //node.elm().outerWidth(maxW+leftover);
                     node.elm().addClass('wb-first');
                 }
             }
@@ -337,6 +337,7 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
             if (maxW < 1)
                 maxW = this.elm().innerWidth();
             var labelW = this.labelElm().outerWidth();
+            
             if (this._labelPosition == 'none') {
                 labelW = 0;
             }
@@ -345,7 +346,7 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
                     || this.opts.type == 'radio') {
                return;
             }
-            if (w > 0)
+            if (w > 0 && labelW > 0)
                 this.target().outerWidth(w);
         }
     },

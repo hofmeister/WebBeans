@@ -142,8 +142,11 @@ $wb.ui.layout.GridBag = function() {
     }
 
     var usedSize = $wb.utils.fullSize(others);
-    last.outerHeight(h-usedSize.height);
-    last.outerWidth(w);
+    
+    last.css({
+        'margin-bottom':usedSize.height*-1,
+        'padding-bottom':usedSize.height
+    });
 };
 
 
@@ -1535,20 +1538,10 @@ $wb.ui.BasePane = $wb.Class('BasePane',
         __construct:function(topbar,header) {
             this.__super(this.getDefaults());
 
-            
-            $(this.opts.parent).bind('resize',this._layout.bind(this));
-
             if (topbar)
                 this.add(topbar);
             if (header)
                 this.add(header);
-            this.bind('before-layout',this.makeFullScreen);
-        },
-        makeFullScreen: function() {
-            var w = $(this.opts.parent).innerWidth();
-            var h = $(this.opts.parent).innerHeight();
-            this.elm().width(w);
-            this.elm().height(h);
         }
     }
 );
@@ -2263,22 +2256,23 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
         var splitterSize = this.getSplitter().fullSize();
 
         if (this._vertical) {
-            width = this.elm().width()-splitterSize.width;
-            height = parseInt(this.elm().css('height'), 10);
-            this.getSplitter().height(height);
-            var w1 = width*splitPosition;
-            var w2 = width-w1;
+            this.get(0).elm().css({
+                'margin-left':splitterSize.width*-1,
+                'width':(100*splitPosition)+"%"
+            });
             
-            this.get(0).elm().outerWidth(w1).outerHeight(height);
-            this.get(1).elm().outerWidth(w2).outerHeight(height);
+            this.get(1).elm().css({
+                'width':(100-(100*splitPosition))+"%"
+            });
         } else {
-            height = this.elm().height()-splitterSize.height;
-            width = this.elm().width();
-            this.getSplitter().width(width);
-            var h1 = height*splitPosition;
-            var h2 = height-h1;
-            this.get(0).elm().outerHeight(h1).outerWidth(width);
-            this.get(1).elm().outerHeight(h2).outerWidth(width);
+            this.get(0).elm().css({
+                'margin-top':splitterSize.height*-1,
+                'height':(100*splitPosition)+"%"
+            });
+            
+            this.get(1).elm().css({
+                'height':(100-(100*splitPosition))+"%"
+            });
         }
     }
 });
@@ -2532,22 +2526,15 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
                 h = this.elm().innerHeight();
                 var btnH = this._tabButtons().outerHeight();
                 var paneContainer = this.elm().find('.wb-panes');
-                paneContainer.outerHeight(h-btnH);
-                paneContainer.outerWidth(this.elm().innerWidth());
-                var panes = paneContainer.children();
-                panes.outerHeight(h-btnH);
-                panes.outerWidth(this.elm().innerWidth());
-
+                paneContainer.css('margin-bottom',btnH*-1);
+                
+                
                 if (this._tabButtonFull) {
                     w = this._tabButtons().width();
                     tabs = this._tabButtons().find('.wb-tab');
                     if (tabs.length > 0) {
-                        var btnW = Math.floor(w / tabs.length);
-                        tabs.outerWidth(btnW);
-
-                        var first = btnW + (w-(btnW*tabs.length));
-
-                        $(tabs[0]).outerWidth(first);
+                        var btnW = 100 / tabs.length;
+                        tabs.css('width',btnW+"%");
                     }
                 }
             };
@@ -3151,10 +3138,7 @@ $wb.ui.HtmlPane = $wb.Class('HtmlPane',{
         target:'.wb-inner',
         editable:false,
         layout:function() {
-            var width = this.elm().width();
-            var height = this.elm().height();
-            this.target().outerWidth(width);
-            this.target().outerHeight(height);
+            
         }
     },
     __construct:function(opts) {
