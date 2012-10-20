@@ -24,12 +24,12 @@ $wb.ui.layout.Stack = function() {
     for(var i = 0; i < nodes.length;i++) {
         nodes[i].elm().css({
             position:'absolute',
+            width:'100%',
+            height:'100%',
             top:0,
             left:0,
             zIndex:i === 0 ? 10 : 1
         });
-        nodes[i].elm().outerWidth(width);
-        nodes[i].elm().outerHeight(height);
     }
 };
 $wb.ui.layout.Flow = function() {
@@ -58,23 +58,18 @@ $wb.ui.layout.Horizontal = function() {
     for(var i = 0; i < nodes.length;i++) {
         var elm = nodes[i].elm();
         elm.css({
-            'float':'left'
+            'float':'left',
+            'height':'100%'
         });
-        elm.outerHeight(height);
         
-        if (i < (nodes.length-1))
-            width -= elm.outerWidth();
     }
-    if (width > 0)
-        elm.outerWidth(width);
+    
 };
 
 
 
 $wb.ui.layout.Centered = function() {
     var nodes = this.children();
-    var height = this.target().innerHeight();
-    var width = this.target().innerWidth();
     
     var thisPos = this.target().css('position');
     
@@ -85,13 +80,13 @@ $wb.ui.layout.Centered = function() {
     
     for(var i = 0; i < nodes.length;i++) {
         var elm = nodes[i].elm();
-        var left = (width-elm.outerWidth()) / 2;
-        var top = (height-elm.outerHeight()) / 2;
         
         elm.css({
-            'position':'absolute',
-            left:left,
-            top:top
+            'margin':'absolute',
+            'left':'50%',
+            'top':'50%',
+            'margin-left':elm.outerWidth() / -2,
+            'margin-top':elm.outerHeight() / -2
         });
     }
 };
@@ -101,21 +96,21 @@ $wb.ui.layout.Box = function() {
     var width = this.target().innerWidth();
     var nodes = this.children();
     for(var i = 0; i < nodes.length;i++) {
-        nodes[i].elm().outerWidth(width);
+        nodes[i].elm().css({
+            width:'100%'
+        });
     }
 };
 
 $wb.ui.layout.Fill = function() {
     var nodes = this.children();
-    var width = this.target().innerWidth();
-    var height = this.target().innerHeight();
     $(nodes).each(function() {
-        if (width > 0)
-            this.elm().outerWidth(width);
-        if (height > 0)
-            this.elm().outerHeight(height);
+        this.elm().css({
+            width:'100%',
+            height:'100%',
+            margin:'0px'
+        });
     });
-    
 };
 
 $wb.ui.layout.None = function() {
