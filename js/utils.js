@@ -990,7 +990,21 @@
             });
             return $(out);
         };
-
+        
+        $.fn.within = function(x1,y1,x2,y2) {
+            var out = [];
+            $(this).each(function() {
+                var elm = $(this);
+                var bbox = elm.boundingBox();
+                
+                if (x1 <= bbox.right 
+                        && x2 >= bbox.left
+                        && y1 <= bbox.bottom
+                        && y2 >= bbox.top)
+                    out.push(this);
+            });
+            return $(out);
+        };
         
         $.fn.elementAt = function(x,y) {
             var out = [];
