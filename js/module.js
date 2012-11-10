@@ -101,7 +101,8 @@ $wb.Module = new $wb.Class('Module',{
         if (this.opts.stores.list)
             return this.opts.stores.list.apply(this);
         return new $wb.data.ListStore({
-            source:this.source()
+            source:this.source(),
+            model:this.model()
         });
     },
     treeStore:function() {
