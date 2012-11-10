@@ -102,7 +102,8 @@ $wb.Module = new $wb.Class('Module',{
             return this.opts.stores.list.apply(this);
         return new $wb.data.ListStore({
             source:this.source(),
-            model:this.model()
+            model:this.model(),
+            fields:this.opts.listFields
         });
     },
     treeStore:function() {
@@ -121,7 +122,8 @@ $wb.Module = new $wb.Class('Module',{
             return this.opts.stores.table.apply(this);
         return new $wb.data.TableStore({
             model:this.model(),
-            source:this.source()
+            source:this.source(),
+            fields:this.opts.listFields
         });
     },
     model:function() {
