@@ -441,10 +441,17 @@ $wb.ui.helper.Actionable = $wb.Class('Actionable',{
         actionClass:'.wb-actions'
     },
     _actions:[],
+    _actionMaker:null,
     __construct:function(opts) {
         if (opts && $.type(opts.actions) == 'array') {
             this._actions = this._actions.concat(opts.actions);
         }
+        
+        if (opts && $.type(opts.actions) == 'function') {
+            this._actionMaker = opts.actions;
+        }
+    
+        
         var self = this;
         this.bind('render',function() {
             var actionContainer = this.elm().findFirst(this.opts.actionClass);
@@ -460,9 +467,19 @@ $wb.ui.helper.Actionable = $wb.Class('Actionable',{
             } else {
                 actionContainer.html('');
             }
-            for(var i = 0; i < this._actions.length;i++) {
+            
+            var actions = $.extend([],this._actions);
+            
+            if (this._actionMaker) {
+                actions = actions.concat(this._actionMaker.apply(this));
+            }
+                    
+            for(var i = 0; i < actions.length;i++) {
                 (function() {
-                    var a = this._actions[i];
+                    var a = actions[i];
+                    if ($.type(a) == 'function')
+                        a = a.apply(this);
+                    
                     var btn = new $wb.ui.Action({
                         type:a.type(),
                         title:a.name(),

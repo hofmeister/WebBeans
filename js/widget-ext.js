@@ -203,6 +203,13 @@ $wb.ui.TableRow = $wb.Class('TableRow',
         _paintActions:function(row,rowActionsOption,addons) {
             var self = this;
             var rowActions = this.getTable().option(rowActionsOption);
+            
+            if ($.type(rowActions) == 'function')
+                rowActions = rowActions.apply(this,[row]);
+            
+            if ($.type(addons) == 'function')
+                addons = addons.apply(this,[row]);
+            
             rowActions = $.extend({},addons,rowActions);
             if (this.getTable().hasActions() || addons) {
                 var actionCellTmpl = this.getTable().option('actionCellTmpl');
@@ -290,7 +297,7 @@ $wb.ui.Table = $wb.Class('Table',
                         } else {
                             actionCell = this._body.findFirst('.wb-actions');
                             actionWidth = actionCell.outerWidth();
-                        } 
+                        }
                         
                         if (actionWidth > 0) {
                             this.elm().find('.wb-table-row').each(function() {
