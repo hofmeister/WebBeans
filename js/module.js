@@ -52,7 +52,7 @@ $wb.Module = new $wb.Class('Module',{
     },
     listView:function(opts) {
         if (this.opts.views.list)
-            return this.opts.views.list.apply(this);
+            return this.opts.views.list.apply(this,[opts]);
         return new $wb.ui.Table($.extend({
             store:this.tableStore(),
             fields:this.opts.listFields,
