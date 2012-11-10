@@ -448,6 +448,12 @@ $wb.ui.helper.Actionable = $wb.Class('Actionable',{
         var self = this;
         this.bind('render',function() {
             var actionContainer = this.elm().findFirst(this.opts.actionClass);
+            
+            if (this._children.length > 0 
+                    && this.target().contains(actionContainer)) {
+                //Make sure we don't get childrens actions
+                return;
+            }
             if (actionContainer.length == 0) {
                 actionContainer = $($wb.template.actions.container.apply(this));
                 this.actionTarget().prepend(actionContainer);
@@ -1634,7 +1640,7 @@ $wb.ui.Action = $wb.Class('Action',{
 $wb.ui.Button = $wb.Class('Button',{
     __extends:[$wb.ui.Widget,$wb.ui.helper.Actionable],
     __defaults:{
-        titleElm:'.wb-title',
+        titleElm:'.wb-title > .wb-text',
         actionTarget:'.wb-title',
         iconElm:'.wb-icon',
         iconClass:null,
@@ -1662,10 +1668,10 @@ $wb.ui.Button = $wb.Class('Button',{
         }
     },
     iconElm:function() {
-        return this.elm().find(this.opts.iconElm);
+        return this.elm().findFirst(this.opts.iconElm);
     },
     titleElm:function() {
-        return this.elm().find(this.opts.titleElm);
+        return this.elm().findFirst(this.opts.titleElm);
     },
     click:function() {
         this.trigger('click',arguments);
@@ -1747,9 +1753,13 @@ $wb.ui.Menu = $wb.Class('Menu',{
         for(var i = 0; i < menus.length;i++) {
             var m = menus[i];
             if (!m) continue;
-            submenu.add(m.title,m.arg);
+            var sub = submenu.add(m.title,m.arg);
+            if (m.actions) {
+                sub.actions(m.actions);
+            }
         }
 
+        
         subMenuBtn.add(submenu);
         subMenuBtn.menu(submenu);
 
@@ -1771,7 +1781,11 @@ $wb.ui.Menu = $wb.Class('Menu',{
         } else if ($.type(title) == 'array') {
             for(var i = 0; i < title.length;i++) {
                 var m = title[i];
-                this.add(m.title,m.arg);
+                elm = this.add(m.title,m.arg);
+                if (m.actions) {
+                    console.log(m.actions);
+                    elm.actions(m.actions);
+                }
             }
             return this._children;
         } else {

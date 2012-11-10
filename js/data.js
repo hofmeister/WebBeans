@@ -590,8 +590,12 @@ $wb.data.JsonService = $wb.Class('JsonService',{
                                         callback(true,out);
                                 },
                                 error:function(out) {
+                                    var resp = null;
+                                    if (out.responseText)
+                                        resp = JSON.parse(out.responseText);
+                                    
                                     if (callback)
-                                        callback(false);
+                                        callback(false,resp,out);
                                 }
                             });
                         };
