@@ -910,7 +910,6 @@ $wb.ui.DomPane = $wb.Class('DomPane',{
                 return;
             }
             
-            
             var folded = elm.nextAll('.wb-dom-folded');
             var content = elm.nextAll('.wb-dom-content');
             
@@ -928,11 +927,14 @@ $wb.ui.DomPane = $wb.Class('DomPane',{
         var dom = this.opts.dom;
         if (!dom) return;
         
+        this.target().children().remove();
+        
         var html = '<ul>';
         
         html += this._paintNode(dom[0]);
         
         html += '</ul>';
+        
         this.target().html(html);
     },
     _paintNode:function(node) {

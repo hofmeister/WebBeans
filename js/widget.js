@@ -1058,13 +1058,13 @@ $wb.ui.Widget = $wb.Class('Widget',
             return null;
         },
         /**
-         * Detach all children
+         * Destroy all children
          * @returns {$wb.ui.Widget} itself
          */
         clear:function() {
             while(this._children.length > 0) {
                 var child = this._children.pop();
-                child.detach();
+                child.destroy();
             }
             return this;
         },
@@ -1100,10 +1100,17 @@ $wb.ui.Widget = $wb.Class('Widget',
                 else
                     child.detach();
             }
+            
             if (this.parent())
                 this.parent().remove(this);
+            
             delete this.opts;
-            this.detach();
+            this._attached = false;
+            this.trigger('detach');
+            this.elm().remove();
+            delete this._target;
+            delete this._elm;
+            delete this.opts;
             this.trigger('destroy');
             if (!$.browser.msie) //Not allowed in IE
                 delete this;
@@ -1355,6 +1362,13 @@ $wb.ui.IFrame = $wb.Class('IFrame',{
     },
     location:function() {
         if (arguments.length > 0) {
+            
+            //Make sure to remove the document jquery style.
+            //Or else this may cause leaks.
+            try {
+                this.doc().remove();
+            } catch(e) {};
+            
             this._showLoadScreen();
             this.opts.src = ""+arguments[0];
             if (this.window())
@@ -3654,7 +3668,7 @@ $wb.ui.Window = $wb.Class('Window',
          */
         close:function() {
             this.trigger('close');
-            this.destroy(false);
+            this.destroy();
         }
     }
 );

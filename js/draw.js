@@ -147,7 +147,9 @@ $wb.draw.Layer = $wb.Class('Layer',{
     },
     empty:function() {
         while(this._elements.length > 0) {
-            delete this._elements.pop();
+            var elm = this._elements.pop();
+            elm.destroy();
+            delete elm;
         }
         this.clear();
     },
@@ -259,6 +261,11 @@ $wb.draw.Element = $wb.Class('Element',{
             this.opts.visible = visible;
             this.render();
         }
+    },
+    destroy:function() {
+        delete this.opts;
+        delete this._ctxtOpts;
+        delete this._cached;
     }
 });
 
@@ -341,6 +348,10 @@ $wb.draw.PolyLine = $wb.Class('PolyLine',{
     },
     getPoints:function() {
         return this._points;
+    },
+    destroy:function() {
+        delete this._points;
+        this.__super();
     }
 });
 
@@ -537,6 +548,10 @@ $wb.draw.Path = $wb.Class('Path',{
     _samePoint:function(p1,p2) {
         return Math.floor(p1.x) == Math.floor(p2.x) 
                 && Math.floor(p1.y) == Math.floor(p2.y);
+    },
+    destroy:function() {
+        delete this._obstacles;
+        this.__super();
     }
 });
 $wb.draw.LineCap = $wb.Class('LineCap',{
@@ -587,7 +602,6 @@ $wb.draw.Arrow = $wb.Class('Arrow',{
 
 $wb.draw.Polygon = $wb.Class('Polygon',{
     __extends:[$wb.draw.PolyLine],
-    _points:[],
     __construct:function(opts) {
         this.__super(opts);
     },
