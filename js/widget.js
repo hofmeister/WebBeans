@@ -1061,10 +1061,21 @@ $wb.ui.Widget = $wb.Class('Widget',
          * Destroy all children
          * @returns {$wb.ui.Widget} itself
          */
-        clear:function() {
+        destroyChildren:function() {
             while(this._children.length > 0) {
                 var child = this._children.pop();
                 child.destroy();
+            }
+            return this;
+        },
+        /**
+         * Detach all children
+         * @returns {$wb.ui.Widget} itself
+         */
+        clear:function() {
+            while(this._children.length > 0) {
+                var child = this._children.pop();
+                child.detach();
             }
             return this;
         },
