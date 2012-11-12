@@ -1018,12 +1018,12 @@ $wb.ui.Widget = $wb.Class('Widget',
         set:function(ix,child) {
             if (typeof child == 'undefined' 
                 && ix instanceof $wb.ui.Widget) {
-                this.clear();
+                this.destroyChildren();
                 this.add(ix);
                 return this;
             }
             if (this._children[ix]) {
-                this._children[ix].detach();
+                this._children[ix].destroy();
             }
             this._children[ix] = child;
             return this;
@@ -1104,6 +1104,9 @@ $wb.ui.Widget = $wb.Class('Widget',
          * @paras {Boolean} recurse If true - destroys all children too (Defaults to just detaching them)
          */
         destroy:function(recurse) {
+            if (this.__isDeleted())
+                return;
+            
             while(this._children.length > 0) {
                 var child = this._children.pop();
                 if (recurse) 
@@ -1112,19 +1115,18 @@ $wb.ui.Widget = $wb.Class('Widget',
                     child.detach();
             }
             
-            if (this.parent())
+            if (this.elm() && this.parent())
                 this.parent().remove(this);
             
-            delete this.opts;
             this._attached = false;
             this.trigger('detach');
-            this.elm().remove();
-            delete this._target;
-            delete this._elm;
-            delete this.opts;
+            if (this.elm())
+                this.elm().remove();
+            
             this.trigger('destroy');
-            if (!$.browser.msie) //Not allowed in IE
-                delete this;
+            
+            this.__deleteLater();
+            
         },
         /**
          * Detach this widget

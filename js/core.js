@@ -283,6 +283,8 @@ if (!$wbConfig.noCSS) {
             //Make sure we have a constructor
             if (!opts.__construct)
                 opts.__construct = function() {};
+            
+            
             //Holds the arguments passed to the constructor - used for cloning
             opts.__initArgs = [];
 
@@ -350,7 +352,10 @@ if (!$wbConfig.noCSS) {
                 * @memberOf $wb.Class.prototype
                 */
                 __callMethod: function(name,args) {
-
+                    if (this && this.__deleted) {
+                        throw new $wb.Error('Attempted to call method on deleted object: '+name+"()");
+                    }
+                
                     var m = clz.methods[name];
                     if (!m) {
                         //Check if a superclass has it
@@ -436,6 +441,24 @@ if (!$wbConfig.noCSS) {
 
                 return out;
             };
+            /**
+             * Mark this object for deletion in next cycle
+             */
+            clz.prototype.__deleteLater = function() {
+                if (this.__deleted) return;
+                var self = this;
+                setTimeout(function() {
+                    //Release all properties (If they are referenced elsewhere - they won't be.)
+                    for(var prop in self) {
+                        delete self[prop];
+                    }
+                    self.__deleted = true;
+                },0);
+            };
+            clz.prototype.__isDeleted = function() {
+                return typeof this.__deleted != 'undefined' && this.__deleted;
+            };
+            
 
             //Extends contains a unique array of all directly inherited classes (Note: NOT entire hierarchy)
             clz.__extends = parents.toArray();
