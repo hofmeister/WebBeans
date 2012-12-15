@@ -1333,6 +1333,25 @@ $wb.ui.Html = $wb.Class('Html',{
     }
 });
 
+
+$wb.ui.TextPane = $wb.Class('Html',{
+    __extends:[$wb.ui.Widget],
+    _text:'',
+    __construct:function() {
+        this.__super({
+            tmpl:function() {return '<pre class="wb-pane wb-textpane" />';}
+        });
+    },
+    prepend:function(text) {
+        this._text = text+"\n"+this._text;
+        this.elm().text(this._text);
+    },
+    append:function(text) {
+        this._text += text+"\n"
+        this.elm().text(this._text);
+    }
+});
+
 $wb.ui.IFrame = $wb.Class('IFrame',{
     __extends:[$wb.ui.Widget],
     __defaults:{

@@ -582,7 +582,7 @@ $wb.data.JsonService = $wb.Class('JsonService',{
                             return $.ajax({
                                 url:url,
                                 type:method.method,
-                                dataType:'json',
+                                //dataType:'json',
                                 contentType:'application/json',
                                 data:data,
                                 success:function(out) {
