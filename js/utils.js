@@ -139,6 +139,7 @@
                 return $.type(v);
             }
         ],
+        _scrollbarSize:null,
         htmlentities:function(html) {
             if (!html) return "";
             html = ""+html;
@@ -383,6 +384,33 @@
                 }
             }
             return "undefined";
+        },
+        scrollbarSize:function() {
+            if (this._scrollbarSize)
+                return this._scrollbarSize;
+
+            var size = {};
+
+            var parent = $('<div style="width:50px;height:50px;overflow:auto"><div style="width:100%;height:100%;" /></div>').appendTo('body');
+            var child = parent.children();
+            
+            var heightBefore = child.innerHeight();
+            var widthBefore = child.innerWidth();
+            
+            child.css('height','200%');
+            
+            size.width = widthBefore-child.innerWidth();
+            
+            child.css('height','100%').width(99);
+            
+            size.height = heightBefore-child.innerHeight();
+            
+            parent.remove();
+            
+            this._scrollbarSize = size;
+            
+            return size;
+
         }
     };
     //jQuery util methods

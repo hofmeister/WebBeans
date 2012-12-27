@@ -520,26 +520,34 @@ div,td,table,tbody,thead,tfoot,th {
     position:absolute;
     top:0px;
     left:0px;
-    cursor: pointer;
     z-index: 10;
+}
+
+.wb-scrollbar,
+    ::-webkit-scrollbar {
+    cursor: pointer;
     background-color: white;
     opacity: .8;
     filter: alpha(opacity=80);
 }
 
 .wb-scrollbar.wb-vertical,
+    ::-webkit-scrollbar:vertical,
     .wb-scrollbar.wb-vertical > .wb-scroller {
     width:10px;
 }
-.wb-scrollbar.wb-vertical {
+.wb-scrollbar.wb-vertical,
+    ::-webkit-scrollbar-track:vertical {
     border-left: 1px solid #ccc;
 }
 
 .wb-scrollbar.wb-horizontal,
-    .wb-scrollbar.wb-horizontal > .wb-scroller {
+    .wb-scrollbar.wb-horizontal > .wb-scroller,
+    ::-webkit-scrollbar:horizontal {
     height:10px;
 }
-.wb-scrollbar.wb-horizontal {
+.wb-scrollbar.wb-horizontal,
+    ::-webkit-scrollbar-track:horizontal {
     border-top: 1px solid #ccc;
 }
 
@@ -550,8 +558,14 @@ div,td,table,tbody,thead,tfoot,th {
     background-color: transparent;
 }
 
+.wb-scrollbar > .wb-scroller,
+    ::-webkit-scrollbar-thumb {
+    background-color: #666;
+    border-radius: 3px;
+}
+
+
 .wb-scrollbar > .wb-scroller {
-    background-color: #333;
     position: absolute;
 }
 .CodeMirror * {

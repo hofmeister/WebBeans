@@ -517,7 +517,8 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
     __defaults:{
         scrollContainer:null,
         scrollable:false,
-        scrollParent:'.wb-window'
+        scrollParent:'.wb-window',
+        _nativeScrollbar:true
     },
     _scrollable:null,
     _scrollParent:null,
@@ -547,10 +548,19 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
     _buildScrollbar:function() {
         if (!this.opts.scrollable) 
             return;
+        var elm = this.scrollContainer();
+        
+        if (this.opts._nativeScrollbar) {
+            //Allow the layout to calculate without scrollbars
+            elm.css({overflow:'hidden'});
+            
+            return;
+        }
+        
         if (this._scrollable)
             return;
         
-        var elm = this.scrollContainer();
+        
         var self = this;
         var scrollbarH,scrollbarV;
         
@@ -620,17 +630,22 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
         elm.trigger('scroll');
     },
     hideScrollbar:function() {
-        if (!this._scrollable) return;
+        if (!this._scrollable || this.opts._nativeScrollbar) return;
         this._scrollable.h.hide();
         this._scrollable.v.hide();
         this.trigger('scrolling');
     },
     showScrollbar:function() {
-        var elm = this.scrollContainer();
-            
         if (!this.opts.scrollable) 
             return;
-
+        
+        var elm = this.scrollContainer();
+        
+        if (this.opts._nativeScrollbar) {
+            elm.css({overflow:'auto'});
+            return;
+        }
+        
         elm.css({overflow:'hidden'});
 
         var availHeight = elm[0].scrollHeight;
@@ -778,7 +793,18 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
         }
     },
     getScrollbarSize:function() {
+        if (!this.opts.scrollable) return null;
+        
+        if (this.opts._nativeScrollbar) {
+            var size = $wb.utils.scrollbarSize();
+            return {
+                v:size.width,
+                h:size.height
+            };
+        }
+        
         if (!this._scrollable) return null;
+        
         return {
             v:this._scrollable.v.outerWidth(),
             h:this._scrollable.h.outerHeight()
