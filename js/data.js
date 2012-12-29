@@ -841,22 +841,38 @@ $wb.data.ListStore = $wb.Class('ListStore',{
     update:function(row) {
         var i = this.indexOf(row);
         if (i < 0) 
-            return;
+            return false;
         $.extend(this._data.rows.get(i),row);
         this.trigger('change');
         this.trigger('updated',[[row]]);
+        return true;
     },
     updateAll:function(rows) {
+        var newRows = [];
         for(var i = 0; i < rows.length;i++) {
             var row = rows[i];
             var ix = this.indexOf(row);
-            if (ix < 0) 
-                return;
+            if (ix < 0) {
+                newRows.push(row);
+                continue;
+            }
             $.extend(this._data.rows.get(ix),row);
         }
         
         this.trigger('change');
         this.trigger('updated',[[row]]);
+        return newRows;
+    },
+    upsert:function(row) {
+        if (!this.update(row)) {
+            this.add(row);
+        }
+    },
+    upsertAll:function(rows) {
+        var newRows = this.updateAll(rows);
+        if (newRows.length > 0) {
+            this.addAll(newRows);
+        }
     },
     getByMethod:function(value,comparator) {
         var i = this.getIndexByMethod(value,comparator);

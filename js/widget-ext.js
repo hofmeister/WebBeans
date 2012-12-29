@@ -570,7 +570,7 @@ $wb.ui.Table = $wb.Class('Table',
                 this._paging.bind('change',function(page) {
                     var rowsPerPage = this.getStore().getRowsPerPage();
                     this.trigger('page-change',[page,page*rowsPerPage,rowsPerPage]);
-                    if (!this.getStore().getSource() && this.getPaging()) {
+                    if (!this.getStore().getSource()) {
                         this.repaintRows();
                     }
                 }.bind(this));
