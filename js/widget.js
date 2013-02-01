@@ -532,7 +532,7 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
             if (!this._scrollable) return;
             this.showScrollbar();
         });
-        this.bind('before-layout',function() {
+        this.bind('before-render',function() {
             this._buildScrollbar();
         });
         
@@ -543,7 +543,39 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
             var elm = this.scrollContainer();
             elm.scrollTop(this._scrollState.top);
             elm.scrollLeft(this._scrollState.left);
-        })
+        });
+        
+        this.scrollContainer().bindOnce('scroll',this._handleScrolling.bind(this));
+    },
+    _handleScrolling:function() {
+        var elm = this.scrollContainer();
+        
+        var availHeight = elm[0].scrollHeight;
+        var availWidth = elm[0].scrollWidth;
+
+        if (this.isContentReady()) {
+            this._scrollState.left = elm.scrollLeft();
+            this._scrollState.top = elm.scrollTop();
+        }
+
+        if (this.opts._nativeScrollbar) {
+            return;
+        }
+        
+        var scrollbarH = this._scrollable.h;
+        var scrollbarV = this._scrollable.v;
+
+        if (scrollbarV.is(':visible')) {
+            scrollbarV.find('.wb-scroller').css({
+                top:Math.floor(scrollbarV.innerHeight()*(elm.scrollTop()/availHeight))
+            });
+        }
+
+        if (scrollbarH.is(':visible')) {
+            scrollbarH.find('.wb-scroller').css({
+                left:Math.floor(scrollbarH.innerWidth()*(elm.scrollLeft()/availWidth))
+            });
+        }
     },
     _buildScrollbar:function() {
         if (!this.opts.scrollable) 
@@ -559,10 +591,6 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
         
         if (this._scrollable)
             return;
-        
-        
-        var self = this;
-        var scrollbarH,scrollbarV;
         
         this._scrollable = {
             h:$('<div class="wb-scrollbar wb-horizontal"><div class="wb-scroller"/></div>'),
@@ -599,30 +627,6 @@ $wb.ui.helper.Scrollable = $wb.Class('Scrollable',{
             elm.trigger('scroll');                    
         });
 
-        scrollbarH = this._scrollable.h;
-        scrollbarV = this._scrollable.v;
-        
-        elm.bind('scroll',function() {
-            var availHeight = elm[0].scrollHeight;
-            var availWidth = elm[0].scrollWidth;
-            
-            if (self.isContentReady()) {
-                self._scrollState.left = elm.scrollLeft();
-                self._scrollState.top = elm.scrollTop();
-            }
-            
-            if (scrollbarV.is(':visible')) {
-                scrollbarV.find('.wb-scroller').css({
-                    top:Math.floor(scrollbarV.innerHeight()*(elm.scrollTop()/availHeight))
-                });
-            }
-
-            if (scrollbarH.is(':visible')) {
-                scrollbarH.find('.wb-scroller').css({
-                    left:Math.floor(scrollbarH.innerWidth()*(elm.scrollLeft()/availWidth))
-                });
-            }
-        });
 
         this._bindHScroll();
         this._bindVScroll();
@@ -1244,8 +1248,12 @@ $wb.ui.Widget = $wb.Class('Widget',
             this._rendering = true;
             if (!this._ready) 
                 return false;
+            
+            this.trigger('before-render');
+            
             if (this._paint() === false) 
                 return false;
+            
             
             this._renderChildren();
 
@@ -1263,9 +1271,6 @@ $wb.ui.Widget = $wb.Class('Widget',
             this.trigger('render');
             
             return this.elm();
-        },
-        isAttached:function() {
-            return this._attached;
         },
         /**
          * Set context menu
@@ -1336,7 +1341,7 @@ $wb.ui.Widget = $wb.Class('Widget',
         * @private
         */
         _renderChildren: function() {
-            this.trigger('beforerenderchildren');
+            this.trigger('before-render-children');
             
             this.elm().putAway();
                 
@@ -2690,7 +2695,7 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
                     break;
             }
         });
-        this.bind('beforerenderchildren',function() {
+        this.bind('before-render-children',function() {
             for(var i = 0; i < this._tabButtonWidgets.length;i++) {
                 var btn = this._tabButtonWidgets[i];
                 btn.render();
