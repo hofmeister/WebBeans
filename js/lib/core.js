@@ -1,4 +1,4 @@
-//@module core
+//@module core @prio 99
 /**
  * @fileOverview
  * <p>
