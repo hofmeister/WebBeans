@@ -1,3 +1,5 @@
+//@module core.geo @prio 99
+
 $wb.geo = {};
 
 $wb.geo.distanceToLine = function(lineStart,lineEnd,point) {

@@ -1,3 +1,4 @@
+//@module core.ui @prio 99
 /**
  * @fileOverview
  * This file contains all the basic widgets

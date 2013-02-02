@@ -1,3 +1,4 @@
+//@module core.data @prio 99
 /**
  * @fileOverview
  * All methods and classes related to data handling is in here

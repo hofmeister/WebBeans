@@ -1,3 +1,5 @@
+//@module core.ui.form
+
 $wb.ui.form.FlowEditor = $wb.Class('FlowEditor',{
     __extends:[$wb.ui.Pane],
     _connections:[],

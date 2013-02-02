@@ -1,3 +1,4 @@
+//@module core
 /**
  * @fileOverview
  * This file contains all utilities provided and used by webbeans

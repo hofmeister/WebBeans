@@ -1,3 +1,4 @@
+//@module core
 $wb.Module = new $wb.Class('Module',{
     __extends:[$wb.core.Events,$wb.core.Utils],
     __defaults:{

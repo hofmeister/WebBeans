@@ -1,3 +1,5 @@
+//@module core.ui.game @prio 99
+
 $wb.ui.game = {};
 
 $wb.ui.game.Board = $wb.Class('Board',{

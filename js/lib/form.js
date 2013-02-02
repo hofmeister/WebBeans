@@ -1,3 +1,4 @@
+//@module core.ui.form @prio 99
 /**
  * @fileOverview
  * All form widgets are in here

@@ -1,3 +1,4 @@
+//@module core
 /**
  * @fileOverview
  * Contains all the default templates

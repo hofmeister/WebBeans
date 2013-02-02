@@ -1,3 +1,4 @@
+//@module core.draw @prio 99
 /**
  * @fileOverview
  * This file contains canvas elements
@@ -149,7 +150,6 @@ $wb.draw.Layer = $wb.Class('Layer',{
         while(this._elements.length > 0) {
             var elm = this._elements.pop();
             elm.destroy();
-            delete elm;
         }
         this.clear();
     },
@@ -190,7 +190,9 @@ $wb.draw.Element = $wb.Class('Element',{
         var layer = this._layer;
         layer.remove(this);
         this.trigger('destroy');
-        delete this;
+        delete this.opts;
+        delete this._ctxtOpts;
+        delete this._cached;
     },
     getLayer:function() {
         return this._layer;
@@ -261,11 +263,6 @@ $wb.draw.Element = $wb.Class('Element',{
             this.opts.visible = visible;
             this.render();
         }
-    },
-    destroy:function() {
-        delete this.opts;
-        delete this._ctxtOpts;
-        delete this._cached;
     }
 });
 

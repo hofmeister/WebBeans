@@ -1,3 +1,4 @@
+//@module core
 /**
  * @fileOverview
  * All localization related methods are in here
