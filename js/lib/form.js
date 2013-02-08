@@ -1189,6 +1189,137 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
 });
 
 
+$wb.ui.form.StringListField = $wb.Class('StringListField',{
+    __extends:[$wb.ui.form.TextArea],
+    __defaults:{
+        'class':'wb-stringlist'
+    },
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        this.__super(opts);
+        this.value([]);
+        this.target().addClass('wb-offscreen');
+
+        var modal = null;
+
+        var model = new $wb.data.Model('stringList',{
+            name:{name:"Entry",valueType:"string",required:true,unique:true}
+        });
+
+        var store = new $wb.data.TableStore({model:model});
+
+        var table = new $wb.ui.Table({
+            store:store,
+            header:true,
+            footer:false,
+            editable:true,
+            headerActions:{
+                'add':new $wb.Action(_('Add'),function() {
+                    table.newRow();
+                },'plus')
+            },
+            rowActions:{
+                'remove':new $wb.Action(_('Remove'),function() {
+                    store.remove(this.getData());
+                },'remove'),
+                'edit':new $wb.Action(_('Edit'),function() {
+                    this.makeEditable();
+                },'edit')
+            },
+            rowEditActions:{
+                'save':new $wb.Action(_('Save'),function() {
+                    var data = this.getData();
+                    if (!data.name) return;
+                    if (this.isNew())
+                        store.add(data);
+                    else
+                        store.update(data);
+                    this.makeStatic();
+                },'save')
+            }
+        });
+
+
+        var btnPane = new $wb.ui.form.ButtonPane();
+        btnPane.add(new $wb.ui.form.Button({label:_('Apply'),action:function() {
+            var rows = store.getRows().toArray();
+            var list = [];
+            $wb.each(rows,function(row) {
+                list.push(row.name);
+            });
+
+            this.value(list);
+            modal.close();
+        }.bind(this)}));
+        btnPane.add(new $wb.ui.form.Button({label:_('Cancel'),action:function() {
+            modal.close();
+        }}));
+
+        btnPane.elm().css('margin-top',15);
+
+        var pane = new $wb.ui.Pane();
+        pane.add(table);
+        pane.add(btnPane);
+
+        var opener = new $wb.ui.Link({title:'Add...',action:function() {
+            if (this.value()) {
+                var list = this.value();
+                var entries = [];
+                $wb.each(list,function(name) {
+                    entries.push({name:name});
+                });
+
+
+                store.setRows(entries);
+            }
+
+            modal = $wb.createModal({title:'Edit list',content:pane,height:450});
+        }.bind(this)});
+
+
+
+        this.bind('change',function() {
+            var list = this.value();
+            if (list && list.length > 0) {
+                opener.html(list.join(', '));
+            } else {
+                opener.html(_('None'));
+            }
+        });
+
+        this.bind('paint',function() {
+            this.container().append(opener.render());
+            this.trigger('change');
+        });
+    },
+    value:function(val) {
+        if (arguments.length > 0) {
+            if ($.type(val) !== 'string') {
+                if (!Array.isArray(val)) {
+                    val = [];
+                }
+                val = JSON.stringify(val.unique());
+            }
+
+            if (val === undefined)
+                val = [];
+            return this.__super(val);
+        } else {
+            val = this.__super();
+            if (!val) {
+                val = [];
+            } else if ($.type(val) === 'string') {
+                val = JSON.parse(val);
+            }
+            if (!Array.isArray(val)) {
+                val = [];
+            }
+            return val.unique();
+        }
+    }
+});
+
+
 
 //Define basic field types
 (function() {
@@ -1420,4 +1551,21 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
         inherits:'code',
         mode:{name:'javascript',json:true}
     });
+
+
+    new $wb.ui.FieldType(
+        {
+            type:"string[]",
+            formField:function(opts,value) {
+                var out = new $wb.ui.form.StringListField({name:opts.id,label:opts.name});
+                out.value(value);
+                return out;
+            },
+            format:function(opts,value) {
+                return (value && value.length > 0) ? value.join(', ') : _('None');
+            }
+        }
+    );
+
+
 })();

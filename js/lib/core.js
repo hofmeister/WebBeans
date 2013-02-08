@@ -179,7 +179,7 @@ if (!$wbConfig.noCSS) {
 
         /**
         * @description Short for $(elm).widget();
-        * @Param {String|DOMNode} elm The element - same as the arguemnt for the jQuery function ($)
+        * @Param {String|DOMNode} elm The element - same as the argument for the jQuery function ($)
         * @namespace the main namespace in webbeans
         */
         $wb = function(elm) {
@@ -194,7 +194,6 @@ if (!$wbConfig.noCSS) {
                 return jQueryElm.widget();
             }
         };
-
         /**
         * @description Convert and splice arguments objects into arrays
         */
@@ -265,10 +264,13 @@ if (!$wbConfig.noCSS) {
                 "        var val = clz.prototype[key];"+
                 "        if ($.type(val) == 'function')"+
                 "            continue;"+
-                "        if ($.type(val) == 'array')"+
+                "        if ($.type(val) == 'array') {"+
                 "            val = $.extend(true,[],val);"+
-                "        if ($.type(val) == 'object')"+
+                "        } else if (val instanceof $wb.Object) {"+
+                "            val = val.clone();"+
+                "        } else if ($.type(val) == 'object') {"+
                 "            val = $.extend(true,{},val);"+
+                "        } "+
                 "        this[key] = val;"+
                 "    }"+
 
@@ -290,7 +292,7 @@ if (!$wbConfig.noCSS) {
             opts.__initArgs = [];
 
             //Compile a list of unique parent classes    
-            var parents = new $wb.Set();
+            var parents = [];
 
             var defaults = {};
             if ((!opts.__extends || opts.__extends.length == 0) && $wb.Object) {
@@ -310,7 +312,7 @@ if (!$wbConfig.noCSS) {
                     $.extend(true,clz.prototype,parent.prototype);
 
                     //Add to set
-                    parents.add(parent.prototype);
+                    parents.push(parent.prototype);
                 }
             }
 
@@ -390,7 +392,7 @@ if (!$wbConfig.noCSS) {
                             return this.__callMethod(key,arguments);
                         };
                     }
-                })();
+                }());
             }
             //Extend the prototype with opts and fixed
             $.extend(true,clz.prototype,opts,fixed);
@@ -462,7 +464,7 @@ if (!$wbConfig.noCSS) {
             
 
             //Extends contains a unique array of all directly inherited classes (Note: NOT entire hierarchy)
-            clz.__extends = parents.toArray();
+            clz.__extends = parents.unique();
 
             /**
             * @description The super method is a class specific method that is used to call overridden methods.
@@ -516,59 +518,9 @@ if (!$wbConfig.noCSS) {
             return clz;
         };
 
-        /**
-        * @description A Set collection (unique list)
-        * @constructor
-        */
-        $wb.Set = function () {
-            this._arr = [];
-        };
-
-        $wb.Set.prototype = {
-
-            /**
-            * @description Class name
-            * @type String
-            * @private
-            */
-            _clz:"Set",
-
-            length:function() {
-                return this._arr.length;
-            },
-            /**
-            * @description Add element to Set
-            * @param {Object} elm
-            */
-            add:function(elm) {
-                if (this._arr.indexOf(elm) == -1)
-                    this._arr.push(elm);
-            },
-            /**
-            * @description Add several elements to Set
-            * @param {Object[]} elms
-            */
-            addAll:function(elms) {
-                for(var i = 0; i < elms.length;i++) {
-                    this.add(elms[i]);
-                }
-            },
-            /**
-            * @description Get element
-            * @param {int} i The index to get
-            * @type Object
-            */
-            get:function(i) {
-                return this._arr[i];
-            },
-            /**
-            * @description Convert this set into a standard js array
-            * @type Object[]
-            */
-            toArray:function() {
-                return $.extend([],this._arr);
-            }
-        };
+        $wb.Object = $wb.Class('Object',{
+            __defaults:{}
+        });
 
 
         //Maybe extend Array instead
@@ -576,16 +528,12 @@ if (!$wbConfig.noCSS) {
         * @description An array wrapper
         * @constructor
         */
-        $wb.Array = function (arr) {
-            this._arr = arr ? arr : [];
-        };
-        $wb.Array.prototype = {
-            /**
-            * Class name
-            * @type String
-            * @private
-            */
-            _clz:"Array",
+        $wb.Array = $wb.Class('Array',{
+            _arr:[],
+
+            __construct:function(arr) {
+                this._arr = arr ? arr : [];
+            },
             /**
             * @description Push element onto end
             * @param {Object} elm
@@ -651,8 +599,8 @@ if (!$wbConfig.noCSS) {
             * @description Empty the array
             */
             clear:function() {
-                for(var i = (this._arr.length-1); i > -1;i--) {
-                    this.remove(i);
+                while(this.length() > 0) {
+                    this.remove(0);
                 }
             },
             /**
@@ -672,11 +620,11 @@ if (!$wbConfig.noCSS) {
             },
             /**
             * @description iterate through the array using a callback function
-            * @param {Function} cb the callback function - is called with a single parameter - each entry.
+            * @param {Function} cb the callback function - is called with 2 parameters - value and index.
             */
             each:function(cb) {
                 for(var i = 0; i < this._arr.length;i++) {
-                    cb.apply(this,[this._arr[i]]);
+                    cb.apply(this,[this._arr[i],i]);
                 }
             },
             /**
@@ -685,13 +633,70 @@ if (!$wbConfig.noCSS) {
             */
             toArray:function() {
                 return this._arr;
+            },
+            contains:function(val) {
+                return this._arr.indexOf(val) > -1
+            },
+            containsOnly:function() {
+                var args = [],i;
+                for(i = 0; i < arguments;i++) {
+                    args.push(arguments[i]);
+                    if (!this.contains(arguments[i])) {
+                        return false;
+                    }
+
+                }
+
+                for(i = 0; i < this._arr.length;i++) {
+                    if (args.indexOf(this._arr[i]) == -1) {
+                        return false;
+                    }
+                }
+
+                return true;
             }
-        };
-
-
-        $wb.Object = $wb.Class('Object',{
-            __defaults:{}
         });
+
+        /**
+         * @description A Set collection (unique list)
+         * @constructor
+         */
+        $wb.Set = $wb.Class('Set',{
+            __extends : [$wb.Array],
+
+            __construct:function(arr) {
+                this.__super(arr ? arr.unique() : arr);
+            },
+
+            /**
+             * @description Add element to Set
+             * @param {Object} elm
+             */
+            add:function(elm) {
+                if (this._arr.indexOf(elm) == -1)
+                    this._arr.push(elm);
+            },
+            /**
+             * @description Add several elements to Set
+             * @param {Object[]} elms
+             */
+            addAll:function(elms) {
+                for(var i = 0; i < elms.length;i++) {
+                    this.add(elms[i]);
+                }
+            },
+            push:function(elm) {
+                this.add(elm);
+            },
+            pushAll:function(elms) {
+                this.addAll(elms);
+            },
+            unshift:function(elm) {
+                if (this._arr.indexOf(elm) == -1)
+                    this._arr.unshift(elm);
+            }
+        });
+
 
         // Heavily inspired by:
         // parseUri 1.2.2
@@ -1241,6 +1246,108 @@ if (!$wbConfig.noCSS) {
             }
         });
 
+        /**
+         * Used to defer execution untill future is resolved
+         * @constructor
+         */
+        $wb.Future = $wb.Class('Future',{
+            _resolved:false,
+            _resolvedValue:null,
+            _listeners:[],
+            _rejectionListeners:[],
+            _rejected:false,
+            __construct:function() {
+
+            },
+            /**
+             * Add callback that will be invoked when future is resolved
+             * @param {Function} callback
+             * @return {$wb.Future}
+             */
+            then:function(callback) {
+                if (this._rejected) {
+                    return;
+                }
+
+                if (this._resolved) {
+                    callback.apply(null,this._resolvedValue);
+                }
+                this._listeners.push(callback);
+                return this;
+            },
+            /**
+             * Add callback that will be invoked if the future is rejected
+             * @param {Function} callback
+             * @return {$wb.Future}
+             */
+            else:function(callback) {
+                if (!this._rejected) {
+                    return;
+                }
+
+                if (this._resolved) {
+                    callback.apply(null,this._resolvedValue);
+                }
+                this._rejectionListeners.push(callback);
+                return this;
+            },
+            /**
+             * Resolve future.
+             * @param {...} values to send to callbacks
+             * @return {$wb.Future}
+             */
+            resolve:function() {
+                if (this._resolved) {
+                    throw new $wb.Error("Future already resolved");
+                }
+                this._resolvedValue = arguments;
+                this._resolved = true;
+
+                while(this._listeners.length > 0) {
+                    var callback = this._listeners.pop();
+                    callback.apply(null,this._resolvedValue);
+                }
+                //Clear all rejection listeners
+                this._rejectionListeners = null;
+                return this;
+            },
+            /**
+             * Reject future
+             * @param {...} values to send to callbacks
+             * @return {$wb.Future}
+             */
+            reject:function() {
+                if (this._resolved) {
+                    throw new $wb.Error("Future already resolved");
+                }
+
+                this._resolvedValue = arguments;
+                this._resolved = true;
+                this._rejected= true;
+                this._listeners = null;//Clear listeners (don't want to hang on to the contained mem)
+
+                while(this._rejectionListeners.length > 0) {
+                    var callback = this._rejectionListeners.pop();
+                    callback.apply(null,this._resolvedValue);
+                }
+                return this;
+            }
+
+        });
+
+        /**
+         * Create a new future
+         * @return {$wb.Future}
+         */
+        $wb.defer = function() {
+            return new $wb.Future();
+        };
+
+
+        /**
+         * A couple of helper functions for common tasks
+         */
+
 
         /**
         * @description global registry
@@ -1322,21 +1429,207 @@ if (!$wbConfig.noCSS) {
         };
 
 
+        /**
+         * Iterate through object
+         * @param {Object} obj
+         * @param callback receives value as first argument and key as second (if this is a map)
+         * @return {mixed) returns true or the first value returned from callback (which stops it)¡
+         */
+        $wb.each = function(obj,callback) {
+            var i,key,result;
+            if (!obj) {
+                return undefined;
+            }
+
+            if (Array.isArray(obj)) {
+                for(i = 0; i < obj.length;i++) {
+                    result = callback(obj[i],i);
+                    if (result !==  undefined) {
+                        return result;
+                    }
+                }
+                return undefined;
+            }
+            if ($wb.utils.isA(obj,$wb.Array)) {
+
+                for(i = 0; i < obj.length();i++) {
+                    result = callback(obj.get(i),i);
+                    if (result !==  undefined) {
+                        return result;
+                    }
+                }
+                return undefined;
+            }
+
+            if ($wb.utils.isClass(obj)) {
+                throw new $wb.Error('Could not iterate instance of class %s'.format($wb.utils.getClassName(obj)));
+            }
+
+            for(key in obj) {
+                if (obj.hasOwnProperty(key)
+                        && typeof obj[key] !== 'function') {
+                    result = callback(obj[key],key);
+                    if (result !==  undefined) {
+                        return result;
+                    }
+                }
+            }
+            return undefined;
+        };
+
+        /**
+         * Iterate through object and collect output values from callback
+         * @param {Object} obj
+         * @param callback receives value as first argument and key as second (if this is a map) - should return value
+         * @return {mixed) returns array of collected values from callbacks
+         */
+        $wb.collect = function(obj,callback) {
+            var i,key,result,out = [];
+            if (!obj) {
+                return [];
+            }
+
+            if (typeof obj.length === 'number') {
+                for(i = 0; i < obj.length;i++) {
+                    result = callback(obj[i],i);
+                    if (result !==  undefined) {
+                        out.push(result);
+                    }
+                }
+                return out;
+            }
+
+            if (obj instanceof $wb.Array) {
+                for(i = 0; i < obj.length();i++) {
+                    result = callback(obj.get(i),i);
+                    if (result !==  undefined) {
+                        out.push(result);
+                    }
+                }
+                return out;
+            }
+
+            for(key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    result = callback(obj[key],key);
+                    if (result !==  undefined) {
+                        out.push(result);
+                    }
+                }
+            }
+            return out;
+        };
+
+
+
+        /**
+         * Get keys as list
+         * @param {Object} obj
+         * @return {Array}
+         */
+        $wb.keys = function(obj) {
+            var out = [];
+            for(var key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    out.push(key);
+                }
+            }
+            return out;
+        };
+
+        /**
+         * Get values as list
+         * @param obj
+         * @return {Array}
+         */
+        $wb.values = function(obj) {
+            var out = [];
+            for(var key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    out.push(obj[key]);
+                }
+            }
+            return out;
+        };
+
+        /**
+         * Count values in map or list
+         * @param {Array|Object} obj
+         * @return {Array}
+         */
+        $wb.count = function(obj) {
+            if (typeof obj.length === 'number') {
+                return obj.length;
+            }
+
+            if (typeof obj.length === 'function') {
+                return obj.length();
+            }
+
+            return $wb.values(obj).length;
+        };
+
+
+        /**
+         * Returns a set of property names that differ in the 2 provided objects
+         * @param {Object} obj1
+         * @param {Object} obj2
+         * @param {boolean} deep Compare nested objects recursively. Defaults to true
+         * @return {$wb.Set}
+         */
+        $wb.diff = function(obj1,obj2,deep) {
+
+            if (typeof deep === 'undefined') {
+                deep = true;
+            }
+
+
+
+            var out = new $wb.Set();
+            [[obj1,obj2],[obj2,obj1]].forEach(function(objects) {
+                var obj1 = objects[0];
+                var obj2 = objects[1];
+
+                $wb.each(obj1,function(value,key) {
+
+                    if (!obj2 || obj2[key] !== value) {
+                        if (deep
+                                && obj2
+                                && typeof value === 'object'
+                                &&  typeof obj2[key] === 'object') {
+
+                            if ($wb.diff(value,obj2[key],deep).length() > 0) {
+                                out.add(key);
+                            }
+                        } else {
+                            out.add(key);
+                        }
+                    }
+                });
+            });
+
+            return out;
+        };
+
+
         window.$wb = $wb;
         
         //jQuery setup
         $.ajaxSetup({cache: false});
     };
 
+
+
+
     /**
-    * Update prototypes that are lacking basic JS methods (hello IE)
-    */
+     * Update prototypes that are lacking basic JS methods (hello IE)
+     */
 
 
     if (!String.prototype.trim) {
         String.prototype.trim = function() {
             return this.replace(/(^[\n\s\t]+|[\n\s\t]+$)/g,'');
-        }
+        };
     }
 
     if (!Function.prototype.bind) {
@@ -1348,15 +1641,150 @@ if (!$wbConfig.noCSS) {
 
 
     if (!Array.prototype.indexOf) {
-        //Ensure bind exists
+        //Ensure indexOf exists
         Array.prototype.indexOf = function(elm) {
             for(var i = 0; i < this.length;i++) {
-                if (this[i] == elm) return i;
+                if (this[i] === elm) return i;
             }
             return -1;
         };
     }
 
+    if (!Array.prototype.lastIndexOf) {
+        //Ensure lastIndexOf exists
+        Array.prototype.lastIndexOf = function(elm) {
+            for(var i = (this.length-1); i > -1;i--) {
+                if (this[i] === elm) return i;
+            }
+            return -1;
+        };
+    }
+
+    if (!Array.prototype.remove) {
+        /**
+         * Remove value at index from array
+         * @param {int} ix
+         * @return {Array}
+         */
+        Array.prototype.remove = function(ix) {
+            this.splice(ix,1);
+            return this;
+        };
+    }
+
+    if (!Array.prototype.removeValue) {
+        /**
+         * Remove all values matching argument from array
+         * @param {mixed} value
+         * @return {boolean} true if something was removed
+         */
+        Array.prototype.removeValue = function(value) {
+            var ix,
+                found = false;
+            while((ix = this.indexOf(value)) > -1) {
+                this.remove(ix);
+                found = true
+            };
+
+            return found;
+        };
+    }
+
+    if (!Array.prototype.pushUnique) {
+        /**
+         * Add value only if it's not already in array
+         * @param {mixed} value
+         * @return {boolean} true if value was added
+         */
+        Array.prototype.pushUnique = function(value) {
+            if (this.indexOf(value) === -1) {
+                this.push(value);
+                return true;
+            }
+            return false;
+        };
+    }
+
+    if (!Array.prototype.replace) {
+        /**
+         * Replace all values with value
+         * @param {mixed} find
+         * @param {mixed} replace
+         * @return {Array}
+         */
+        Array.prototype.replace = function(find,replace) {
+            var ix;
+            while((ix = this.indexOf(find)) > -1) {
+                this.splice(ix,1,replace);
+            }
+            return this;
+        };
+    }
+
+    if (!Array.prototype.unique) {
+        /**
+         * Remove all duplicates in array
+         * @param {mixed} find
+         * @param {mixed} replace
+         * @return {Array}
+         */
+        Array.prototype.unique = function(find,replace) {
+            var ix,val,valIx,
+                vals = [],
+                duplicates = [];
+
+            for(ix = 0; ix < this.length;ix++) {
+                val = this[ix];
+                valIx = vals.indexOf(val);
+                if (valIx > -1) {
+                    duplicates.push(val);
+                } else if (valIx === -1) {
+                    vals.push(val);
+                }
+            }
+
+            while(duplicates.length > 0)  {
+                val = duplicates.pop();
+                ix = this.lastIndexOf(val);
+                this.remove(ix);
+            }
+            return this;
+        };
+    }
+
+    if (!Array.prototype.pushAll) {
+        /**
+         * Add multiple values to the end of this array
+         * @param {Array} values
+         * @return {Array} itself
+         */
+        Array.prototype.pushAll = function(values) {
+            var ix;
+            for(ix = 0; ix < values.length;ix++) {
+                this.push(values[ix]);
+            }
+            return this;
+        };
+    }
+
+    if (!Array.prototype.flatten) {
+        /**
+         * Flattens multi dimensional array into 1
+         * @return {Array} A flattened copy of current array
+         */
+        Array.prototype.flatten = function() {
+            var out = [],val,ix;
+            for(ix = 0; ix < this.length;ix++) {
+                val = this[ix];
+                if (Array.isArray(val)) {
+                    out.pushAll(val.flatten());
+                } else {
+                    out.push(val);
+                }
+            }
+            return out;
+        };
+    }
 
 
 
@@ -1373,8 +1801,9 @@ if (!$wbConfig.noCSS) {
         }
         return out;
     };
-    
-    if (typeof jQuery != 'undefined') {
+
+
+    if (typeof jQuery !== 'undefined') {
         loader();
     } else {
         require($wbConfig.jQuery,loader);

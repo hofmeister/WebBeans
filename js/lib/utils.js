@@ -12,10 +12,10 @@
         options = $.extend({
             escapeStrings: true,
             indent: 4,
-            linesep: "\n",
+            lineSep: "\n",
             quoteKeys: true
         }, options || {});
-        var itemsep = options.linesep.length ? "," + options.linesep : ", ";
+        var itemSep = options.lineSep.length ? "," + options.lineSep : ", ";
 
         function format(val, depth) {
             var tab = [];
@@ -27,20 +27,20 @@
                 case "boolean":
                 case "number":
                 case "string":
-                    var retval = val;
+                    var returnVal = val;
                     if (type == "string" && !options.escapeStrings) {
-                        retval = indentLines(retval.replace(/\r\n/g, "\n"), tab.substr(options.indent));
+                        returnVal = indentLines(returnVal.replace(/\r\n/g, "\n"), tab.substr(options.indent));
                     } else {
                         if (options.html) {
-                            retval = JSON.stringify(val);
+                            returnVal = JSON.stringify(val);
                         } else {
-                            retval = JSON.stringify(val);
+                            returnVal = JSON.stringify(val);
                         }
                     }
                     if (options.html) {
-                        retval = "<code class='" + type + "'>" + retval + "</code>";
+                        returnVal = "<code class='" + type + "'>" + returnVal + "</code>";
                     }
-                    return retval;
+                    return returnVal;
 
                 case "object": {
                     if (val === null) {
@@ -58,11 +58,11 @@
                     if (val.constructor == Array) {
                         buf.push("[");
                         for (var index = 0; index < val.length; index++) {
-                            buf.push(index > 0 ? itemsep : options.linesep);
+                            buf.push(index > 0 ? itemSep : options.lineSep);
                             buf.push(tab, format(val[index], depth + 1));
                         }
                         if (index >= 0) {
-                            buf.push(options.linesep, tab.substr(options.indent));
+                            buf.push(options.lineSep, tab.substr(options.indent));
                         }
                         buf.push("]");
                         if (options.html) {
@@ -73,7 +73,7 @@
                         buf.push("{");
                         var index = 0;
                         for (var key in val) {
-                            buf.push(index > 0 ? itemsep : options.linesep);
+                            buf.push(index > 0 ? itemSep : options.lineSep);
                             var keyDisplay = options.quoteKeys ? JSON.stringify(key) : key;
                             if (options.html) {
                                 if (options.quoteKeys) {
@@ -89,7 +89,7 @@
                             index++;
                         }
                         if (index >= 0) {
-                            buf.push(options.linesep, tab.substr(options.indent));
+                            buf.push(options.lineSep, tab.substr(options.indent));
                         }
                         buf.push("}");
                         if (options.html) {
@@ -104,9 +104,9 @@
 
         function indentLines(text, tab) {
             var lines = text.split("\n");
-            for (var i in lines) {
-                lines[i] = (i > 0 ? tab : "") + lines[i];
-            }
+            $wb.each(function(line,i) {
+                lines[i] = (i > 0 ? tab : "") + line;
+            });
             return lines.join("<br>");
 
         }
@@ -125,6 +125,7 @@
     * @namespace Utility functions
     */
     $wb.utils = {
+
         _typeResolvers:[
             function(v) {
                 if ($wb.utils.isA(v,$wb.data.Model))
@@ -411,7 +412,6 @@
             this._scrollbarSize = size;
             
             return size;
-
         }
     };
     //jQuery util methods
@@ -927,16 +927,40 @@
             return $(this).has(elms).length > 0;
         };
 
-        $.fn.boundingBox = function(relative) {
-            var elm = $(this[0]);
-            var out = {};
-            if (relative)
-                out = elm.position();
-            else
-                out = elm.offset();
-            if (!out) return null;
-            out.right = out.left+elm.outerWidth();
-            out.bottom = out.top+elm.outerHeight();
+        $.fn.boundingBox = function(relative,minimal) {
+            var out = {top:-1,left:-1,right:-1,bottom:-1};
+
+            $(this).each(function() {
+                var pos,elm = $(this);
+
+                if (relative)
+                    pos = elm.position();
+                else
+                    pos = elm.offset();
+
+                if (!pos) {
+                    return;
+                }
+
+                var right = pos.left+(minimal ? elm.boxWidth() : elm.outerWidth());
+                var bottom = pos.top+(minimal ? elm.boxHeight() : elm.outerHeight());
+
+                if (out.left < 0 || pos.left < out.left) {
+                    out.left = pos.left;
+                }
+
+                if (out.top < 0 || pos.top < out.top) {
+                    out.top = pos.top;
+                }
+
+                if (out.bottom < 0 || bottom > out.bottom) {
+                    out.bottom = bottom;
+                }
+
+                if (out.right < 0 || right > out.right) {
+                    out.right = right;
+                }
+            });
             return out;
         };
         

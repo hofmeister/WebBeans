@@ -37,13 +37,14 @@ $wb.data.Model = $wb.Class('Model',{
     addFields:function(fields) {
         var ids = [];
         var defaults = this.getDefaults();
-        for(var id in fields) {
+        $wb.each(fields,function(field,id) {
             ids.push(id);
-            this._fields[id] = $.extend({},defaults,fields[id]);
+            this._fields[id] = $.extend({},defaults,field);
             this._fields[id].id = id;
-            if (!this._fields[id].shortName)
+            if (!this._fields[id].shortName) {
                 this._fields[id].shortName = this._fields[id].name;
-        }
+            }
+        }.bind(this));
         this.trigger('added',[ids]);
     },
     addField:function(id,name,valueType,validator,defaultValue,shortName) {
@@ -66,53 +67,52 @@ $wb.data.Model = $wb.Class('Model',{
         return this._fields;
     },
     getFieldNames:function() {
-        var out = [];
-        for(var name in this._fields) {
-            out.push(name);
-        }
-        return out;
+        return $wb.keys(this._fields);
     },
     getFieldCount:function() {
         return this.getFieldNames().length;
     },
     create:function(data) {
-        if (!data) data = {};
-        
-        for(var id in this._fields) {
-            var f = this._fields[id];
-            
-            if (!data[id])
-                data[id] = f.defaultValue || null;
+        if (!data) {
+            data = {};
         }
+        
+        $wb.each(this._fields,function(f,id) {
+            if (!data[id]) {
+                data[id] = f.defaultValue || null;
+            }
+        });
         
         return data;
     },
     getKey:function(row) {
         var key = [];
-        for(var id in this._fields) {
-            var f = this._fields[id];
+        $wb.each(this._fields,function(f,id) {
             if (f.primary) {
                 key.push(row[id]);
             }
-        }
+        });
+
         return key.join(",");
     },
     hasKey:function() {
-        
-        for(var id in this._fields) {
-            var f = this._fields[id];
-            if (f.primary) {
-                return true;
+        var id;
+        for(id in this._fields) {
+            if (this._fields.hasOwnProperty(id)) {
+                var f = this._fields[id];
+                if (f.primary) {
+                    return true;
+                }
             }
         }
         return false;
     },
     validate:function(row) {
-        for(var id in row) {
-            if (!this._fields[id])
-                continue;
+        return $wb.each(row,function(value,id) {
+            if (!this._fields[id]) {
+                return;
+            }
             var f = this._fields[id];
-            var value = row[id];
             if (!value)
                 value = f.defaultValue;
             if (f.validator) {
@@ -120,11 +120,10 @@ $wb.data.Model = $wb.Class('Model',{
                     return false;
                 }
             }
-            if ($wb.utils.type(value) != f.valueType) {
+            if ($wb.utils.type(value) !== f.valueType) {
                 return false;
             }
-        }
-        return true;
+        }.bind(this));
     }
 });
 
