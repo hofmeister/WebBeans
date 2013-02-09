@@ -484,7 +484,10 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
     }
     
 });
-
+/**
+ * A simple text component for inserting non-writable info into form
+ * @constructor
+ */
 $wb.ui.form.Text = $wb.Class('Text',{
     __extends:[$wb.ui.form.BaseField],
     _html:"",
