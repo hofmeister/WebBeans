@@ -2041,7 +2041,7 @@ $wb.ui.ContextMenu = $wb.Class('ContextMenu',{
             zIndex:9999
         });
         
-        if (!this.trigger('before-context')) {
+        if (!this.trigger('before-context',[evt])) {
             this.source(null);
             $wb.ui.ContextMenu.hide();
             return;
