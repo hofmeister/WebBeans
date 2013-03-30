@@ -1366,6 +1366,7 @@ $wb.ui.Html = $wb.Class('Html',{
 $wb.ui.TextPane = $wb.Class('Html',{
     __extends:[$wb.ui.Widget],
     _text:'',
+	_maxLength:15000,
     __construct:function() {
         this.__super({
             tmpl:function() {return '<pre class="wb-pane wb-textpane" />';}
@@ -1374,9 +1375,19 @@ $wb.ui.TextPane = $wb.Class('Html',{
     prepend:function(text) {
         this._text = text+"\n"+this._text;
         this.elm().text(this._text);
+		this.elm().enableMarking();
     },
     append:function(text) {
         this._text += text+"\n"
+		if (this._text.length > this._maxLength) {
+			var startOffset = this._text.length - this._maxLength;
+			var firstLineOffset = this._text.indexOf("\n",startOffset);
+			if (firstLineOffset < 0) {
+				firstLineOffset = Math.max(0,startOffset);
+			}
+			this._text = '....\n' + this._text.substr(firstLineOffset);
+		}
+
         this.elm().text(this._text);
     }
 });
