@@ -19,7 +19,8 @@ $wb.draw.Canvas = $wb.Class('Canvas',{
         tmpl:$wb.template.draw.canvas,
         layout:function() {
             var target = this.target();
-            this.elm().find('.wb-layer').css({
+
+			this.elm().find('.wb-layer').css({
                 position:'absolute',
                 top: 0,
                 left: 0
@@ -37,6 +38,7 @@ $wb.draw.Canvas = $wb.Class('Canvas',{
     _layerNames:{},
     __construct:function() {
         this.__super(this.getDefaults());
+		this.elm().disableMarking();
     },
     addLayer:function(name,zIndex) {
         if (typeof zIndex == 'undefined')

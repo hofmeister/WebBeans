@@ -2175,7 +2175,7 @@ $wb.ui.Pane = $wb.Class('Pane',{
     __construct:function(opts) {
         this.__super(this.getDefaults(opts));
         this.bind('paint',function() {
-            this.elm().disableMarking(); 
+            //this.elm().disableMarking();
         });
     }
 });
