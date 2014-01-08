@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8">
+<view root="#base"
+      xmlns="http://webbeans.com/basic"
+      xmlns:c="http://webbeans.com/control"
+      xmlns:f="http://webbeans.com/form"
+        >
+
+    <header id="header">
+        <topbar controller="TopBarController">
+            <menu title="File">
+                <menu title="Open..." click="openFile()" />
+                <menu title="Debug" click="debug()" />
+                <menu title="Save as..." click="saveFileAs()" />
+                <menu title="Log out" click="logout()" />
+            </menu>
+            <menu title="Tools">
+
+            </menu>
+
+        </topbar>
+    </header>
+
+    <base id="base" header="#header" >
+        <splitpane vertical="true" splitPosition=".2" id="main">
+            <splitpane vertical="false" splitPosition=".2" id="right">
+                <tabpane orientation="bottom">
+                    <tab title="Html">
+                        <htmlpane editable="true"></htmlpane>
+                    </tab>
+                    <tab title="Form">
+                        <f:form>
+                            <f:textfield name="textinput" label="Text Input" label-position="top" />
+                            <f:textfield name="textinput" label="Text Input Label inside" label-position="inside" />
+                            <f:checkbox name="checkinput" label="Checkbox" label-position="right" />
+                            <f:radiobutton name="radiobtn" label="Radio button" label-position="right" />
+                            <f:textarea name="thetext" label="Text Input" label-position="top" />
+                            <f:select name="thetext" label="Text Input" label-position="top" />
+                        </f:form>
+                    </tab>
+                    <tab title="Table">
+                        <pane controller="TableViewController">
+                            <table store="entryStore" />
+                        </pane>
+                    </tab>
+                </tabpane>
+                <htmlpane>Bottom right!</htmlpane>
+            </splitpane>
+            <splitpane vertical="false" splitPosition=".2" id="left">
+                <tabpane orientation="top">
+                    <pane>
+                        <tree hideRoot="true">
+                            <node>
+                                <node title="Servers">
+                                    <node title="EU Cluster">
+                                        <node title="service1" />
+                                        <node title="service2" />
+                                        <node title="web1" />
+                                        <node title="web2" />
+                                    </node>
+                                </node>
+                                <node title="Roles">
+                                    <node title="web" />
+                                    <node title="couchdb" />
+                                    <node title="rabbitmq" />
+                                    <node title="service" />
+                                </node>
+                            </node>
+                        </tree>
+                    </pane>
+                    <pane>
+                        <accordion>
+                            <menu title="Mail">
+                                <menu title="Inbox" />
+                                <menu title="Sent" />
+                                <menu title="Drafts" />
+                                <menu title="Spam" />
+                            </menu>
+                            <menu title="Calendar">
+                                <menu title="Private" />
+                                <menu title="Public" />
+                                <menu title="Work" />
+                            </menu>
+                            <menu title="Tasks">
+                                <menu title="Private" />
+                                <menu title="Public" />
+                                <menu title="Work" />
+                            </menu>
+                        </accordion>
+                    </pane>
+                    <htmlpane>
+                        Tab 3!
+                    </htmlpane>
+                </tabpane>
+            </splitpane>
+        </splitpane>
+
+    </base>
+</view>

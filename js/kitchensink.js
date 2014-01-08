@@ -149,7 +149,7 @@ $(function() {
                         
                     var tStore = new $wb.data.TableStore({model:model});
                     
-                    window.entryService = new $wb.data.Service({
+                    window.entryService = new $wb.data.Source({
                         adder:function(rows) {
                             $.ajax({
                                 type:"POST",

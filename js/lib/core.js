@@ -27,7 +27,7 @@ if (typeof $wbConfig === 'undefined') {
 
 //Set default jquery path
 if (!$wbConfig.jQuery) {
-    $wbConfig.jQuery = 'https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js';
+    $wbConfig.jQuery = 'https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min';
 }
 
 //Set default skin
@@ -67,7 +67,7 @@ var require = function(path,cb,async) {
     }
     if (requireAllIx > -1) {
         paths.splice(requireAllIx,0,
-                "jquery-ui","jquery-mousewheel","utils","localization","data","template","widget","form",'widget-ext','module','draw','geo');
+                "js/3rdparty/jquery/jquery-ui","js/3rdparty/jquery/jquery-mousewheel","js/lib/utils","js/lib/localization","js/lib/data","js/lib/template","js/lib/widget","js/lib/form",'js/lib/widget-ext','js/lib/module','js/lib/draw','js/lib/geo');
     }
     
     var oks = new Array(paths.length);
@@ -94,7 +94,7 @@ var require = function(path,cb,async) {
             
         var script = document.createElement('script');
         script.type = 'text/javascript';
-        script.src = path;
+        script.src = path + ".js";
         
         var onload = function() {
             oks[i] = true;
