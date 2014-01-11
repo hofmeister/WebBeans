@@ -143,11 +143,13 @@ div,td,table,tbody,thead,tfoot,th {
     cursor: move;
 }
 .wb-splitpane.wb-horizontal > .wb-splitter {
-    cursor: row-resize;
+	cursor: row-resize;
+	height:10px;
 }
 
 .wb-splitpane.wb-vertical > .wb-splitter {
     cursor: col-resize;
+	width:10px;
 }
 
 /* tab pane */
