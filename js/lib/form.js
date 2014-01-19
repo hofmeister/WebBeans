@@ -68,6 +68,38 @@ $wb.ui.form.FieldContainer = $wb.Class('FieldContainer',{
             return result[0];
         return null;
     },
+	getFields:function() {
+		var out = {};
+		this.findWidgets(function(widget) {
+			if (!(widget instanceof $wb.ui.form.BaseField))
+				return false;
+
+			out[widget.name()] = widget;
+		});
+
+		return out;
+	},
+	addFields: function( fields ) {
+		$wb.each(fields, function(field) {
+			var fieldType = $wb.ui.FieldType.type(field.valueType);
+			var fieldWidget = fieldType.getFormField(field, field.defaultValue);
+			this.add(fieldWidget);
+		}.bind(this));
+		return this;
+	},
+	reorder: function() {
+		var fields = this.getFields();
+		console.log('Fields', fields);
+		this.clear();
+		for(var i = 0; i < arguments.length; i++) {
+			var fieldId = arguments[i];
+			var field = fields[fieldId];
+			if (!field) {
+				continue;
+			}
+			this.add(field);
+		}
+	},
     setData:function(data) {
         if (typeof data != 'object') 
             return this;
@@ -100,8 +132,10 @@ $wb.ui.form.FieldContainer = $wb.Class('FieldContainer',{
                     }
                 }
 
-                if (typeof data[name] !== 'undefined') {
-                    w.value(data[name]);
+				name = name.replace(/\[\]/g,'').replace(/\]/g,'').replace(/\[/g,'.');
+
+                if (typeof $wb.utils.GetValue(data,name) !== 'undefined') {
+                    w.value($wb.utils.GetValue(data,name));
                 }
             });
         } else {
@@ -151,7 +185,7 @@ $wb.ui.form.FieldContainer = $wb.Class('FieldContainer',{
             var isArray = (name.substr(-2) === '[]');
             var parts = name.split('[');
             for(i = 0; i < parts.length;i++) {
-                var part = parts[i];
+                var part = parts[i].replace(/\]$/,'');
                 var last = (parts.length-1)===i;
                 if (isArray && last) {
                     name = parts[i-1];
@@ -463,7 +497,7 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
         }
     },
     name:function() {
-        return this.target().attr('name');
+        return this._name;
     },
     focus:function() {
         this.target().focus();
