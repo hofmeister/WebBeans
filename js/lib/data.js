@@ -64,7 +64,17 @@ $wb.data.Model = $wb.Class('Model',{
         return this._fields[id];
     },
     getFields:function() {
-        return this._fields;
+		if (arguments.length > 0) {
+			var out = [];
+			for(var i = 0; i < arguments.length;i++) {
+				var fieldId = arguments[i];
+				if (this._fields[fieldId]) {
+					out.push(this._fields[fieldId]);
+				}
+			}
+			return out;
+		}
+		return this._fields;
     },
     getFieldNames:function() {
         return $wb.keys(this._fields);
