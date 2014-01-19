@@ -894,7 +894,7 @@ $wb.ui.Widget = $wb.Class('Widget',
         * @param {Function} opts.tmpl template function
         * @param {String} opts.id Id of the element
         * @param {Function} opts.layout Layout function
-        * @param {boolean} [opts.async] If true - rendering will be hold off untill "ready" event is triggered
+        * @param {boolean} [opts.async] If true - rendering will be hold off until "ready" event is triggered
         */
         __construct:function(opts) {
             this.__super();
@@ -2187,7 +2187,9 @@ $wb.ui.Section = $wb.Class('Section',{
         tmpl:$wb.template.section,
         titleElm:'.wb-title',
         title:null,
-        target:'.wb-target'
+        target:'.wb-target',
+		closable: false,
+		closed: false
     },
     __construct:function(opts) {
         this.__super(this.getDefaults(opts));
@@ -2214,7 +2216,33 @@ $wb.ui.Section = $wb.Class('Section',{
             
             this.target().outerHeight(this.elm().innerHeight()-this._titleElm().outerHeight());
         });
+
+		if (this.opts.closable) {
+			var me = this;
+			this._titleElm().click(function() {
+				me.target().toggleClass('wb-offscreen');
+				me._layout();
+			});
+
+			this._titleElm().css('cursor','pointer');
+
+			if (this.opts.closed) {
+				this.close();
+			}
+		}
     },
+	close:function() {
+		this.target().addClass('wb-offscreen');
+		return this;
+	},
+	open:function() {
+		this.target().removeClass('wb-offscreen');
+		this._layout();
+		return this;
+	},
+	isOpen: function() {
+		return this.target().hasClass('wb-offscreen');
+	},
     _titleElm:function() {
         return this.elm().findFirst(this.opts.titleElm);
     },
@@ -2403,13 +2431,13 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
         if (!splitPosition)
             splitPosition = this._splitPosition;
         this._splitPosition = splitPosition;
-        var splitterSize = this.getSplitter().fullSize();
+		var splitterSize = this.getSplitter().fullSize();
 
         if (this._vertical) {
             width = this.elm().width()-splitterSize.width;
             height = parseInt(this.elm().css('height'), 10);
             this.getSplitter().height(height);
-            var w1 = width*splitPosition;
+            var w1 = Math.round(width*splitPosition);
             var w2 = width-w1;
             
             this.get(0).elm().outerWidth(w1).outerHeight(height);
@@ -2418,7 +2446,7 @@ $wb.ui.SplitPane = $wb.Class('SplitPane',{
             height = this.elm().height()-splitterSize.height;
             width = this.elm().width();
             this.getSplitter().width(width);
-            var h1 = height*splitPosition;
+            var h1 = Math.round(height*splitPosition);
             var h2 = height-h1;
             this.get(0).elm().outerHeight(h1).outerWidth(width);
             this.get(1).elm().outerHeight(h2).outerWidth(width);
@@ -2679,7 +2707,7 @@ $wb.ui.TabPane = $wb.Class('TabPane',{
                 paneContainer.outerWidth(this.elm().innerWidth());
                 var panes = paneContainer.children();
                 panes.outerHeight(h-btnH);
-                panes.outerWidth(this.elm().innerWidth());
+				panes.outerWidth(this.elm().innerWidth());
 
                 if (this._tabButtonFull) {
                     w = this._tabButtons().width();
