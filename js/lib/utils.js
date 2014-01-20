@@ -492,12 +492,16 @@
             return this;
         };
         
-        $.fn.path = function(ignoreTags,last) {
+        $.fn.path = function(ignoreTags, stopAt, last) {
             if (!ignoreTags)
                 ignoreTags = [];
             if (!last) last = '';
             
             var el = $(this);
+
+			if (stopAt && stopAt.length > 0 && el[0] == stopAt[0]) {
+				return last;
+			}
             
             var nonGenericPart = function(tag,attr,val) {
                 val = val.trim();
@@ -551,7 +555,7 @@
                         && p.length > 0
                         && similarCount == 1) { 
                 //Parent has only one
-                return p.path(ignoreTags,last);
+                return p.path(ignoreTags, stopAt, last);
             }
             
             var out = '';
@@ -596,7 +600,7 @@
             }
             
             if (p) {
-                return p.path(ignoreTags,(out+' '+last).trim());
+                return p.path(ignoreTags,stopAt, (out+' '+last).trim());
             }
                 
             

@@ -1497,6 +1497,9 @@ $wb.ui.IFrame = $wb.Class('IFrame',{
     doc:function() {
         return this.target().contents().find('html');
     },
+	document: function() {
+		return this.target()[0].contentDocument;
+	},
     body:function() {
         return this.target().contents().find('body');
     },
