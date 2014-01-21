@@ -1081,6 +1081,36 @@
             return $(out);
         };
 
+		$.fn.visible = function() {
+
+			var elm = this[0];
+
+			var win = elm.ownerDocument.defaultView;
+
+			var style = win.getComputedStyle(elm);
+
+			if (style.display === 'none' ||
+				style.visibility  === 'hidden' ||
+				style.opacity === 0) {
+				return false;
+			}
+			if (elm.tagName.toUpperCase() === 'INPUT') {
+				var inputType = elm.getAttribute('type');
+				if (inputType && inputType.toLowerCase() === 'hidden') {
+					return false;
+				}
+			}
+			if (elm.parentElement) {
+				var parent = $(elm.parentElement);
+
+				if (!parent.visible()) {
+					return false;
+				}
+			}
+
+			return true;
+		};
+
     })(jQuery);
 
 })();
