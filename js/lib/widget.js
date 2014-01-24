@@ -443,6 +443,7 @@ $wb.ui.helper.Actionable = $wb.Class('Actionable',{
     },
     _actions:[],
     _actionMaker:null,
+	_actionContainer: null,
     __construct:function(opts) {
         if (opts && $.type(opts.actions) === 'array') {
             this._actions = this._actions.concat(opts.actions);
@@ -451,45 +452,44 @@ $wb.ui.helper.Actionable = $wb.Class('Actionable',{
         if (opts && $.type(opts.actions) === 'function') {
             this._actionMaker = opts.actions;
         }
-    
-        
-        var self = this;
-        this.bind('render',function() {
-            var actionContainer = this.elm().findFirst(this.opts.actionClass);
-            
-            if (this._children.length > 0 
-                    && this.target().contains(actionContainer)) {
-                //Make sure we don't get childrens actions
-                return;
-            }
-            if (actionContainer.length === 0) {
-                actionContainer = $($wb.template.actions.container.apply(this));
-                this.actionTarget().prepend(actionContainer);
-            } else {
-                actionContainer.html('');
-            }
-            
-            var actions = $.extend([],this._actions);
-            
-            if (this._actionMaker) {
-                actions = actions.concat(this._actionMaker.apply(this));
-            }
-                    
-            $wb.each(actions,function(a) {
-                if ($.type(a) === 'function')
-                    a = a.apply(this);
 
-                var btn = new $wb.ui.Action({
-                    type:a.type(),
-                    title:a.name(),
-                    action:function() {
-                        a.method().apply(self);
-                    }
-                });
-                actionContainer.append(btn.render());
-            }.bind(this));
-        });
+		this.bind('render',function() {
+			this._buildActions();
+		});
     },
+	_buildActions: function() {
+		var me = this;
+
+		if (!this._actionContainer) {
+			var actionContainer = this.elm().findFirst(this.opts.actionClass);
+
+			if (actionContainer.length > 0
+				&& this._children.length > 0
+				&& this.target().contains(actionContainer)) {
+				//Make sure we don't get childrens actions
+				return;
+			}
+
+			if (actionContainer.length > 0) {
+				this._actionContainer = actionContainer;
+			} else {
+				this._actionContainer = $($wb.template.actions.container.apply(this));
+				this.actionTarget().prepend(this._actionContainer);
+			}
+		} else {
+			return;
+		}
+
+		var actions = $.extend([],this._actions);
+
+		if (this._actionMaker) {
+			actions = actions.concat(this._actionMaker.apply(this));
+		}
+
+		$wb.each(actions,function(a) {
+			me.addAction(a);
+		}.bind(this));
+	},
     actionTarget:function() {
         if (!this.opts.actionTarget) {
             return this.target();
@@ -497,7 +497,24 @@ $wb.ui.helper.Actionable = $wb.Class('Actionable',{
         return this.elm().findFirst(this.opts.actionTarget);
     },
     addAction:function(action) {
+		var actionBtn;
+
         this._actions.push(action);
+		if ($.type(action) === 'function')
+			action = action.apply(this);
+
+		if (action instanceof $wb.ui.Action) {
+			actionBtn = action;
+		} else {
+			var actionBtn = new $wb.ui.Action({
+				type:action.type(),
+				title:action.name(),
+				action:function() {
+					action.method().call(me,actionBtn);
+				}
+			});
+		}
+		this._actionContainer.append(actionBtn.render());
         return this;
     },
     actions:function() {
@@ -1669,18 +1686,22 @@ $wb.ui.Link = $wb.Class('Link',{
     __extends:[$wb.ui.Widget],
     __defaults:{
         tmpl:$wb.template.link,
-        context:this,
+        context:null,
         titleElm:null
     },
     __construct:function(opts) {
         this.require(opts,'title');
-        
         this.__super(this.getDefaults(opts));
+
+		if (!this.opts.context) {
+			this.opts.context = this;
+		}
         
         if (opts.action)
             this.action(opts.action);
         
-        var self = this;
+        var me = this;
+
         this.elm().click(function(evt) {
             evt.preventDefault();
             evt.stopPropagation();
@@ -1688,8 +1709,8 @@ $wb.ui.Link = $wb.Class('Link',{
             if ($(this).tipsy(true)) {
                 $(this).tipsy("hide");
             }
-            if (self.opts.action) {
-                self.opts.action.apply(self.opts.context,[evt]);
+            if (me.opts.action) {
+                me.opts.action.apply(me.opts.context,[evt]);
             }
         });
         
