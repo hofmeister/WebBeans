@@ -1076,6 +1076,14 @@ if (!$wbConfig.noCSS) {
                     this._bindings[evt].push(handler);
                     return this;
                 },
+				bindOnce: function(evt, handler) {
+					var me = this;
+					var wrapper = function() {
+						handler.apply(this,arguments);
+						me.unbind(evt, wrapper);
+					};
+					return this.bind(evt,wrapper);
+				},
                 unbind:function(evt,handler) {
                     if (!handler) {
                         delete this._bindings[evt];

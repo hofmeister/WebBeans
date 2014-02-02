@@ -967,6 +967,10 @@
             });
             return out;
         };
+
+        $.fn.tag = function() {
+            return this[0].tagName.toLowerCase();
+        };
         
         $.fn.isOnPage = function() {
             return ($(this).closest('body').length != 0);
