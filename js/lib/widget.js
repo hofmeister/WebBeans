@@ -2393,41 +2393,57 @@ $wb.ui.SplitPane = $wb.Class('SplitPane', {
                 .addClass(opts.vertical ? 'wb-vertical' : 'wb-horizontal');
 
             var moving = false;
-            var self = this;
+            var me = this;
             this.getSplitter().mousedown(function (evt) {
                 evt.preventDefault();
-                if (self.opts.fixed) return;
+                if (me.opts.fixed) return;
                 //evt.stopPropagation();
                 moving = true;
-                self.elm().css('cursor', self._vertical ? 'col-resize' : 'row-resize');
+                me.elm().css('cursor', me._vertical ? 'col-resize' : 'row-resize');
+                me._getRuler().show();
             });
-            $('body').mouseup(function (evt) {
-                //evt.stopPropagation();
-                if (self.opts.fixed) return;
-                moving = false;
-                self.elm().css('cursor', 'inherit');
-            });
-            $('body').mousemove(function (evt) {
-                if (self.opts.fixed) return;
-                var fullSize, globalOffset, elmOffset;
-                if (!moving) return;
-                var splitterSize = self.getSplitter().fullSize();
 
-                if (self._vertical) {
-                    fullSize = self.elm().width() - splitterSize.width;
+            function calculateSplitOffset(evt) {
+                var fullSize,globalOffset,elmOffset;
+                var splitterSize = me.getSplitter().fullSize();
+
+                if (me._vertical) {
+                    fullSize = me.elm().width() - splitterSize.width;
                     globalOffset = evt.pageX - Math.ceil(splitterSize.width / 2);
-                    elmOffset = self.elm().offset().left;
+                    elmOffset = me.elm().offset().left;
                 } else {
-                    fullSize = self.elm().height() - splitterSize.height;
+                    fullSize = me.elm().height() - splitterSize.height;
                     globalOffset = evt.pageY - Math.ceil(splitterSize.height / 2);
-                    elmOffset = self.elm().offset().top;
+                    elmOffset = me.elm().offset().top;
 
                 }
-                var offset = (globalOffset - elmOffset) / fullSize;
+                return (globalOffset - elmOffset) / fullSize;
+            }
 
-                self.setSplitPosition(offset);
-                self._children[0]._layout();
-                self._children[1]._layout();
+            $('body').mouseup(function (evt) {
+                //evt.stopPropagation();
+                if (me.opts.fixed || !moving) return;
+
+                me._getRuler().hide();
+                var offset = calculateSplitOffset(evt);
+                me.setSplitPosition(offset);
+                me._children[0]._layout();
+                me._children[1]._layout();
+
+                moving = false;
+                me.elm().css('cursor', 'inherit');
+            });
+            $('body').mousemove(function (evt) {
+                if (me.opts.fixed) return;
+                var fullSize, globalOffset, elmOffset;
+                if (!moving) return;
+                var offset = calculateSplitOffset(evt)*100;
+
+                if (me._vertical) {
+                    me._getRuler().css('left',offset + '%');
+                } else {
+                    me._getRuler().css('top',offset + '%');
+                }
             });
 
         });
@@ -2445,6 +2461,9 @@ $wb.ui.SplitPane = $wb.Class('SplitPane', {
     },
     getSplitter: function () {
         return this.elm().children('.wb-splitter');
+    },
+    _getRuler: function () {
+        return this.elm().children('.wb-ruler');
     },
     _paint: function () {
         if (this.trigger('before-paint') === false)

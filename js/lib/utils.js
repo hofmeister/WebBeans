@@ -931,6 +931,42 @@
             return $(this).has(elms).length > 0;
         };
 
+        $.fn.visibleBox = function() {
+            var $this = $(this);
+            var vbox = $this.boundingBox();
+            $parent = $this.parent();
+            while($parent.length > 0 && !$parent.is('html')) {
+                var pBox = $parent.boundingBox();
+                if (pBox.top > vbox.top) {
+                    vbox.top = pBox.top;
+                }
+                if (pBox.bottom < vbox.bottom) {
+                    vbox.bottom = pBox.bottom;
+                }
+
+                if (pBox.left > vbox.left) {
+                    vbox.left = pBox.left;
+                }
+
+                if (pBox.right < vbox.right) {
+                    vbox.right = pBox.right;
+                }
+
+                $parent = $parent.parent();
+            }
+
+            var offset = $this.offset();
+            var diffY = vbox.top - offset.top;
+            var diffX = vbox.left - offset.left;
+
+            vbox.top -= offset.top;
+            vbox.left -= offset.left;
+            vbox.bottom += diffY;
+            vbox.right += diffX;
+
+            return vbox;
+        };
+
         $.fn.boundingBox = function(relative,minimal) {
             var out = {top:-1,left:-1,right:-1,bottom:-1};
 

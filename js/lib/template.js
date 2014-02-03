@@ -98,7 +98,7 @@ $wb.template = {
              return '<div class="wb-pane"></div>';
         },
         split:function() {
-            return '<div class="wb-pane wb-splitpane"><div class="wb-splitter"></div></div>';
+            return '<div class="wb-pane wb-splitpane"><div class="wb-splitter" /><div class="wb-ruler" /></div>';
         },
         tab:function() {
             return '<div class="wb-pane wb-tabpane"><ul class="wb-tabs line" ><li class="wb-actions" /></ul><div class="wb-panes" /></div>';

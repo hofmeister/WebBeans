@@ -17,20 +17,27 @@ $wb.draw.Canvas = $wb.Class('Canvas',{
     __extends: [$wb.ui.Widget],
     __defaults: {
         tmpl:$wb.template.draw.canvas,
+        maxSize: 6000, //Large sized canvassed are unsupported in most browsers
         layout:function() {
             var target = this.target();
+            var me = this;
+            var buffer = 100;
+
+            var vbox = this.elm().visibleBox();
+            var width = (vbox.right - vbox.left) + (buffer * 2);
+            var height = (vbox.bottom - vbox.top) + (buffer * 2);
 
 			this.elm().find('.wb-layer').css({
                 position:'absolute',
-                top: 0,
-                left: 0
+                top: buffer*-1,
+                left: buffer*-1
             }).each(function () {
                 var layer = $(this).widget();
                 layer.canvas()
-                        .css('z-index',layer.getOrder())
-                        .attr('width',target.innerWidth())
-                        .attr('height',target.innerHeight());
-                        
+                        .attr('width', width)
+                        .attr('height',height)
+                        .css('z-index',layer.getOrder());
+
                 layer.clear();
             });
         }
@@ -123,10 +130,34 @@ $wb.draw.Layer = $wb.Class('Layer',{
         this._elements.sort(function(a,b) {
             return a.opts.zIndex-b.opts.zIndex;
         });
-        
+
+        var buffer = 100;
+
+        var ppos = this.parent().elm().position();
+        var offset = {
+            x: ppos.left + buffer,
+            y: ppos.top + buffer
+        }
+        this.elm().css({
+                top:offset.y * -1,
+                left:offset.x * -1
+            });
+
+
+        var vbox = this.parent().elm().visibleBox();
         for(var i = 0; i < this._elements.length;i++) {
             var child = this._elements[i];
             if (child.isVisible()) {
+                if (child.getBoundingBox) {
+                    var bbox = child.getBoundingBox();
+                    if (bbox.x2 < vbox.left ||
+                        bbox.x1 > vbox.right ||
+                        bbox.y2 < vbox.top ||
+                        bbox.y1 > vbox.bottom) {
+                        continue;
+                    }
+                }
+                child.setOffset(offset.x,offset.y);
                 child.draw(this);
             }
         }
@@ -177,6 +208,7 @@ $wb.draw.Element = $wb.Class('Element',{
         shadowOffsetY:0,
         shadowBlur:0
     },
+    _offset: {x:0,y:0},
     _ctxtOpts:[ 'fillStyle','strokeStyle','lineWidth','miterLimit',
                 'shadowColor','shadowOffsetX','shadowOffsetY','shadowBlur'],
     _cached:null,
@@ -200,17 +232,27 @@ $wb.draw.Element = $wb.Class('Element',{
         return this._layer;
     },
     render:function(layer) {
+        if (!layer) {
+            layer = this._layer;
+        }
+
         if (layer) {
             return this.draw(layer);
+            layer.render();
+            this.trigger('render');
+        } else {
+            console.warn('Layer not found for elm',this);
         }
-        this._layer.render();
-        this.trigger('render');
         return this;
     },
     draw:function(layer) {
         
         if (!layer) {
             layer = this._layer;
+        }
+        if (!layer ){
+            console.warn('Layer not found for elm',this);
+            return;
         }
         this.trigger('before-draw');
         
@@ -265,6 +307,12 @@ $wb.draw.Element = $wb.Class('Element',{
             this.opts.visible = visible;
             this.render();
         }
+    },
+    setOffset: function(x,y) {
+        this._offset = {
+            x:x,
+            y:y
+        };
     }
 });
 
@@ -306,6 +354,9 @@ $wb.draw.PolyLine = $wb.Class('PolyLine',{
     },
     setLineCap:function(lineEnding) {
         this.opts.lineEnding = lineEnding;
+        if (this.opts.lineEnding) {
+            this.opts.lineEnding.setOffset(this._offset.x,this._offset.y);
+        }
         this.clearCache();
         return this;
     },
@@ -313,14 +364,21 @@ $wb.draw.PolyLine = $wb.Class('PolyLine',{
         var first = this._points[0];
         ctxt.beginPath();
         
-        ctxt.moveTo(first.x,first.y);
+        ctxt.moveTo(first.x + this._offset.x, first.y + this._offset.y);
         var last = first;
         for(var i = 1;i < this._points.length;i++) {
             
-            if (this.opts.style == 'dashed')
-                ctxt.dashedLineTo(last.x,last.y,this._points[i].x,this._points[i].y);
-            else
-                ctxt.lineTo(this._points[i].x,this._points[i].y);
+            if (this.opts.style == 'dashed') {
+                ctxt.dashedLineTo(
+                    last.x + this._offset.x,
+                    last.y + this._offset.y,
+                    this._points[i].x + this._offset.x,
+                    this._points[i].y + this._offset.y);
+            } else {
+                ctxt.lineTo(
+                    this._points[i].x + this._offset.x,
+                    this._points[i].y + this._offset.y);
+            }
             last = this._points[i];
         }
         this._paintLineEnding(ctxt,canvas);
@@ -348,9 +406,40 @@ $wb.draw.PolyLine = $wb.Class('PolyLine',{
     getPoints:function() {
         return this._points;
     },
+    getBoundingBox:function() {
+        var out = {
+            x1:-1,
+            y1:-1,
+            x2:-1,
+            y2:-1
+        };
+
+        this._points.forEach(function(point) {
+            if (out.x1 < 0) {
+                out.x1 = out.x2 = point.x;
+            } else {
+                out.x1 = Math.min(out.x1,point.x);
+                out.x2 = Math.max(out.x2,point.x);
+            }
+            if (out.y1 < 0) {
+                out.y1 = out.y2 = point.y;
+            } else {
+                out.y1 = Math.min(out.y1,point.y);
+                out.y2 = Math.max(out.y2,point.y);
+            }
+        });
+
+        return out;
+    },
     destroy:function() {
         delete this._points;
         this.__super();
+    },
+    setOffset: function(x, y) {
+        if (this.opts.lineEnding) {
+            this.opts.lineEnding.setOffset(x,y);
+        }
+        return this.__super(x, y);
     }
 });
 
@@ -589,12 +678,16 @@ $wb.draw.Arrow = $wb.Class('Arrow',{
             y:to.y+3*Math.sin(angle)
         };
         
-        ctxt.moveTo(offset.x, offset.y);
-        ctxt.lineTo(offset.x-size*Math.cos(angle-Math.PI/6),offset.y-size*Math.sin(angle-Math.PI/6));
-        ctxt.moveTo(offset.x, offset.y);
-        ctxt.lineTo(offset.x-size*Math.cos(angle+Math.PI/6),offset.y-size*Math.sin(angle+Math.PI/6));
-        
-        
+        ctxt.moveTo(offset.x + this._offset.x, offset.y + this._offset.y);
+        ctxt.lineTo(
+            (offset.x + this._offset.x) - size * Math.cos(angle-Math.PI/6),
+            (offset.y + this._offset.y) - size * Math.sin(angle-Math.PI/6)
+        );
+        ctxt.moveTo(offset.x + this._offset.x, offset.y + this._offset.y);
+        ctxt.lineTo(
+            (offset.x + this._offset.x) - size * Math.cos(angle+Math.PI/6),
+            (offset.y + this._offset.y) - size * Math.sin(angle+Math.PI/6)
+        );
     }
 });
 
@@ -607,11 +700,18 @@ $wb.draw.Polygon = $wb.Class('Polygon',{
     _paint:function(ctxt,canvas) {
         var first = this._points[0];
         ctxt.beginPath();
-        ctxt.moveTo(first.x,first.x);
+        ctxt.moveTo(
+            first.x + this._offset.x,
+            first.y + this._offset.y);
         for(var i = 1;i < this._points.length;i++) {
-            ctxt.lineTo(this._points[i].x,this._points[i].y);
+            ctxt.lineTo(
+                this._points[i].x + this._offset.x,
+                this._points[i].y + this._offset.y);
         }
-        ctxt.lineTo(first.x,first.y);
+        ctxt.lineTo(
+            first.x + this._offset.x,
+            first.y + this._offset.y
+        );
         ctxt.stroke();
         ctxt.fill();
     }
@@ -637,10 +737,22 @@ $wb.draw.Rectangle = $wb.Class('Rectangle',{
         this.clearCache();
     },
     _paint:function(ctxt) {
-        if (this.opts.fillStyle)
-            ctxt.fillRect(this.opts.x1,this.opts.y1,this.opts.x2,this.opts.y2);
-        if (this.opts.strokeStyle)
-            ctxt.strokeRect(this.opts.x1,this.opts.y1,this.opts.x2,this.opts.y2);
+        if (this.opts.fillStyle) {
+            ctxt.fillRect(
+                this.opts.x1 + this._offset.x,
+                this.opts.y1 + this._offset.y,
+                this.opts.x2 + this._offset.x,
+                this.opts.y2 + this._offset.y
+            );
+        }
+        if (this.opts.strokeStyle) {
+            ctxt.strokeRect(
+                this.opts.x1 + this._offset.x,
+                this.opts.y1 + this._offset.y,
+                this.opts.x2 + this._offset.x,
+                this.opts.y2 + this._offset.y
+            );
+        }
     }
 });
 
@@ -690,14 +802,14 @@ $wb.draw.Grid = $wb.Class('Grid',{
         for(var x = 0; x < cellWidth;x++) {
             var offsetX = offset.x+x*this.opts.width;
             
-            ctxt.moveTo(offsetX,offset.y);
-            ctxt.lineTo(offsetX,size.height);
+            ctxt.moveTo(offsetX + this._offset.x,offset.y + this._offset.y);
+            ctxt.lineTo(offsetX + this._offset.x,size.height + this._offset.y);
             
             for(var y = 0; y < cellHeight;y++) {
                 var offsetY = offset.y+y*this.opts.height;
                 
-                ctxt.moveTo(offset.x,offsetY);
-                ctxt.lineTo(size.width,offsetY);
+                ctxt.moveTo(offset.x + this._offset.x,offsetY + this._offset.y);
+                ctxt.lineTo(size.width + this._offset.x,offsetY + this._offset.y);
             }
         }
         ctxt.stroke();
@@ -740,11 +852,22 @@ $wb.draw.Circle = $wb.Class('Circle',{
     },
     _paint:function(ctxt) {
         ctxt.beginPath();
-        ctxt.arc(this.opts.x,this.opts.y,this.opts.radius,this.opts.start,this.opts.end,this.opts.clockwise);
-        if (this.opts.fillStyle)
+        ctxt.arc(
+            this.opts.x + this._offset.x,
+            this.opts.y + this._offset.y,
+            this.opts.radius,
+            this.opts.start,
+            this.opts.end,
+            this.opts.clockwise
+        );
+
+        if (this.opts.fillStyle) {
             ctxt.fill();
-        if (this.opts.strokeStyle)
+        }
+        if (this.opts.strokeStyle) {
             ctxt.stroke();
+        }
+
     }
 });
 
@@ -769,11 +892,12 @@ $wb.draw.Image = $wb.Class('Image',{
     },
     _paint:function(ctxt) {
         var imgObj = new Image();
-        var self = this;
-        var timeStart = new Date().getTime();
+        var me = this;
         imgObj.onload = function() {
-            ctxt.drawImage(imgObj,self.opts.x,self.opts.y);
-            var timeTaken = new Date().getTime()-timeStart
+            ctxt.drawImage(imgObj,
+                me.opts.x + this._offset.x,
+                me.opts.y + this._offset.y
+            );
         };
         
         imgObj.src = this.opts.data;
@@ -785,10 +909,13 @@ $wb.draw.Image = $wb.Class('Image',{
 var CP = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
 if (CP && CP.lineTo){
     CP.dashedLineTo = function(x,y,x2,y2,dashArray) {
-        if (!dashArray) 
-            dashArray=[5];
-        if (dashLength==0) 
+        if (!dashArray) {
+            dashArray = [5];
+        }
+
+        if (dashLength === 0) {
             dashLength = 0.001; // Hack for Safari
+        }
         
         var dashCount = dashArray.length;
         this.moveTo(x, y);
@@ -799,8 +926,9 @@ if (CP && CP.lineTo){
         var dashIndex=0, draw=true;
         while (distRemaining>=0.1){
             var dashLength = dashArray[dashIndex++%dashCount];
-            if (dashLength > distRemaining) 
+            if (dashLength > distRemaining) {
                 dashLength = distRemaining;
+            }
             var xStep = Math.sqrt( dashLength*dashLength / (1 + slope*slope) );
             x += xStep;
             y += slope*xStep;
