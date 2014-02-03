@@ -1037,28 +1037,32 @@
         //Temporarily detach element to reduce dom changes when doing alot of manipulating. Reintroduce it into the dom 
         //using "putBack"
         $.fn.putAway = function() {
-            var elm = $(this[0]);
-            if (elm.closest('body').length == 0) return;//Already removed from dom
-            elm.data('parent',elm.parent())
-                .data('prev',elm.prev());
-            elm.detach();
+            $(this).each(function() {
+                var elm = $(this);
+                if (elm.closest('body').length == 0) return;//Already removed from dom
+                elm.data('parent',elm.parent())
+                    .data('prev',elm.prev());
+                elm.detach();
+            });
         };
 
         $.fn.putBack = function() {
-            var elm = $(this[0]);
-            if (elm.closest('body').length > 0) return;//Already in dom
+            $(this).each(function() {
+                var elm = $(this);
+                if (elm.closest('body').length > 0) return;//Already in dom
 
-            var parent = elm.data('parent');
-            var prev = elm.data('prev');
-            if (!parent) return; //Not detached using putAway
-            if (!prev || prev.length == 0) {
-                parent.prepend(elm);
-            } else {
-                prev.after(elm);    
-            }
+                var parent = elm.data('parent');
+                var prev = elm.data('prev');
+                if (!parent) return; //Not detached using putAway
+                if (!prev || prev.length == 0) {
+                    parent.prepend(elm);
+                } else {
+                    prev.after(elm);
+                }
 
-            elm.data('parent',null);
-            elm.data('prev',null);
+                elm.data('parent',null);
+                elm.data('prev',null);
+            });
         };
 
 
