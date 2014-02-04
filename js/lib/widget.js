@@ -1798,6 +1798,21 @@ $wb.ui.Button = $wb.Class('Button', {
             this.elm().bind('click', this.opts.action);
         }
     },
+    setIcon: function( newIcon ) {
+        if (!newIcon) {
+            this.iconElm().remove();
+            return;
+        }
+
+        newIcon.addClass(this.opts.iconClass);
+        var oldIcon = this.iconElm();
+        if (oldIcon.length > 0) {
+            oldIcon.before(newIcon);
+            oldIcon.remove();
+        } else {
+            this.target().prepend(newIcon);
+        }
+    },
     title: function () {
         if (arguments.length > 0) {
             this.titleElm().html(arguments[0]);
