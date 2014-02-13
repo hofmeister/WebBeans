@@ -566,7 +566,7 @@
             if (p.length == 0 || ignoreTags.indexOf(tag) == -1) {
                 var name = '';
 
-                var attrs = ['class', 'name', 'rel', 'type', 'title', 'alt', 'value'];
+                var attrs = ['type', 'class', 'name', 'rel', 'title', 'alt', 'value'];
                 var found = false;
                 for (var i = 0; i < attrs.length; i++) {
                     var attr = attrs[i];
@@ -588,12 +588,26 @@
 
                 if (p.length > 0) {
 
-                    similarCount = p.find((name + ' ' + last).trim()).length
+                    var triedValue = false;
+                    while(true) {
+                        similarCount = p.find((name + ' ' + last).trim()).length
 
-                    if (similarCount > 1) {
-                        var index = el.prevAll().length;
-                        name += ":nth-child(" + (index + 1) + ")";
-                        found = true;
+                        if (similarCount > 1) {
+                            if (el.tag() === 'input' &&
+                                ['radio','checkbox'].indexOf(el.attr('type')) > -1 &&
+                                !triedValue &&
+                                el.attr('value')) {
+                                name += '[value="' + el.attr('value') + '"]';
+                                triedValue = true;
+                                continue;
+                            }
+
+                            var index = el.prevAll().length;
+                            name += ":nth-child(" + (index + 1) + ")";
+                            found = true;
+                        }
+
+                        break;
                     }
                 }
 
