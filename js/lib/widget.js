@@ -2093,6 +2093,7 @@ $wb.ui.ContextMenu = $wb.Class('ContextMenu', {
         }
 
         this.source(source);
+        var margin = 20;
 
         elm.css({
             position: 'absolute',
@@ -2114,6 +2115,23 @@ $wb.ui.ContextMenu = $wb.Class('ContextMenu', {
         }
 
         this.__super();
+
+        var bbox = elm.boundingBox();
+
+        var winHeight = margin + $(window).height();
+        var winWidth = margin + $(window).width();
+
+        if (bbox.bottom > winHeight) {
+            elm.css({
+                'top': $(window).height() - elm.outerHeight() - margin
+            });
+        }
+
+        if (bbox.right > winWidth) {
+            elm.css({
+                'left':evt.pageX - elm.outerWidth()
+            });
+        }
     }
 });
 $wb.ui.ContextMenu.id = '-wb-state-current-context';
