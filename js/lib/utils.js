@@ -846,8 +846,8 @@
             input.blur(function (evt) {
                 elm.removeClass('wb-focus');
             });
-
         };
+
 
         $.fn.isOutside = function (container, newOffset) {
             var thisBBox = $(this).boundingBox(false);
@@ -946,6 +946,24 @@
         $.fn.contains = function (elms) {
             return $(this).has(elms).length > 0;
         };
+
+        $.fn.minimalWidth = function() {
+            var $this = $(this);
+            if ($this.css('display') !== 'block') {
+                return $this.outerWidth();
+            }
+            var minWidth = 0;
+            $this.children().each(function() {
+                var $child = $(this);
+                var width = $child.minimalWidth();
+                if (width > minWidth) {
+                    minWidth = width;
+                }
+            });
+
+            return minWidth;
+        };
+
 
         $.fn.visibleBox = function () {
             var $this = $(this);
