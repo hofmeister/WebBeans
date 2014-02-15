@@ -1443,7 +1443,7 @@ if (!$wbConfig.noCSS) {
          * @param callback receives value as first argument and key as second (if this is a map)
          * @return {mixed) returns true or the first value returned from callback (which stops it)¡
          */
-        $wb.each = function(obj,callback) {
+        $wb.each = function(obj,callback, includeFunctions) {
             var i,key,result;
             if (!obj) {
                 return undefined;
@@ -1475,7 +1475,7 @@ if (!$wbConfig.noCSS) {
 
             for(key in obj) {
                 if (obj.hasOwnProperty(key)
-                        && typeof obj[key] !== 'function') {
+                        && (includeFunctions || typeof obj[key] !== 'function')) {
                     result = callback(obj[key],key);
                     if (result !==  undefined) {
                         return result;

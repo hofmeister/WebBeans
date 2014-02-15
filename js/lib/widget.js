@@ -2162,35 +2162,30 @@ $wb.ui.DropdownMenu = $wb.Class('DropdownMenu', {
         vertical: true
     },
     _element: null,
+    _boundHide: null,
     __construct: function (opts) {
         opts = this.getDefaults(opts);
         this.__super(opts);
 
-        $wb.ui.ContextMenu.init();
-
         this.bind('detach', function () {
-            if (this._element) {
-                this._element.unbind('click', $wb.ui.ContextMenu.hide);
-                this._element.removeClass('wb-active');
+            if (this._element && this._boundHide) {
+                this._element.unbind('click', this._boundHide);
             }
         });
+
     },
     render: function (element) {
-        if (!element) throw _("ContextMenu requires first argument to render to be an event");
+        if (!element) throw _("Dropdown menu requires first argument for render to be an element");
         this._element = element;
-        $wb.ui.ContextMenu.hide();
+
         var elm = this.elm();
-        elm.addClass($wb.ui.ContextMenu.id);
-        element.addClass('wb-active');
+
         $('body').append(elm);
         elm.html('');
 
-        //elm.bindOnce('click',$wb.ui.ContextMenu.hide);
-
-        if (this._element) {
-            this._element.bindOnce('click', $wb.ui.ContextMenu.hide);
-        }
-
+        this._boundHide = this.detach.bind(this);
+        this._element.bindOnce('click', this._boundHide);
+        element.addClass('wb-active');
 
         var out = this.__super();
         var css = element.offset();
