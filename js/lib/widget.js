@@ -3632,10 +3632,12 @@ $wb.ui.Frame = $wb.Class('Frame',
                     this.header().prepend('<img src="%s" alt="%s" />'
                         .format(this.opts.icon, this.opts.title));
 
-                if (this.opts.title)
+                if (this.opts.title) {
                     this.header().show();
-                else
+                } else {
                     this.header().hide();
+                }
+                this.trigger('title-changed',[this.opts.title]);
 
                 return this;
             }
