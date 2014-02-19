@@ -1492,7 +1492,6 @@ $wb.ui.IFrame = $wb.Class('IFrame', {
         }
         if (this.opts.showBlankScreen
             && ((this.opts.src === this.opts.blankSrc) || force)) {
-            console.log('Show blank screen',this.opts,force);
             this._loadScreen.html(this.opts.blankScreenText);
             this._loadScreen.outerWidth(this.target().outerWidth());
             this._loadScreen.outerHeight(this.target().outerHeight());
