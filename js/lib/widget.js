@@ -1464,14 +1464,14 @@ $wb.ui.IFrame = $wb.Class('IFrame', {
             //Or else this may cause leaks.
             try {
                 this.doc().remove();
-            } catch (e) {
-            }
-            ;
+            } catch (e) {}
 
             this._showLoadScreen();
             this.opts.src = "" + arguments[0];
-            if (this.window())
-                this.window().location = this.opts.src;
+            if (this.window()) {
+                this.window().location.replace(this.opts.src);
+            }
+
             if (this.opts.src === this.opts.blankSrc)
                 this.showBlankScreen();
             return this;
@@ -1492,6 +1492,7 @@ $wb.ui.IFrame = $wb.Class('IFrame', {
         }
         if (this.opts.showBlankScreen
             && ((this.opts.src === this.opts.blankSrc) || force)) {
+            console.log('Show blank screen',this.opts,force);
             this._loadScreen.html(this.opts.blankScreenText);
             this._loadScreen.outerWidth(this.target().outerWidth());
             this._loadScreen.outerHeight(this.target().outerHeight());
