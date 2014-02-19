@@ -2174,6 +2174,8 @@ $wb.ui.DropdownMenu = $wb.Class('DropdownMenu', {
             }
         });
 
+        this.elm().bind('click',this.detach.bind(this));
+
     },
     render: function (element) {
         if (!element) throw _("Dropdown menu requires first argument for render to be an element");
@@ -2186,6 +2188,11 @@ $wb.ui.DropdownMenu = $wb.Class('DropdownMenu', {
 
         this._boundHide = this.detach.bind(this);
         this._element.bindOnce('click', this._boundHide);
+        var widget = $wb(this._element);
+        if (widget) {
+            widget.bind('detach',this._boundHide);
+        }
+
         element.addClass('wb-active');
 
         var out = this.__super();
