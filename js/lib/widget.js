@@ -3771,6 +3771,8 @@ $wb.ui.Window = $wb.Class('Window',
                     this.target().css('height', 'auto');
                 }
             });
+
+            this.bind('resize', doPosition);
             this.bind('after-layout', doPosition);
             this.bind('show', doPosition);
             this.bind('render', function () {
