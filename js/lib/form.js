@@ -592,6 +592,39 @@ $wb.ui.form.TextField = $wb.Class('TextField',{
     }
 });
 
+$wb.ui.form.NumberField = $wb.Class('NumberField',{
+    __extends:[$wb.ui.form.InputField],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            type:'number'
+        },opts);
+        this.__super(opts);
+    }
+});
+
+$wb.ui.form.EmailField = $wb.Class('EmailField',{
+    __extends:[$wb.ui.form.InputField],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            type:'email'
+        },opts);
+        this.__super(opts);
+    }
+});
+
+$wb.ui.form.UrlField = $wb.Class('UrlField',{
+    __extends:[$wb.ui.form.InputField],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            type:'url'
+        },opts);
+        this.__super(opts);
+    }
+});
+
 
 $wb.ui.form.CheckBox = $wb.Class('CheckBox',{
     __extends:[$wb.ui.form.InputField],
