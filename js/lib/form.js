@@ -1116,8 +1116,10 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
         
     },
     _loadMode:function() {
-        if (typeof CodeMirror.modes[this.opts.mode] == 'undefined') {
-            throw 'Invalid code mirror mode: ' + this.opts.mode + '. Remember to include all needed files before invoking TextEditor.';
+        var modeName = $.type(this.opts.mode) == 'string' ? this.opts.mode : this.opts.mode.name;
+
+        if (typeof CodeMirror.modes[modeName] == 'undefined') {
+            throw 'Invalid code mirror mode: ' + modeName + '. Remember to include all needed files before invoking TextEditor.';
         }
         this._init();
     },
