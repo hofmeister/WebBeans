@@ -1110,35 +1110,24 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
     },
     _loadCodeMirror:function() {
         if (typeof CodeMirror == 'undefined') {
-            loadCSS(this.opts.codemirrorBase+"codemirror.css");
-            var required = [
-                this.opts.codemirrorBase+"codemirror.js"
-            ];
-            require(required,this._loadMode.bind(this));
-        } else {
-            this._loadMode();
+            throw 'Code mirror not loaded. Remember to include all needed files before invoking TextEditor.';
         }
+        this._loadMode();
         
     },
     _loadMode:function() {
         if (typeof CodeMirror.modes[this.opts.mode] == 'undefined') {
-            //Load mode
-            var modeName = $.type(this.opts.mode) == 'string' ? this.opts.mode : this.opts.mode.name;
-            var jsFile = this.opts.codemirrorBase+"mode/"+modeName+"/"+modeName+".js";
-            var required = [jsFile];
-            if (modeName == 'javascript') {
-                required.push(this.opts.codemirrorBase+"util/simple-hint.js");
-                required.push(this.opts.codemirrorBase+"util/javascript-hint.js");
-                loadCSS(this.opts.codemirrorBase+"util/simple-hint.css");
-            }
-            //var cssFile = this.opts.codemirrorBase+"mode/"+this.opts.mode+"/"+this.opts.mode+".css";
-            require(required,this._init.bind(this));
-        } else {
-            this._init();
+            throw 'Invalid code mirror mode: ' + this.opts.mode + '. Remember to include all needed files before invoking TextEditor.';
         }
+        this._init();
     },
     _init:function() {
         var destroyIt = function() {
+            if (this.elm().find('.CodeMirror').length < 1) {
+                return;
+            }
+
+            console.log('destroying');
             this.elm().find('.CodeMirror').detach();
             delete this._codemirror;
             this._codemirror = null;
@@ -1156,27 +1145,15 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
                 var m = this._copyMethods[i];
                 this[m] = this._codemirror[m].bind(this._codemirror);
             }
-            
+
             //Cause a slight delay to allow it to properly refresh
             //@TODO: Find root cause and fix
             setTimeout(function() {
-                this._codemirror.refresh()
+                this._codemirror.refresh();
+                this.value(this.value());
             }.bind(this),500);
-            
-            var parentWindow = this.elm().closest('.wb-window');
-            if (parentWindow.length > 0) {
-                $wb(parentWindow).layout();
-            }
-            
-            this._rendered = false;
+
         });
-        /**
-         * If the widget had time to render before we got the whole thing loaded
-         * trigger render event manually to ensure we get code mirror setup
-         */
-        if (this._rendered) {
-            this.trigger('render');
-        }
     },
     value:function() {
         if (arguments.length > 0) {
