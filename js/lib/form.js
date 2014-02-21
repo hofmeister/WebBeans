@@ -1151,7 +1151,7 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
             setTimeout(function() {
                 this._codemirror.refresh();
                 this.value(this.value());
-            }.bind(this),500);
+            }.bind(this),100);
 
         });
     },
