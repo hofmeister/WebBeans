@@ -905,6 +905,41 @@ $wb.draw.Image = $wb.Class('Image',{
 });
 
 
+
+$wb.draw.Text = $wb.Class('Text',{
+    __extends:[$wb.draw.Element],
+    __defaults:{
+        font:'10px Verdana',
+        textAlign:'left',
+        textBaseline:'top',
+        text:'',
+        x:0,
+        y:0
+    },
+    __construct:function(opts) {
+        this.__super(opts);
+    },
+    setText:function(text) {
+        this.opts.text = text
+        return this;
+    },
+    _paint:function(ctxt) {
+        ctxt.font = this.opts.font;
+        ctxt.textAlign  = this.opts.textAlign ;
+        ctxt.textBaseline  = this.opts.textBaseline ;
+
+        var x = this._offset.x + this.opts.x,
+            y = this._offset.y + this.opts.y;
+
+
+        ctxt.fillText(this.opts.text,
+            x,
+            y
+        );
+    }
+});
+
+
 //Extensions to the default API
 var CP = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
 if (CP && CP.lineTo){

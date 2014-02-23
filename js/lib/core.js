@@ -639,7 +639,7 @@ if (!$wbConfig.noCSS) {
             },
             containsOnly:function() {
                 var args = [],i;
-                for(i = 0; i < arguments;i++) {
+                for(i = 0; i < arguments.length;i++) {
                     args.push(arguments[i]);
                     if (!this.contains(arguments[i])) {
                         return false;
@@ -649,6 +649,20 @@ if (!$wbConfig.noCSS) {
 
                 for(i = 0; i < this._arr.length;i++) {
                     if (args.indexOf(this._arr[i]) == -1) {
+                        return false;
+                    }
+                }
+
+                return true;
+            },
+            hasOnly:function() {
+                var args = [],i;
+                for(i = 0; i < arguments.length;i++) {
+                    args.push(arguments[i]);
+                }
+
+                for(i = 0; i < this._arr.length;i++) {
+                    if (args.indexOf(this._arr[i]) === -1) {
                         return false;
                     }
                 }
