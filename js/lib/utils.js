@@ -493,7 +493,7 @@
             return this;
         };
 
-        $.fn.path = function (ignoreTags, stopAt, last, ignoreAttrs) {
+        $.fn.path = function (ignoreTags, stopAt, last, ignoreAttrs, forList) {
             if (!ignoreTags)
                 ignoreTags = [];
             if (!ignoreAttrs) {
@@ -589,7 +589,7 @@
                 if (p.length > 0) {
 
                     var triedValue = false;
-                    while(true) {
+                    while(true && !forList) {
                         similarCount = p.find((name + ' ' + last).trim()).length
 
                         if (similarCount > 1) {
@@ -618,7 +618,7 @@
             }
 
             if (p) {
-                return p.path(ignoreTags, stopAt, (out + ' ' + last).trim(), ignoreAttrs);
+                return p.path(ignoreTags, stopAt, (out + ' ' + last).trim(), ignoreAttrs, forList);
             }
 
 
