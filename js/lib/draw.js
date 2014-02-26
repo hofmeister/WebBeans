@@ -737,21 +737,17 @@ $wb.draw.Rectangle = $wb.Class('Rectangle',{
         this.clearCache();
     },
     _paint:function(ctxt) {
+
+        var x1 = this.opts.x1 + this._offset.x,
+            y1 = this.opts.y1 + this._offset.y,
+            w = (this.opts.x2 + this._offset.x) - (this.opts.x1 + this._offset.x),
+            h = (this.opts.y2 + this._offset.y) - (this.opts.y1 + this._offset.y);
+
         if (this.opts.fillStyle) {
-            ctxt.fillRect(
-                this.opts.x1 + this._offset.x,
-                this.opts.y1 + this._offset.y,
-                this.opts.x2 + this._offset.x,
-                this.opts.y2 + this._offset.y
-            );
+            ctxt.fillRect(x1,y1,w,h);
         }
         if (this.opts.strokeStyle) {
-            ctxt.strokeRect(
-                this.opts.x1 + this._offset.x,
-                this.opts.y1 + this._offset.y,
-                this.opts.x2 + this._offset.x,
-                this.opts.y2 + this._offset.y
-            );
+            ctxt.strokeRect(x1,y1,w,h);
         }
     }
 });

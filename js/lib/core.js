@@ -354,24 +354,24 @@ if (!$wbConfig.noCSS) {
                 * @private
                 * @memberOf $wb.Class.prototype
                 */
-                __callMethod: function(name,args) {
+                __callMethod: function(methodName,args) {
                     if (this && this.__deleted) {
-                        throw new $wb.Error('Attempted to call method on deleted object: '+name+"()");
+                        throw new $wb.Error('Attempted to call method on deleted object: ' + name + "." + +methodName+"()");
                     }
                 
-                    var m = clz.methods[name];
+                    var m = clz.methods[methodName];
                     if (!m) {
                         //Check if a superclass has it
-                        var parentMethods = clz.__getParentMethods(name);
+                        var parentMethods = clz.__getParentMethods(methodName);
                         if (parentMethods && parentMethods.length > 0) {
                             m = parentMethods[0].method;
                         }
                     }
 
                     if (!m)
-                        throw "Method not found: "+clz.prototype._clz+"::"+name;
+                        throw "Method not found: "+clz.prototype._clz+"::"+methodName;
 
-                    return call.apply(this,[clz,name,m,args]);
+                    return call.apply(this,[clz,methodName,m,args]);
                 }
 
             };
