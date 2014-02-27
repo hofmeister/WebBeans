@@ -612,7 +612,7 @@
                 }
 
 
-                if (found)
+                if (found || forList)
                     out = name;
 
             }
