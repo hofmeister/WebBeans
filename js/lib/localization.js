@@ -95,3 +95,55 @@ Date.prototype.format = function(format) {
             .replace(/\bS\b/g,this.getMilliseconds());
 
 };
+
+Date.prototype.timeSince = function() {
+    var ms = Date.now().getTime() - this.getTime();
+    if (ms < Date.MS_MINUTE) {
+        return _('just now');
+    }
+
+    if (ms < Date.MS_HOUR) {
+        var minutes = Math.floor(ms / Date.MS_MINUTE);
+        return minutes > 1 ? _('%s minutes ago', minutes ) : _('%s minute ago', minutes );
+    }
+
+    if (ms < Date.MS_DAY) {
+        var hours = Math.floor(ms / Date.MS_HOUR);
+        return hours > 1 ? _('%s hours ago', hours ) : _('%s hour ago', hours );
+    }
+
+    if (ms < Date.MS_WEEK) {
+        return _('%s days ago', Math.floor(ms / Date.MS_DAY) );
+        var days = Math.floor(ms / Date.MS_DAY);
+        return days > 1 ? _('%s days ago', days ) : _('%s day ago', days );
+    }
+
+    if (ms < Date.MS_MONTH) {
+        var weeks = Math.floor(ms / Date.MS_WEEK);
+        return weeks > 1 ? _('%s weeks ago', weeks ) : _('%s week ago', weeks );
+    }
+
+    if (ms < Date.MS_YEAR) {
+        var months = Math.floor(ms / Date.MS_MONTH);
+        return months > 1 ? _('%s months ago', months ) : _('%s month ago', months );
+    }
+
+    var years = ms % Date.MS_YEAR;
+    if (years > 1) {
+        return _('%s years ago', years );
+    } else {
+        return _('%s year ago', years );
+    }
+
+};
+Date.MS_SEC = 1000;
+Date.MS_MINUTE = Date.MS_SEC * 60;
+Date.MS_HOUR = Date.MS_MINUTE * 60;
+Date.MS_DAY = Date.MS_HOUR * 24;
+Date.MS_WEEK = Date.MS_DAY * 7;
+Date.MS_MONTH = Date.MS_DAY * 30;
+Date.MS_YEAR = Date.MS_DAY * 365;
+
+Date.now = function() {
+    return new Date();
+};
