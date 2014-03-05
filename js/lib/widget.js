@@ -2180,7 +2180,9 @@ $wb.ui.DropdownMenu = $wb.Class('DropdownMenu', {
         if (!element) throw _("Dropdown menu requires first argument for render to be an element");
         this._element = element;
 
+        $wb.ui.ContextMenu.hide();
         var elm = this.elm();
+        elm.addClass($wb.ui.ContextMenu.id);
 
         $('body').append(elm);
         elm.html('');
