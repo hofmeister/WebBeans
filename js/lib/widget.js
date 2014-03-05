@@ -1522,16 +1522,16 @@ $wb.ui.IFrame = $wb.Class('IFrame', {
         return new $wb.Url(new $wb.Url(this.location()).base());
     },
     doc: function () {
-        return this.target().contents().find('html');
+        return $(this.document().documentElement);
     },
     document: function () {
         return this.target()[0].contentDocument;
     },
     body: function () {
-        return this.target().contents().find('body');
+        return $(this.document().body);
     },
     head: function () {
-        return this.target().contents().find('head');
+        return $(this.document().head);
     },
     window: function () {
         return this.target()[0].contentWindow;
@@ -1649,6 +1649,13 @@ $wb.ui.IFrame = $wb.Class('IFrame', {
     addCSS: function (cssFile) {
         var url = new $wb.Url(cssFile, $wb.location());
         this.head().append('<link href="%s" type="text/css" rel="stylesheet" />'.format(url));
+    },
+    addJS: function (jsFile) {
+        var url = new $wb.Url(jsFile, $wb.location());
+        var script = document.createElement( 'script' );
+        script.type = 'text/javascript';
+        script.src = url.toString();
+        this.body()[0].appendChild(script);
     }
 });
 
