@@ -559,6 +559,152 @@ $wb.ui.form.Text = $wb.Class('Text',{
     }
 });
 
+/**
+ * For adding read-only image to forms
+ * @type {*}
+ */
+$wb.ui.form.ImagePreview = $wb.Class('FormImagePreview',{
+    __extends:[$wb.ui.form.BaseField],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            target:'.wb-target',
+            inputTmpl:function() {
+                return '<img class="wb-target wb-input wb-fake-input" />';
+            }
+        },opts);
+        this.__super(opts);
+
+
+        var me = this;
+        this.target().click(function() {
+            var val = me.value()
+            if (!val) {
+                return;
+            }
+            var a = document.createElement('a');
+            a.href = val;
+            a.target = 'preview';
+            a.click();
+        });
+    },
+    value:function(val) {
+        if (arguments.length > 0) {
+            this.target().attr('src',val)
+                .css('cursor', val ? 'pointer' : 'default')
+                .attr('title', val ? _('Click to preview image in new window') : '');
+
+            return this;
+        }
+        return this.target().attr('src');
+    }
+});
+
+/**
+ * For adding read-only file info to forms
+ * @type {*}
+ */
+$wb.ui.form.FilePreview = $wb.Class('FormFilePreview',{
+    __extends:[$wb.ui.form.BaseField],
+    _datauri:null,
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            target:'.wb-target',
+            inputTmpl:function() {
+                return '<div class="wb-target wb-input wb-fake-input" />';
+            }
+        },opts);
+        this.__super(opts);
+
+        this.bind('render',function() {
+            this.target().enableMarking();
+            this.value(this._datauri);
+        });
+
+        var me = this;
+        this.target().click(function() {
+            if (!me._datauri) {
+                return;
+            }
+
+            var parts = me._datauri.split(',');
+            var contentTypeParts = parts[0].split(':')[1];
+            var contentType = contentTypeParts.split(';')[0];
+
+
+            var a = document.createElement('a');
+            a.href = me._datauri;
+            var ext = '';
+            switch(contentType) {
+                case 'image/png':
+                    ext = '.png';
+                    break;
+                case 'image/jpg':
+                case 'image/jpeg':
+                    ext = '.jpg';
+                    break;
+                case 'image/gif':
+                    ext = '.gif';
+                    break;
+                case 'application/pdf':
+                    ext = '.pdf';
+                    break;
+                case 'text/xml':
+                    ext = '.xml';
+                    break;
+                case 'text/html':
+                    ext = '.html';
+                    break;
+                case 'application/json':
+                    ext = '.json';
+                    break;
+            }
+            a.download = 'preview' + ext;
+            a.click();
+        });
+    },
+    value:function(val) {
+        if (arguments.length > 0) {
+            this._datauri = val;
+            var html = _('None');
+            if (val) {
+                var parts = val.split(',')
+                var contentTypeParts = parts[0].split(':')[1];
+                var contentType = contentTypeParts.split(';')[0];
+
+                var binary = atob(parts[1]);
+                var bytes = binary.length;
+                var kb = 1024;
+                var mb = kb*1024;
+                var gb = mb*1024;
+
+                var byteText = '%s bytes'.format(bytes);
+                if (bytes > gb) {
+                    byteText = '%s Gb'.format(Math.round(bytes*100 / gb) / 100);
+                }
+                if (bytes > mb) {
+                    byteText = '%s Mb'.format(Math.round(bytes*100 / mb) / 100);
+                }
+                if (bytes > kb) {
+                    byteText = '%s Kb'.format(Math.round(bytes*100 / kb) / 100);
+                }
+
+                html = '<p style="cursor: pointer;" title="%s"><b>%s:</b> %s<br/><b>%s:</b> %s</p>'.format(
+                            _('Click to download file preview'),
+                            _('File Type'),contentType,
+                            _('File Size'),byteText);
+
+            }
+
+            this.target().html(html);
+            return this;
+        }
+        return this._datauri;
+    }
+});
+
+
 $wb.ui.form.InputField = $wb.Class('InputField',{
     __extends:[$wb.ui.form.BaseField],
     _type:null,
