@@ -320,6 +320,7 @@ $wb.draw.Element = $wb.Class('Element',{
 $wb.draw.PolyLine = $wb.Class('PolyLine',{
     __extends:[$wb.draw.Element],
     __defaults:{
+        smooth: false,
         lineEnding:null,
         style:'normal' //normal or dashed
     },
@@ -363,27 +364,170 @@ $wb.draw.PolyLine = $wb.Class('PolyLine',{
     _paint:function(ctxt,canvas) {
         var first = this._points[0];
         ctxt.beginPath();
-        
-        ctxt.moveTo(first.x + this._offset.x, first.y + this._offset.y);
-        var last = first;
-        for(var i = 1;i < this._points.length;i++) {
-            
-            if (this.opts.style == 'dashed') {
-                ctxt.dashedLineTo(
-                    last.x + this._offset.x,
-                    last.y + this._offset.y,
-                    this._points[i].x + this._offset.x,
-                    this._points[i].y + this._offset.y);
-            } else {
-                ctxt.lineTo(
-                    this._points[i].x + this._offset.x,
-                    this._points[i].y + this._offset.y);
-            }
-            last = this._points[i];
+        if (this.opts.style == 'dashed') {
+            ctxt.setLineDash([8]);
         }
+        ctxt.moveTo(first.x + this._offset.x, first.y + this._offset.y);
+
+        if (this.opts.smooth) {
+            this._paintSmooth(ctxt, canvas);
+        } else {
+            this._paintStraight(ctxt, canvas);
+        }
+
+        ctxt.stroke();
+
+        if (this.opts.style == 'dashed') {
+            ctxt.setLineDash([]);
+        }
+
+        ctxt.beginPath();
         this._paintLineEnding(ctxt,canvas);
         ctxt.stroke();
     },
+    _paintStraight: function(ctxt, canvas) {
+        for(var i = 1;i < this._points.length;i++) {
+            var p = this._point(i);
+
+            ctxt.lineTo( p.x, p.y );
+        }
+    },
+    _point: function(i) {
+        if (!this._points[i]) {
+            return null;
+        }
+        return {
+            x: this._points[i].x + this._offset.x,
+            y: this._points[i].y + this._offset.y
+        };
+    },
+    _paintSmooth: function(ctxt, canvas) {
+        if (this._points.length < 3) {
+            this._paintStraight(ctxt, canvas);
+            return;
+        }
+
+        var points = [];
+        for(var i = 0;i < this._points.length;i++) {
+            var p = this._point(i);
+            points.push(p);
+        }
+
+        var iPoints = this._getInterpolatedPoints(points, 20);
+
+        for(var i = 0;i < iPoints.length;i++) {
+            var p = iPoints[i]
+
+            ctxt.lineTo(p.x, p.y);
+        }
+    },
+    _getInterpolationSegment: function(pnt0, pnt1, pnt2, pnt3, buff, buff_base, pointsPerSegment){
+        var rv = false;
+        var steps = 0;
+        var step = 0.0;
+        var t = 0.0;
+        var tt = 0.0;
+        var ttt = 0.0;
+        var p0x = pnt0.x;
+        var p1x = pnt1.x;
+        var p2x = pnt2.x;
+        var p3x = pnt3.x;
+        var p0y = pnt0.y;
+        var p1y = pnt1.y;
+        var p2y = pnt2.y;
+        var p3y = pnt3.y;
+        //var ipps = this._interpolatedPointsPerSegment;
+        var ipps = pointsPerSegment;
+        var i = 0;
+        if (buff){
+            steps = ipps - 1;
+            if (steps > 0){
+                step = 1.0 / steps;
+                steps = buff_base + steps;
+                //t = 0.0 => point = pnt1
+                buff[buff_base].x = pnt1.x;
+                buff[buff_base].y = pnt1.y;
+
+                //0.0<t<1.0 => ...
+                for (i = buff_base+1; i < steps; ++i){
+                    t += step;
+                    tt = t*t;
+                    ttt = tt * t;
+                    buff[i].x = 0.5 * ( (2*p1x) +
+                        (-p0x + p2x) * t +
+                        (2*p0x - 5*p1x + 4*p2x - p3x) * tt +
+                        (-p0x + 3*p1x - 3*p2x + p3x) * ttt);
+                    buff[i].y = 0.5 * ( (2*p1y) +
+                        (-p0y + p2y) * t +
+                        (2*p0y - 5*p1y + 4*p2y - p3y) * tt +
+                        (-p0y + 3*p1y - 3*p2y + p3y) * ttt);
+                }
+
+                //t = 1.0 => point = pnt2
+                buff[steps].x = pnt2.x;
+                buff[steps].y = pnt2.y;
+                rv = true;
+            }
+        }
+        return rv;
+    },
+    _getInterpolatedPoints: function(points, pointsPerSegment) {
+        var pnts,pnt,pnt0,pnt1,pnt2,pnt3,rv;
+
+        var ipps = pointsPerSegment - 1,
+            subsegments = ipps * (points.length - 1) + 1,
+            n = 0,
+            current_base = 0;
+
+        if ((!rv || (rv.length !== subsegments)) && (points.length > 2)){
+            rv = [];
+            for (i = 0; i < subsegments; ++i){
+                rv.push({'x': 0.0, 'y': 0.0});
+            }
+
+            pnts = points;
+
+            pnt1 = pnts[0];
+            pnt2 = pnts[1];
+            pnt3 = pnts[2];
+            pnt0 = pnt = {'x': pnt1.x + (pnt1.x - pnt2.x), 'y': pnt1.y + (pnt1.y - pnt2.y)};
+
+            this._getInterpolationSegment(pnt0, pnt1, pnt2, pnt3, rv, current_base, pointsPerSegment);
+            current_base += ipps;
+
+            //
+            n = pnts.length;
+            for (i = 3; i < n; ++i){
+                pnt0 = pnt1;
+                pnt1 = pnt2;
+                pnt2 = pnt3;
+                pnt3 = pnts[i];
+
+                this._getInterpolationSegment(pnt0, pnt1, pnt2, pnt3, rv, current_base, pointsPerSegment);
+                current_base += ipps;
+            }
+
+            //the last segment
+            pnt0 = pnt1;
+            pnt1 = pnt2;
+            pnt2 = pnt3;
+            pnt3 = pnt; pnt3.x = pnt2.x + (pnt2.x - pnt1.x); pnt3.y = pnt2.y + (pnt2.y - pnt1.y);
+            this._getInterpolationSegment(pnt0, pnt1, pnt2, pnt3, rv, current_base, pointsPerSegment);
+            current_base += ipps;
+
+        } else if (!(rv && (points.length > 2))){
+            rv = [];
+
+            pnts = points;
+            n = pnts.length;
+            for (i = 0; i < n; ++i){
+                pnt = pnts[i];
+                rv.push({'x': pnt.x, 'y': pnt.y});
+            }
+        }
+        return rv;
+    },
+
     _paintLineEnding:function(ctxt,canvas) {
         if (this.opts.lineEnding && this._points.length > 1) {
             var offset = 0;
@@ -947,13 +1091,13 @@ if (CP && CP.lineTo){
         if (dashLength === 0) {
             dashLength = 0.001; // Hack for Safari
         }
-        
+
         var dashCount = dashArray.length;
         this.moveTo(x, y);
         var dx = (x2-x), dy = (y2-y);
         var slope = dy/dx;
         var distRemaining = Math.sqrt( dx*dx + dy*dy );
-        
+
         var dashIndex=0, draw=true;
         while (distRemaining>=0.1){
             var dashLength = dashArray[dashIndex++%dashCount];
