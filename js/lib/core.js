@@ -1789,6 +1789,21 @@ if (!$wbConfig.noCSS) {
         };
     }
 
+    if (!Array.prototype.pushAllUnique) {
+        /**
+         * Add multiple values to the end of this array
+         * @param {Array} values
+         * @return {Array} itself
+         */
+        Array.prototype.pushAllUnique = function(values) {
+            var ix;
+            for(ix = 0; ix < values.length;ix++) {
+                this.pushUnique(values[ix]);
+            }
+            return this;
+        };
+    }
+
     if (!Array.prototype.flatten) {
         /**
          * Flattens multi dimensional array into 1
