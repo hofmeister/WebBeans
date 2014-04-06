@@ -1156,6 +1156,8 @@ $wb.ui.Widget = $wb.Class('Widget',
             if (this.__isDeleted())
                 return;
 
+            this.trigger('before-destroy');
+
             while (this._children.length > 0) {
                 var child = this._children.pop();
                 if (recurse)
@@ -1182,6 +1184,8 @@ $wb.ui.Widget = $wb.Class('Widget',
          * @returns {$wb.ui.Widget}
          */
         detach: function () {
+            this.trigger('before-detach');
+
             for (var i = 0; i < this._children.length; i++) {
                 //Detach children but dont remove them from the widget
                 this._children[i].detach();
@@ -1464,7 +1468,8 @@ $wb.ui.IFrame = $wb.Class('IFrame', {
             //Or else this may cause leaks.
             try {
                 this.doc().remove();
-            } catch (e) {}
+            } catch (e) {
+            }
 
             this._showLoadScreen();
             this.opts.src = "" + arguments[0];
@@ -1652,7 +1657,7 @@ $wb.ui.IFrame = $wb.Class('IFrame', {
     },
     addJS: function (jsFile) {
         var url = new $wb.Url(jsFile, $wb.location());
-        var script = document.createElement( 'script' );
+        var script = document.createElement('script');
         script.type = 'text/javascript';
         script.src = url.toString();
         this.body()[0].appendChild(script);
@@ -1805,7 +1810,7 @@ $wb.ui.Button = $wb.Class('Button', {
             this.elm().bind('click', this.opts.action);
         }
     },
-    setIcon: function( newIcon ) {
+    setIcon: function (newIcon) {
         if (!newIcon) {
             this.iconElm().remove();
             return;
@@ -2136,7 +2141,7 @@ $wb.ui.ContextMenu = $wb.Class('ContextMenu', {
 
         if (bbox.right > winWidth) {
             elm.css({
-                'left':evt.pageX - elm.outerWidth()
+                'left': evt.pageX - elm.outerWidth()
             });
         }
     }
@@ -2180,7 +2185,7 @@ $wb.ui.DropdownMenu = $wb.Class('DropdownMenu', {
             }
         });
 
-        this.elm().bind('click',this.detach.bind(this));
+        this.elm().bind('click', this.detach.bind(this));
 
     },
     render: function (element) {
@@ -2197,8 +2202,8 @@ $wb.ui.DropdownMenu = $wb.Class('DropdownMenu', {
         this._boundHide = this.detach.bind(this);
         this._element.bindOnce('click', this._boundHide);
         var widget = $wb(this._element);
-        if (widget) {
-            widget.bind('detach',this._boundHide);
+        if (widget) {
+            widget.bind('detach', this._boundHide);
         }
 
         element.addClass('wb-active');
@@ -2448,7 +2453,7 @@ $wb.ui.SplitPane = $wb.Class('SplitPane', {
             });
 
             function calculateSplitOffset(evt) {
-                var fullSize,globalOffset,elmOffset;
+                var fullSize, globalOffset, elmOffset;
                 var splitterSize = me.getSplitter().fullSize();
 
                 if (me._vertical) {
@@ -2481,12 +2486,12 @@ $wb.ui.SplitPane = $wb.Class('SplitPane', {
                 if (me.opts.fixed) return;
                 var fullSize, globalOffset, elmOffset;
                 if (!moving) return;
-                var offset = calculateSplitOffset(evt)*100;
+                var offset = calculateSplitOffset(evt) * 100;
 
                 if (me._vertical) {
-                    me._getRuler().css('left',offset + '%');
+                    me._getRuler().css('left', offset + '%');
                 } else {
-                    me._getRuler().css('top',offset + '%');
+                    me._getRuler().css('top', offset + '%');
                 }
             });
 
@@ -2856,11 +2861,7 @@ $wb.ui.TabPane = $wb.Class('TabPane', {
             }
         });
         this.bind('before-render-children', function () {
-            for (var i = 0; i < this._tabButtonWidgets.length; i++) {
-                var btn = this._tabButtonWidgets[i];
-                btn.render();
-                this._tabButtons().append(btn.elm());
-            }
+            this._renderTabButtons();
         });
 
         this.bind('render', function () {
@@ -2872,40 +2873,48 @@ $wb.ui.TabPane = $wb.Class('TabPane', {
 
     },
 
-    showTab: function (ix) {
-
-        if (ix instanceof $wb.ui.Widget) {
-            var children = this.children();
-            for (var i = 0; i < children.length; i++) {
-                if (children[i] === ix) {
-                    this.showTab(i);
-                    return;
-                }
+    _renderTabButtons: function() {
+        this._tabButtons().find('.wb-tab').detach();
+        for (var i = 0; i < this._tabButtonWidgets.length; i++) {
+            var btn = this._tabButtonWidgets[i];
+            if (!btn.isContentReady()) {
+                btn.render();
             }
+            this._tabButtons().append(btn.elm());
+        }
+    },
+
+    showTab: function (ix) {
+        ix = this._toIndex(ix);
+        if (ix < 0) {
             return;
         }
 
         var panes = this._panes().children();
-
         if (!panes[ix])
             return;
 
+
         this._tabButtons().find('.wb-tab').removeClass('wb-active');
-        var btn = this._tabButtons().find('.wb-tab:eq(' + ix + ")");
-        btn.addClass('wb-active');
 
-        var visiblePane = this._panes().children();
+        this.tabButton(ix).elm().addClass('wb-active');
 
-        if (visiblePane.length > 0) {
-            for (i = 0; i < visiblePane.length; i++) {
-                if ($wb(visiblePane[i]).hideScrollbar)
-                    $wb(visiblePane[i]).hideScrollbar()
+        if (panes.length > 0) {
+            for (var i = 0; i < panes.length; i++) {
+                if ($wb(panes[i]).hideScrollbar)
+                    $wb(panes[i]).hideScrollbar()
             }
-            visiblePane.offscreen();
+            panes.offscreen();
         }
-        $(panes[ix]).onscreen();
-        if ($wb(panes[ix]).showScrollbar)
-            $wb(panes[ix]).showScrollbar();
+        var pane = this.pane(ix);
+
+        pane.elm().onscreen();
+        if (pane.showScrollbar) {
+            pane.showScrollbar();
+        } else {
+            console.log('pane had no scrollbar', pane);
+        }
+
     },
     _tabButtons: function () {
         return this.elm().children('.wb-tabs');
@@ -2913,37 +2922,80 @@ $wb.ui.TabPane = $wb.Class('TabPane', {
     _panes: function () {
         return this.elm().children('.wb-panes');
     },
-    _makeTabButton: function (title, pane, ix) {
+    _toIndex: function(ix) {
+        if (ix instanceof $wb.ui.Widget) {
+            var children = this.children();
+            for (var i = 0; i < children.length; i++) {
+                if (children[i] === ix) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        return ix;
+    },
+    _makeTabButton: function (title, pane) {
         var btn = new $wb.ui.TabButton({
             tmpl: this._tabTmpl
         });
-        var self = this;
+        var me = this;
         btn.bind('paint', function () {
             this.title(title);
         });
         btn.elm().click(function (evt) {
             evt.preventDefault();
-            self.showTab(ix);
+            me.showTab(pane);
         });
 
         return btn;
     },
     tabButton: function (ix) {
-        if (ix instanceof $wb.ui.Widget) {
-            var children = this.children();
-            for (var i = 0; i < children.length; i++) {
-                if (children[i] === ix) {
-                    return this.tabButton(i);
-                }
-            }
+        ix = this._toIndex(ix);
+        if (ix < 0) {
             return null;
         }
         return this._tabButtonWidgets[ix];
     },
-    add: function (title, pane) {
-        var btn = this._makeTabButton(title, pane, this.children().length);
-        this._tabButtonWidgets.push(btn);
-        this._children.push(pane);
+
+    pane: function (ix) {
+        ix = this._toIndex(ix);
+        if (ix < 0) {
+            return null;
+        }
+        return this._children[ix];
+    },
+    removeTab: function(ix) {
+        var ix = this._toIndex(ix);
+        if (ix < 0) {
+            return;
+        }
+
+        this.tabButton(ix).destroy();
+        this._tabButtonWidgets.splice(ix,1);
+        var children = this._children.splice(ix,1);
+        if (children.length > 0) {
+            children[0].detach();
+        }
+
+        this.showTab(0);
+    },
+    add: function (title, pane, ix) {
+        if (ix === undefined) {
+            ix = this.children().length;
+        }
+
+        if (this._children.indexOf(pane) > -1) {
+            return pane;
+        }
+        var btn = this._makeTabButton(title, pane);
+        this._tabButtonWidgets.splice(ix, 0, btn);
+        this._children.splice(ix, 0, pane);
+
+        if (this.isContentReady()) {
+            this._renderTabButtons();
+            this.target().append(pane.render());
+        }
         return pane;
     }
 });
@@ -3653,7 +3705,7 @@ $wb.ui.Frame = $wb.Class('Frame',
                 } else {
                     this.header().hide();
                 }
-                this.trigger('title-changed',[this.opts.title]);
+                this.trigger('title-changed', [this.opts.title]);
 
                 return this;
             }

@@ -881,6 +881,14 @@
             return null;
         }
 
+        $.fn.isOnly = function (selector) {
+            for(var i = 0; i < this.length;i++) {
+                if (!$(this[i]).is(selector)) {
+                    return false;
+                }
+            }
+            return this.length > 0;
+        };
 
         $.fn.disableMarking = function () {
             $(this).css({
