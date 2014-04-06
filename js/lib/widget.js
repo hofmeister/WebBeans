@@ -2062,6 +2062,7 @@ $wb.ui.ContextMenu = $wb.Class('ContextMenu', {
     },
     _source: null,
     _element: null,
+    _cover: null,
     __construct: function (opts) {
         opts = this.getDefaults(opts);
 
@@ -2074,6 +2075,16 @@ $wb.ui.ContextMenu = $wb.Class('ContextMenu', {
             if (this._element) {
                 this._element.unbind('click', $wb.ui.ContextMenu.hide);
             }
+        });
+
+        this._cover = $('<div style="position: absolute;z-index:9998;background-color: transparent; left:0;right:0;bottom:0;top:0;" />');
+
+        this._cover.bind('click',function(evt) {
+            $wb.ui.ContextMenu.hide(evt);
+        });
+
+        this.bind('detach',function() {
+            this._cover.detach();
         });
     },
     setElement: function (element) {
@@ -2126,6 +2137,8 @@ $wb.ui.ContextMenu = $wb.Class('ContextMenu', {
             this._element.bindOnce('click', $wb.ui.ContextMenu.hide);
         }
 
+        $('body').append(this._cover);
+
         this.__super();
 
         var bbox = elm.boundingBox();
@@ -2155,11 +2168,17 @@ $wb.ui.ContextMenu.init = function () {
 };
 $wb.ui.ContextMenu._done = false;
 
-$wb.ui.ContextMenu.hide = function () {
+$wb.ui.ContextMenu.hide = function (evt) {
+
     var id = $wb.ui.ContextMenu.id;
     var w = $wb('.' + id);
-    if (w)
+    if (w) {
+        if (evt) {
+            evt.preventDefault();
+            evt.stopPropagation();
+        }
         w.detach();
+    }
 };
 
 $wb.ui.ContextMenu.instance = function () {
