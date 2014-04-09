@@ -2930,8 +2930,6 @@ $wb.ui.TabPane = $wb.Class('TabPane', {
         pane.elm().onscreen();
         if (pane.showScrollbar) {
             pane.showScrollbar();
-        } else {
-            console.log('pane had no scrollbar', pane);
         }
 
     },
