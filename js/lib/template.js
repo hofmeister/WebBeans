@@ -203,6 +203,9 @@ $wb.template = {
         select_option:function() {
             return '<option />';
         },
+        select_option_group:function() {
+            return '<optgroup />';
+        },
         button_pane:function() {
             return '<div class="wb-button-pane line"></div>';
         }

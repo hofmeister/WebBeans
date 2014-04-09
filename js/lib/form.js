@@ -1161,6 +1161,30 @@ $wb.ui.form.SelectOption = $wb.Class('SelectOption',{
     }
 });
 
+$wb.ui.form.SelectOptionGroup = $wb.Class('SelectOptionGroup',{
+    __extends:[$wb.ui.Widget],
+    _name:null,
+    _value:null,
+    __construct:function(opts) {
+        opts = $.extend({
+            tmpl:$wb.template.form.select_option_group
+        },opts);
+
+        this.require(opts,'name');
+        this.__super(opts);
+
+        this._name = opts.name;
+
+        this.bind('paint',function() {
+            this.elm().attr('label',this._name);
+        });
+    },
+    addOption:function( option ) {
+        var opt = new $wb.ui.form.SelectOption(option);
+        this.elm().append(opt.render());
+    }
+});
+
 $wb.ui.form.Select = $wb.Class('Select',{
     __extends:[$wb.ui.form.BaseField],
     __defaults:{
@@ -1198,23 +1222,27 @@ $wb.ui.form.Select = $wb.Class('Select',{
         this.clear();
         
         if (this.opts.showEmpty) {
-            this.add(this.opts.emptyValue,this.opts.emptyText);
+            this.addOption(this.opts.emptyValue,this.opts.emptyText);
         }
         
         if ($.type(options) == 'array') {
             for(var i = 0; i < options.length;i++) {
                 var option = options[i];
                 if (!option) continue;
-                if (typeof option == 'object')
-                    this.add(option.value,option.name);
-                else
-                    this.add(option);
-                    
+                if (typeof option == 'object') {
+                    if (option.options) {
+                        this.addGroup(option.name,option.options);
+                    } else {
+                        this.addOption(option.value,option.name);
+                    }
+                } else {
+                    this.addOption(option);
+                }
             }
         }
         if ($.type(options) == 'object') {
             for(var value in options) {
-                this.add(value,options[value]);
+                this.addOption(value,options[value]);
             }
         }
         //If this has already been painted - just update instantly
@@ -1222,9 +1250,18 @@ $wb.ui.form.Select = $wb.Class('Select',{
             this.render();
         }
     },
-    add:function(value,name) {
+    addOption:function(value, name) {
         var opt = new $wb.ui.form.SelectOption({name:name,value:value});
-        this.__super(opt);
+        this.add(opt);
+    },
+    addGroup: function(name, options) {
+        var group = new $wb.ui.form.SelectOptionGroup({name:name});
+
+        for(var value in options) {
+            group.addOption({name:options[value], value: value});
+        }
+
+        this.add(group);
     }
 });
 
