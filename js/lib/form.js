@@ -1,3 +1,4 @@
+//@module core.ui.form @prio 99
 /**
  * @fileOverview
  * All form widgets are in here
@@ -67,6 +68,38 @@ $wb.ui.form.FieldContainer = $wb.Class('FieldContainer',{
             return result[0];
         return null;
     },
+	getFields:function() {
+		var out = {};
+		this.findWidgets(function(widget) {
+			if (!(widget instanceof $wb.ui.form.BaseField))
+				return false;
+
+			out[widget.name()] = widget;
+		});
+
+		return out;
+	},
+	addFields: function( fields ) {
+		$wb.each(fields, function(field) {
+			var fieldType = $wb.ui.FieldType.type(field.valueType);
+			var fieldWidget = fieldType.getFormField(field, field.defaultValue);
+			this.add(fieldWidget);
+		}.bind(this));
+		return this;
+	},
+	reorder: function() {
+		var fields = this.getFields();
+		console.log('Fields', fields);
+		this.clear();
+		for(var i = 0; i < arguments.length; i++) {
+			var fieldId = arguments[i];
+			var field = fields[fieldId];
+			if (!field) {
+				continue;
+			}
+			this.add(field);
+		}
+	},
     setData:function(data) {
         if (typeof data != 'object') 
             return this;
@@ -99,8 +132,10 @@ $wb.ui.form.FieldContainer = $wb.Class('FieldContainer',{
                     }
                 }
 
-                if (typeof data[name] !== 'undefined') {
-                    w.value(data[name]);
+				name = name.replace(/\[\]/g,'').replace(/\]/g,'').replace(/\[/g,'.');
+
+                if (typeof $wb.utils.GetValue(data,name) !== 'undefined') {
+                    w.value($wb.utils.GetValue(data,name));
                 }
             });
         } else {
@@ -150,7 +185,7 @@ $wb.ui.form.FieldContainer = $wb.Class('FieldContainer',{
             var isArray = (name.substr(-2) === '[]');
             var parts = name.split('[');
             for(i = 0; i < parts.length;i++) {
-                var part = parts[i];
+                var part = parts[i].replace(/\]$/,'');
                 var last = (parts.length-1)===i;
                 if (isArray && last) {
                     name = parts[i-1];
@@ -181,25 +216,7 @@ $wb.ui.form.FieldContainer = $wb.Class('FieldContainer',{
 $wb.ui.form.FieldPane = $wb.Class('FieldPane',{
     __extends:[$wb.ui.Pane,$wb.ui.form.FieldContainer],
     __defaults:{
-        layout:function() {
-            var labels = this.target().find('.wb-input-container.wb-label-left .wb-label:visible:first-child');
-            var widest = labels.widest();
-            labels.outerWidth(widest.outerWidth());
-            
-            var maxW = Math.floor(this.target().innerWidth() / this.opts.cols);
-            var leftover = this.target().innerWidth()-(maxW*this.opts.cols);
-            var nodes = this.children();
-            for(var i = 0; i < nodes.length;i++) {
-                var node = nodes[i];
-                //node.elm().outerWidth(maxW);
-                if (this.opts.cols > 1)
-                    node.elm().css('float','left');
-                if (i % this.opts.cols == 0) {
-                    //node.elm().outerWidth(maxW+leftover);
-                    node.elm().addClass('wb-first');
-                }
-            }
-        },
+        layout: $wb.ui.layout.Vertical,
         cols:1,
         columnClass:'wb-columns'
     },
@@ -210,11 +227,6 @@ $wb.ui.form.FieldPane = $wb.Class('FieldPane',{
             var elm = $wb(this.find('.wb-input:eq(0)'));
             if (elm) {
                 elm.focus();
-            }
-            if (this.opts.cols > 1) {
-                this.elm().addClass(this.opts.columnClass);
-            } else {
-                this.elm().removeClass(this.opts.columnClass);
             }
         });
     }
@@ -333,21 +345,9 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
             return $wb.template.form.container.apply(this,[this.opts.type,inputHtml]);
         },
         layout:function() {
-            var maxW = this._container.innerWidth();
-            if (maxW < 1)
-                maxW = this.elm().innerWidth();
-            var labelW = this.labelElm().outerWidth();
-            
-            if (this._labelPosition == 'none') {
-                labelW = 0;
+            if (['left','right'].indexOf(this._labelPosition) > -1) {
+                $wb.ui.layout.Horizontal.apply(this);
             }
-            var w = maxW-labelW;
-            if (this.opts.type == 'checkbox' 
-                    || this.opts.type == 'radio') {
-               return;
-            }
-            if (w > 0 && labelW > 0)
-                this.target().outerWidth(w);
         }
     },
     _labelElm:null,
@@ -463,7 +463,7 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
         }
     },
     name:function() {
-        return this.target().attr('name');
+        return this._name;
     },
     focus:function() {
         this.target().focus();
@@ -484,7 +484,10 @@ $wb.ui.form.BaseField = $wb.Class('BaseField',{
     }
     
 });
-
+/**
+ * A simple text component for inserting non-writable info into form
+ * @constructor
+ */
 $wb.ui.form.Text = $wb.Class('Text',{
     __extends:[$wb.ui.form.BaseField],
     _html:"",
@@ -522,6 +525,152 @@ $wb.ui.form.Text = $wb.Class('Text',{
     }
 });
 
+/**
+ * For adding read-only image to forms
+ * @type {*}
+ */
+$wb.ui.form.ImagePreview = $wb.Class('FormImagePreview',{
+    __extends:[$wb.ui.form.BaseField],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            target:'.wb-target',
+            inputTmpl:function() {
+                return '<img class="wb-target wb-input wb-fake-input" />';
+            }
+        },opts);
+        this.__super(opts);
+
+
+        var me = this;
+        this.target().click(function() {
+            var val = me.value()
+            if (!val) {
+                return;
+            }
+            var a = document.createElement('a');
+            a.href = val;
+            a.target = 'preview';
+            a.click();
+        });
+    },
+    value:function(val) {
+        if (arguments.length > 0) {
+            this.target().attr('src',val)
+                .css('cursor', val ? 'pointer' : 'default')
+                .attr('title', val ? _('Click to preview image in new window') : '');
+
+            return this;
+        }
+        return this.target().attr('src');
+    }
+});
+
+/**
+ * For adding read-only file info to forms
+ * @type {*}
+ */
+$wb.ui.form.FilePreview = $wb.Class('FormFilePreview',{
+    __extends:[$wb.ui.form.BaseField],
+    _datauri:null,
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            target:'.wb-target',
+            inputTmpl:function() {
+                return '<div class="wb-target wb-input wb-fake-input" />';
+            }
+        },opts);
+        this.__super(opts);
+
+        this.bind('render',function() {
+            this.target().enableMarking();
+            this.value(this._datauri);
+        });
+
+        var me = this;
+        this.target().click(function() {
+            if (!me._datauri) {
+                return;
+            }
+
+            var parts = me._datauri.split(',');
+            var contentTypeParts = parts[0].split(':')[1];
+            var contentType = contentTypeParts.split(';')[0];
+
+
+            var a = document.createElement('a');
+            a.href = me._datauri;
+            var ext = '';
+            switch(contentType) {
+                case 'image/png':
+                    ext = '.png';
+                    break;
+                case 'image/jpg':
+                case 'image/jpeg':
+                    ext = '.jpg';
+                    break;
+                case 'image/gif':
+                    ext = '.gif';
+                    break;
+                case 'application/pdf':
+                    ext = '.pdf';
+                    break;
+                case 'text/xml':
+                    ext = '.xml';
+                    break;
+                case 'text/html':
+                    ext = '.html';
+                    break;
+                case 'application/json':
+                    ext = '.json';
+                    break;
+            }
+            a.download = 'preview' + ext;
+            a.click();
+        });
+    },
+    value:function(val) {
+        if (arguments.length > 0) {
+            this._datauri = val;
+            var html = _('None');
+            if (val) {
+                var parts = val.split(',')
+                var contentTypeParts = parts[0].split(':')[1];
+                var contentType = contentTypeParts.split(';')[0];
+
+                var binary = atob(parts[1]);
+                var bytes = binary.length;
+                var kb = 1024;
+                var mb = kb*1024;
+                var gb = mb*1024;
+
+                var byteText = '%s bytes'.format(bytes);
+                if (bytes > gb) {
+                    byteText = '%s Gb'.format(Math.round(bytes*100 / gb) / 100);
+                }
+                if (bytes > mb) {
+                    byteText = '%s Mb'.format(Math.round(bytes*100 / mb) / 100);
+                }
+                if (bytes > kb) {
+                    byteText = '%s Kb'.format(Math.round(bytes*100 / kb) / 100);
+                }
+
+                html = '<p style="cursor: pointer;" title="%s"><b>%s:</b> %s<br/><b>%s:</b> %s</p>'.format(
+                            _('Click to download file preview'),
+                            _('File Type'),contentType,
+                            _('File Size'),byteText);
+
+            }
+
+            this.target().html(html);
+            return this;
+        }
+        return this._datauri;
+    }
+});
+
+
 $wb.ui.form.InputField = $wb.Class('InputField',{
     __extends:[$wb.ui.form.BaseField],
     _type:null,
@@ -550,6 +699,39 @@ $wb.ui.form.TextField = $wb.Class('TextField',{
         if (!opts) opts = {};
         opts = $.extend({
             type:'text'
+        },opts);
+        this.__super(opts);
+    }
+});
+
+$wb.ui.form.NumberField = $wb.Class('NumberField',{
+    __extends:[$wb.ui.form.InputField],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            type:'number'
+        },opts);
+        this.__super(opts);
+    }
+});
+
+$wb.ui.form.EmailField = $wb.Class('EmailField',{
+    __extends:[$wb.ui.form.InputField],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            type:'email'
+        },opts);
+        this.__super(opts);
+    }
+});
+
+$wb.ui.form.UrlField = $wb.Class('UrlField',{
+    __extends:[$wb.ui.form.InputField],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            type:'url'
         },opts);
         this.__super(opts);
     }
@@ -737,11 +919,7 @@ $wb.ui.form.CronField = $wb.Class('CronField',{
             },
             $wb.utils.Range(new Date().getFullYear()-10,new Date().getFullYear()+10),
         ],
-        layout:function() {
-            var maxW = this.labelElm().parent().innerWidth();
-            var labelW = this.labelElm().outerWidth();
-            this._cronElm().outerWidth(maxW-labelW);
-        }
+        layout: $wb.ui.layout.Horizontal
     },
     _fields:[],
     __construct:function(opts) {
@@ -1073,35 +1251,26 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
     },
     _loadCodeMirror:function() {
         if (typeof CodeMirror == 'undefined') {
-            loadCSS(this.opts.codemirrorBase+"codemirror.css");
-            var required = [
-                this.opts.codemirrorBase+"codemirror.js"
-            ];
-            require(required,this._loadMode.bind(this));
-        } else {
-            this._loadMode();
+            throw 'Code mirror not loaded. Remember to include all needed files before invoking TextEditor.';
         }
+        this._loadMode();
         
     },
     _loadMode:function() {
-        if (typeof CodeMirror.modes[this.opts.mode] == 'undefined') {
-            //Load mode
-            var modeName = $.type(this.opts.mode) == 'string' ? this.opts.mode : this.opts.mode.name;
-            var jsFile = this.opts.codemirrorBase+"mode/"+modeName+"/"+modeName+".js";
-            var required = [jsFile];
-            if (modeName == 'javascript') {
-                required.push(this.opts.codemirrorBase+"util/simple-hint.js");
-                required.push(this.opts.codemirrorBase+"util/javascript-hint.js");
-                loadCSS(this.opts.codemirrorBase+"util/simple-hint.css");
-            }
-            //var cssFile = this.opts.codemirrorBase+"mode/"+this.opts.mode+"/"+this.opts.mode+".css";
-            require(required,this._init.bind(this));
-        } else {
-            this._init();
+        var modeName = $.type(this.opts.mode) == 'string' ? this.opts.mode : this.opts.mode.name;
+
+        if (typeof CodeMirror.modes[modeName] == 'undefined') {
+            throw 'Invalid code mirror mode: ' + modeName + '. Remember to include all needed files before invoking TextEditor.';
         }
+        this._init();
     },
     _init:function() {
         var destroyIt = function() {
+            if (this.elm().find('.CodeMirror').length < 1) {
+                return;
+            }
+
+            console.log('destroying');
             this.elm().find('.CodeMirror').detach();
             delete this._codemirror;
             this._codemirror = null;
@@ -1119,27 +1288,15 @@ $wb.ui.form.TextEditor = $wb.Class('TextEditor',{
                 var m = this._copyMethods[i];
                 this[m] = this._codemirror[m].bind(this._codemirror);
             }
-            
+
             //Cause a slight delay to allow it to properly refresh
             //@TODO: Find root cause and fix
             setTimeout(function() {
-                this._codemirror.refresh()
-            }.bind(this),500);
-            
-            var parentWindow = this.elm().closest('.wb-window');
-            if (parentWindow.length > 0) {
-                $wb(parentWindow).layout();
-            }
-            
-            this._rendered = false;
+                this._codemirror.refresh();
+                this.value(this.value());
+            }.bind(this),100);
+
         });
-        /**
-         * If the widget had time to render before we got the whole thing loaded
-         * trigger render event manually to ensure we get code mirror setup
-         */
-        if (this._rendered) {
-            this.trigger('render');
-        }
     },
     value:function() {
         if (arguments.length > 0) {
@@ -1185,6 +1342,137 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
     },
     addButton:function(button) {
         this._buttonPane.add(button);
+    }
+});
+
+
+$wb.ui.form.StringListField = $wb.Class('StringListField',{
+    __extends:[$wb.ui.form.TextArea],
+    __defaults:{
+        'class':'wb-stringlist'
+    },
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        this.__super(opts);
+        this.value([]);
+        this.target().addClass('wb-offscreen');
+
+        var modal = null;
+
+        var model = new $wb.data.Model('stringList',{
+            name:{name:"Entry",valueType:"string",required:true,unique:true}
+        });
+
+        var store = new $wb.data.TableStore({model:model});
+
+        var table = new $wb.ui.Table({
+            store:store,
+            header:true,
+            footer:false,
+            editable:true,
+            headerActions:{
+                'add':new $wb.Action(_('Add'),function() {
+                    table.newRow();
+                },'plus')
+            },
+            rowActions:{
+                'remove':new $wb.Action(_('Remove'),function() {
+                    store.remove(this.getData());
+                },'remove'),
+                'edit':new $wb.Action(_('Edit'),function() {
+                    this.makeEditable();
+                },'edit')
+            },
+            rowEditActions:{
+                'save':new $wb.Action(_('Save'),function() {
+                    var data = this.getData();
+                    if (!data.name) return;
+                    if (this.isNew())
+                        store.add(data);
+                    else
+                        store.update(data);
+                    this.makeStatic();
+                },'save')
+            }
+        });
+
+
+        var btnPane = new $wb.ui.form.ButtonPane();
+        btnPane.add(new $wb.ui.form.Button({label:_('Apply'),action:function() {
+            var rows = store.getRows().toArray();
+            var list = [];
+            $wb.each(rows,function(row) {
+                list.push(row.name);
+            });
+
+            this.value(list);
+            modal.close();
+        }.bind(this)}));
+        btnPane.add(new $wb.ui.form.Button({label:_('Cancel'),action:function() {
+            modal.close();
+        }}));
+
+        btnPane.elm().css('margin-top',15);
+
+        var pane = new $wb.ui.Pane();
+        pane.add(table);
+        pane.add(btnPane);
+
+        var opener = new $wb.ui.Link({title:'Add...',action:function() {
+            if (this.value()) {
+                var list = this.value();
+                var entries = [];
+                $wb.each(list,function(name) {
+                    entries.push({name:name});
+                });
+
+
+                store.setRows(entries);
+            }
+
+            modal = $wb.createModal({title:'Edit list',content:pane,height:450});
+        }.bind(this)});
+
+
+
+        this.bind('change',function() {
+            var list = this.value();
+            if (list && list.length > 0) {
+                opener.html(list.join(', '));
+            } else {
+                opener.html(_('None'));
+            }
+        });
+
+        this.bind('paint',function() {
+            this.container().append(opener.render());
+            this.trigger('change');
+        });
+    },
+    value:function(val) {
+        if (arguments.length > 0) {
+            if ($.type(val) !== 'string') {
+                if (!Array.isArray(val)) {
+                    val = [];
+                }
+                val = JSON.stringify(val.unique());
+            }
+
+            if (val === undefined)
+                val = [];
+            return this.__super(val);
+        } else {
+            val = this.__super();
+            if (!val) {
+                val = [];
+            } else if ($.type(val) === 'string') {
+                val = JSON.parse(val);
+            }
+            if (!Array.isArray(val)) {
+                val = [];
+            }
+            return val.unique();
+        }
     }
 });
 
@@ -1420,4 +1708,21 @@ $wb.ui.form.WindowForm = $wb.Class('WindowForm',{
         inherits:'code',
         mode:{name:'javascript',json:true}
     });
+
+
+    new $wb.ui.FieldType(
+        {
+            type:"string[]",
+            formField:function(opts,value) {
+                var out = new $wb.ui.form.StringListField({name:opts.id,label:opts.name});
+                out.value(value);
+                return out;
+            },
+            format:function(opts,value) {
+                return (value && value.length > 0) ? value.join(', ') : _('None');
+            }
+        }
+    );
+
+
 })();

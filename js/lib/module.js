@@ -1,3 +1,4 @@
+//@module core
 $wb.Module = new $wb.Class('Module',{
     __extends:[$wb.core.Events,$wb.core.Utils],
     __defaults:{
@@ -52,7 +53,7 @@ $wb.Module = new $wb.Class('Module',{
     },
     listView:function(opts) {
         if (this.opts.views.list)
-            return this.opts.views.list.apply(this);
+            return this.opts.views.list.apply(this,[opts]);
         return new $wb.ui.Table($.extend({
             store:this.tableStore(),
             fields:this.opts.listFields,
@@ -101,7 +102,9 @@ $wb.Module = new $wb.Class('Module',{
         if (this.opts.stores.list)
             return this.opts.stores.list.apply(this);
         return new $wb.data.ListStore({
-            source:this.source()
+            source:this.source(),
+            model:this.model(),
+            fields:this.opts.listFields
         });
     },
     treeStore:function() {
@@ -120,7 +123,8 @@ $wb.Module = new $wb.Class('Module',{
             return this.opts.stores.table.apply(this);
         return new $wb.data.TableStore({
             model:this.model(),
-            source:this.source()
+            source:this.source(),
+            fields:this.opts.listFields
         });
     },
     model:function() {

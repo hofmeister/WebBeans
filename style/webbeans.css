@@ -148,7 +148,7 @@ div,td,table,tbody,thead,tfoot,th {
     overflow:hidden;
     background-color: transparent !important;
     background-image: none !important;
-
+    position: relative;
 }
 .wb-splitpane.wb-vertical > .wb-pane,
     .wb-splitpane.wb-vertical > .wb-splitter {
@@ -160,15 +160,29 @@ div,td,table,tbody,thead,tfoot,th {
     .wb-splitpane.wb-horizontal > .wb-splitter {
     float:none;
 }
+.wb-splitpane > .wb-ruler {
+    position: absolute;
+    top:0;
+    left:0;
+    display:none;
+    z-index: 10;
+}
+
 .wb-splitpane > .wb-splitter {
     cursor: move;
 }
-.wb-splitpane.wb-horizontal > .wb-splitter {
-    cursor: row-resize;
+.wb-splitpane.wb-horizontal > .wb-splitter,
+  .wb-splitpane.wb-horizontal > .wb-ruler {
+	cursor: row-resize;
+	height:10px;
+    width:100%;
 }
 
-.wb-splitpane.wb-vertical > .wb-splitter {
+.wb-splitpane.wb-vertical > .wb-splitter,
+  .wb-splitpane.wb-vertical > .wb-ruler {
     cursor: col-resize;
+	width:10px;
+    height:100%;
 }
 
 /* tab pane */
@@ -550,26 +564,34 @@ div,td,table,tbody,thead,tfoot,th {
     position:absolute;
     top:0px;
     left:0px;
-    cursor: pointer;
     z-index: 10;
+}
+
+.wb-scrollbar,
+    ::-webkit-scrollbar {
+    cursor: pointer;
     background-color: white;
     opacity: .8;
     filter: alpha(opacity=80);
 }
 
 .wb-scrollbar.wb-vertical,
+    ::-webkit-scrollbar:vertical,
     .wb-scrollbar.wb-vertical > .wb-scroller {
     width:10px;
 }
-.wb-scrollbar.wb-vertical {
+.wb-scrollbar.wb-vertical,
+    ::-webkit-scrollbar-track:vertical {
     border-left: 1px solid #ccc;
 }
 
 .wb-scrollbar.wb-horizontal,
-    .wb-scrollbar.wb-horizontal > .wb-scroller {
+    .wb-scrollbar.wb-horizontal > .wb-scroller,
+    ::-webkit-scrollbar:horizontal {
     height:10px;
 }
-.wb-scrollbar.wb-horizontal {
+.wb-scrollbar.wb-horizontal,
+    ::-webkit-scrollbar-track:horizontal {
     border-top: 1px solid #ccc;
 }
 
@@ -580,8 +602,14 @@ div,td,table,tbody,thead,tfoot,th {
     background-color: transparent;
 }
 
+.wb-scrollbar > .wb-scroller,
+    ::-webkit-scrollbar-thumb {
+    background-color: #666;
+    border-radius: 3px;
+}
+
+
 .wb-scrollbar > .wb-scroller {
-    background-color: #333;
     position: absolute;
 }
 .CodeMirror * {

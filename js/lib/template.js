@@ -1,3 +1,4 @@
+//@module core
 /**
  * @fileOverview
  * Contains all the default templates
@@ -58,7 +59,7 @@ $wb.template = {
             return '<ul class="wb-menu line"></ul>';
         },
         menuItem:function() {
-            return '<li class="wb-menuitem"><span class="wb-icon"/><span class="wb-title"/></li>';
+            return '<li class="wb-menuitem"><span class="wb-icon"/><span class="wb-title" ><span class="wb-text" /></span></li>';
         },
         subMenu:function() {
             return '<ul class="wb-submenu line"></ul>';
@@ -69,7 +70,7 @@ $wb.template = {
             return '<ul class="wb-breadcrumb line"></ul>';
         },
         button:function() {
-            return '<li class="wb-entry"><span class="wb-icon"/><span class="wb-title"/></li>';
+            return '<li class="wb-entry"><span class="wb-icon"/><span class="wb-title" ><span class="wb-text" /></span></li>';
         }
     },
     frame: function() {
@@ -97,13 +98,13 @@ $wb.template = {
              return '<div class="wb-pane"></div>';
         },
         split:function() {
-            return '<div class="wb-pane wb-splitpane"><div class="wb-splitter"></div></div>';
+            return '<div class="wb-pane wb-splitpane"><div class="wb-splitter" /><div class="wb-ruler" /></div>';
         },
         tab:function() {
             return '<div class="wb-pane wb-tabpane"><ul class="wb-tabs line" ><li class="wb-actions" /></ul><div class="wb-panes" /></div>';
         },
         tab_button:function() {
-            return '<li class="wb-tab"><div class="wb-title" /></li>';
+            return '<li class="wb-tab"><span class="wb-title" ><span class="wb-text" /></span></li>';
         },
         html:function() {
              return '<div class="wb-pane wb-pane-html"><div class="wb-inner" /></div>';

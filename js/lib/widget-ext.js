@@ -1,4 +1,4 @@
-
+//@module core.ui.form
 /* Table */
 
 
@@ -203,6 +203,13 @@ $wb.ui.TableRow = $wb.Class('TableRow',
         _paintActions:function(row,rowActionsOption,addons) {
             var self = this;
             var rowActions = this.getTable().option(rowActionsOption);
+            
+            if ($.type(rowActions) == 'function')
+                rowActions = rowActions.apply(this,[row]);
+            
+            if ($.type(addons) == 'function')
+                addons = addons.apply(this,[row]);
+            
             rowActions = $.extend({},addons,rowActions);
             if (this.getTable().hasActions() || addons) {
                 var actionCellTmpl = this.getTable().option('actionCellTmpl');
@@ -290,7 +297,7 @@ $wb.ui.Table = $wb.Class('Table',
                         } else {
                             actionCell = this._body.findFirst('.wb-actions');
                             actionWidth = actionCell.outerWidth();
-                        } 
+                        }
                         
                         if (actionWidth > 0) {
                             this.elm().find('.wb-table-row').each(function() {
@@ -563,7 +570,7 @@ $wb.ui.Table = $wb.Class('Table',
                 this._paging.bind('change',function(page) {
                     var rowsPerPage = this.getStore().getRowsPerPage();
                     this.trigger('page-change',[page,page*rowsPerPage,rowsPerPage]);
-                    if (!this.getStore().getSource() && this.getPaging()) {
+                    if (!this.getStore().getSource()) {
                         this.repaintRows();
                     }
                 }.bind(this));
@@ -903,7 +910,6 @@ $wb.ui.DomPane = $wb.Class('DomPane',{
                 return;
             }
             
-            
             var folded = elm.nextAll('.wb-dom-folded');
             var content = elm.nextAll('.wb-dom-content');
             
@@ -921,11 +927,14 @@ $wb.ui.DomPane = $wb.Class('DomPane',{
         var dom = this.opts.dom;
         if (!dom) return;
         
+        this.target().children().remove();
+        
         var html = '<ul>';
         
         html += this._paintNode(dom[0]);
         
         html += '</ul>';
+        
         this.target().html(html);
     },
     _paintNode:function(node) {
@@ -985,3 +994,5 @@ $wb.ui.DomPane = $wb.Class('DomPane',{
         return this.opts.dom;
     }
 });
+
+

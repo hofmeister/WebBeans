@@ -1,3 +1,4 @@
+//@module core.draw @prio 99
 /**
  * @fileOverview
  * This file contains canvas elements
@@ -16,19 +17,27 @@ $wb.draw.Canvas = $wb.Class('Canvas',{
     __extends: [$wb.ui.Widget],
     __defaults: {
         tmpl:$wb.template.draw.canvas,
+        maxSize: 6000, //Large sized canvassed are unsupported in most browsers
         layout:function() {
             var target = this.target();
-            this.elm().find('.wb-layer').css({
+            var me = this;
+            var buffer = 100;
+
+            var vbox = this.elm().visibleBox();
+            var width = (vbox.right - vbox.left) + (buffer * 2);
+            var height = (vbox.bottom - vbox.top) + (buffer * 2);
+
+			this.elm().find('.wb-layer').css({
                 position:'absolute',
-                top: 0,
-                left: 0
+                top: buffer*-1,
+                left: buffer*-1
             }).each(function () {
                 var layer = $(this).widget();
                 layer.canvas()
-                        .css('z-index',layer.getOrder())
-                        .attr('width',target.innerWidth())
-                        .attr('height',target.innerHeight());
-                        
+                        .attr('width', width)
+                        .attr('height',height)
+                        .css('z-index',layer.getOrder());
+
                 layer.clear();
             });
         }
@@ -36,6 +45,7 @@ $wb.draw.Canvas = $wb.Class('Canvas',{
     _layerNames:{},
     __construct:function() {
         this.__super(this.getDefaults());
+		this.elm().disableMarking();
     },
     addLayer:function(name,zIndex) {
         if (typeof zIndex == 'undefined')
@@ -120,10 +130,34 @@ $wb.draw.Layer = $wb.Class('Layer',{
         this._elements.sort(function(a,b) {
             return a.opts.zIndex-b.opts.zIndex;
         });
-        
+
+        var buffer = 100;
+
+        var ppos = this.parent().elm().position();
+        var offset = {
+            x: ppos.left + buffer,
+            y: ppos.top + buffer
+        }
+        this.elm().css({
+                top:offset.y * -1,
+                left:offset.x * -1
+            });
+
+
+        var vbox = this.parent().elm().visibleBox();
         for(var i = 0; i < this._elements.length;i++) {
             var child = this._elements[i];
             if (child.isVisible()) {
+                if (child.getBoundingBox) {
+                    var bbox = child.getBoundingBox();
+                    if (bbox.x2 < vbox.left ||
+                        bbox.x1 > vbox.right ||
+                        bbox.y2 < vbox.top ||
+                        bbox.y1 > vbox.bottom) {
+                        continue;
+                    }
+                }
+                child.setOffset(offset.x,offset.y);
                 child.draw(this);
             }
         }
@@ -147,7 +181,8 @@ $wb.draw.Layer = $wb.Class('Layer',{
     },
     empty:function() {
         while(this._elements.length > 0) {
-            delete this._elements.pop();
+            var elm = this._elements.pop();
+            elm.destroy();
         }
         this.clear();
     },
@@ -173,6 +208,7 @@ $wb.draw.Element = $wb.Class('Element',{
         shadowOffsetY:0,
         shadowBlur:0
     },
+    _offset: {x:0,y:0},
     _ctxtOpts:[ 'fillStyle','strokeStyle','lineWidth','miterLimit',
                 'shadowColor','shadowOffsetX','shadowOffsetY','shadowBlur'],
     _cached:null,
@@ -188,23 +224,35 @@ $wb.draw.Element = $wb.Class('Element',{
         var layer = this._layer;
         layer.remove(this);
         this.trigger('destroy');
-        delete this;
+        delete this.opts;
+        delete this._ctxtOpts;
+        delete this._cached;
     },
     getLayer:function() {
         return this._layer;
     },
     render:function(layer) {
+        if (!layer) {
+            layer = this._layer;
+        }
+
         if (layer) {
             return this.draw(layer);
+            layer.render();
+            this.trigger('render');
+        } else {
+            console.warn('Layer not found for elm',this);
         }
-        this._layer.render();
-        this.trigger('render');
         return this;
     },
     draw:function(layer) {
         
         if (!layer) {
             layer = this._layer;
+        }
+        if (!layer ){
+            console.warn('Layer not found for elm',this);
+            return;
         }
         this.trigger('before-draw');
         
@@ -259,6 +307,12 @@ $wb.draw.Element = $wb.Class('Element',{
             this.opts.visible = visible;
             this.render();
         }
+    },
+    setOffset: function(x,y) {
+        this._offset = {
+            x:x,
+            y:y
+        };
     }
 });
 
@@ -266,6 +320,7 @@ $wb.draw.Element = $wb.Class('Element',{
 $wb.draw.PolyLine = $wb.Class('PolyLine',{
     __extends:[$wb.draw.Element],
     __defaults:{
+        smooth: false,
         lineEnding:null,
         style:'normal' //normal or dashed
     },
@@ -300,26 +355,179 @@ $wb.draw.PolyLine = $wb.Class('PolyLine',{
     },
     setLineCap:function(lineEnding) {
         this.opts.lineEnding = lineEnding;
+        if (this.opts.lineEnding) {
+            this.opts.lineEnding.setOffset(this._offset.x,this._offset.y);
+        }
         this.clearCache();
         return this;
     },
     _paint:function(ctxt,canvas) {
         var first = this._points[0];
         ctxt.beginPath();
-        
-        ctxt.moveTo(first.x,first.y);
-        var last = first;
-        for(var i = 1;i < this._points.length;i++) {
-            
-            if (this.opts.style == 'dashed')
-                ctxt.dashedLineTo(last.x,last.y,this._points[i].x,this._points[i].y);
-            else
-                ctxt.lineTo(this._points[i].x,this._points[i].y);
-            last = this._points[i];
+        if (this.opts.style == 'dashed') {
+            ctxt.setLineDash([8]);
         }
+        ctxt.moveTo(first.x + this._offset.x, first.y + this._offset.y);
+
+        if (this.opts.smooth) {
+            this._paintSmooth(ctxt, canvas);
+        } else {
+            this._paintStraight(ctxt, canvas);
+        }
+
+        ctxt.stroke();
+
+        if (this.opts.style == 'dashed') {
+            ctxt.setLineDash([]);
+        }
+
+        ctxt.beginPath();
         this._paintLineEnding(ctxt,canvas);
         ctxt.stroke();
     },
+    _paintStraight: function(ctxt, canvas) {
+        for(var i = 1;i < this._points.length;i++) {
+            var p = this._point(i);
+
+            ctxt.lineTo( p.x, p.y );
+        }
+    },
+    _point: function(i) {
+        if (!this._points[i]) {
+            return null;
+        }
+        return {
+            x: this._points[i].x + this._offset.x,
+            y: this._points[i].y + this._offset.y
+        };
+    },
+    _paintSmooth: function(ctxt, canvas) {
+        if (this._points.length < 3) {
+            this._paintStraight(ctxt, canvas);
+            return;
+        }
+
+        var points = [];
+        for(var i = 0;i < this._points.length;i++) {
+            var p = this._point(i);
+            points.push(p);
+        }
+
+        var iPoints = this._getInterpolatedPoints(points, 20);
+
+        for(var i = 0;i < iPoints.length;i++) {
+            var p = iPoints[i]
+
+            ctxt.lineTo(p.x, p.y);
+        }
+    },
+    _getInterpolationSegment: function(pnt0, pnt1, pnt2, pnt3, buff, buff_base, pointsPerSegment){
+        var rv = false;
+        var steps = 0;
+        var step = 0.0;
+        var t = 0.0;
+        var tt = 0.0;
+        var ttt = 0.0;
+        var p0x = pnt0.x;
+        var p1x = pnt1.x;
+        var p2x = pnt2.x;
+        var p3x = pnt3.x;
+        var p0y = pnt0.y;
+        var p1y = pnt1.y;
+        var p2y = pnt2.y;
+        var p3y = pnt3.y;
+        //var ipps = this._interpolatedPointsPerSegment;
+        var ipps = pointsPerSegment;
+        var i = 0;
+        if (buff){
+            steps = ipps - 1;
+            if (steps > 0){
+                step = 1.0 / steps;
+                steps = buff_base + steps;
+                //t = 0.0 => point = pnt1
+                buff[buff_base].x = pnt1.x;
+                buff[buff_base].y = pnt1.y;
+
+                //0.0<t<1.0 => ...
+                for (i = buff_base+1; i < steps; ++i){
+                    t += step;
+                    tt = t*t;
+                    ttt = tt * t;
+                    buff[i].x = 0.5 * ( (2*p1x) +
+                        (-p0x + p2x) * t +
+                        (2*p0x - 5*p1x + 4*p2x - p3x) * tt +
+                        (-p0x + 3*p1x - 3*p2x + p3x) * ttt);
+                    buff[i].y = 0.5 * ( (2*p1y) +
+                        (-p0y + p2y) * t +
+                        (2*p0y - 5*p1y + 4*p2y - p3y) * tt +
+                        (-p0y + 3*p1y - 3*p2y + p3y) * ttt);
+                }
+
+                //t = 1.0 => point = pnt2
+                buff[steps].x = pnt2.x;
+                buff[steps].y = pnt2.y;
+                rv = true;
+            }
+        }
+        return rv;
+    },
+    _getInterpolatedPoints: function(points, pointsPerSegment) {
+        var pnts,pnt,pnt0,pnt1,pnt2,pnt3,rv;
+
+        var ipps = pointsPerSegment - 1,
+            subsegments = ipps * (points.length - 1) + 1,
+            n = 0,
+            current_base = 0;
+
+        if ((!rv || (rv.length !== subsegments)) && (points.length > 2)){
+            rv = [];
+            for (i = 0; i < subsegments; ++i){
+                rv.push({'x': 0.0, 'y': 0.0});
+            }
+
+            pnts = points;
+
+            pnt1 = pnts[0];
+            pnt2 = pnts[1];
+            pnt3 = pnts[2];
+            pnt0 = pnt = {'x': pnt1.x + (pnt1.x - pnt2.x), 'y': pnt1.y + (pnt1.y - pnt2.y)};
+
+            this._getInterpolationSegment(pnt0, pnt1, pnt2, pnt3, rv, current_base, pointsPerSegment);
+            current_base += ipps;
+
+            //
+            n = pnts.length;
+            for (i = 3; i < n; ++i){
+                pnt0 = pnt1;
+                pnt1 = pnt2;
+                pnt2 = pnt3;
+                pnt3 = pnts[i];
+
+                this._getInterpolationSegment(pnt0, pnt1, pnt2, pnt3, rv, current_base, pointsPerSegment);
+                current_base += ipps;
+            }
+
+            //the last segment
+            pnt0 = pnt1;
+            pnt1 = pnt2;
+            pnt2 = pnt3;
+            pnt3 = pnt; pnt3.x = pnt2.x + (pnt2.x - pnt1.x); pnt3.y = pnt2.y + (pnt2.y - pnt1.y);
+            this._getInterpolationSegment(pnt0, pnt1, pnt2, pnt3, rv, current_base, pointsPerSegment);
+            current_base += ipps;
+
+        } else if (!(rv && (points.length > 2))){
+            rv = [];
+
+            pnts = points;
+            n = pnts.length;
+            for (i = 0; i < n; ++i){
+                pnt = pnts[i];
+                rv.push({'x': pnt.x, 'y': pnt.y});
+            }
+        }
+        return rv;
+    },
+
     _paintLineEnding:function(ctxt,canvas) {
         if (this.opts.lineEnding && this._points.length > 1) {
             var offset = 0;
@@ -341,6 +549,41 @@ $wb.draw.PolyLine = $wb.Class('PolyLine',{
     },
     getPoints:function() {
         return this._points;
+    },
+    getBoundingBox:function() {
+        var out = {
+            x1:-1,
+            y1:-1,
+            x2:-1,
+            y2:-1
+        };
+
+        this._points.forEach(function(point) {
+            if (out.x1 < 0) {
+                out.x1 = out.x2 = point.x;
+            } else {
+                out.x1 = Math.min(out.x1,point.x);
+                out.x2 = Math.max(out.x2,point.x);
+            }
+            if (out.y1 < 0) {
+                out.y1 = out.y2 = point.y;
+            } else {
+                out.y1 = Math.min(out.y1,point.y);
+                out.y2 = Math.max(out.y2,point.y);
+            }
+        });
+
+        return out;
+    },
+    destroy:function() {
+        delete this._points;
+        this.__super();
+    },
+    setOffset: function(x, y) {
+        if (this.opts.lineEnding) {
+            this.opts.lineEnding.setOffset(x,y);
+        }
+        return this.__super(x, y);
     }
 });
 
@@ -537,6 +780,10 @@ $wb.draw.Path = $wb.Class('Path',{
     _samePoint:function(p1,p2) {
         return Math.floor(p1.x) == Math.floor(p2.x) 
                 && Math.floor(p1.y) == Math.floor(p2.y);
+    },
+    destroy:function() {
+        delete this._obstacles;
+        this.__super();
     }
 });
 $wb.draw.LineCap = $wb.Class('LineCap',{
@@ -575,30 +822,40 @@ $wb.draw.Arrow = $wb.Class('Arrow',{
             y:to.y+3*Math.sin(angle)
         };
         
-        ctxt.moveTo(offset.x, offset.y);
-        ctxt.lineTo(offset.x-size*Math.cos(angle-Math.PI/6),offset.y-size*Math.sin(angle-Math.PI/6));
-        ctxt.moveTo(offset.x, offset.y);
-        ctxt.lineTo(offset.x-size*Math.cos(angle+Math.PI/6),offset.y-size*Math.sin(angle+Math.PI/6));
-        
-        
+        ctxt.moveTo(offset.x + this._offset.x, offset.y + this._offset.y);
+        ctxt.lineTo(
+            (offset.x + this._offset.x) - size * Math.cos(angle-Math.PI/6),
+            (offset.y + this._offset.y) - size * Math.sin(angle-Math.PI/6)
+        );
+        ctxt.moveTo(offset.x + this._offset.x, offset.y + this._offset.y);
+        ctxt.lineTo(
+            (offset.x + this._offset.x) - size * Math.cos(angle+Math.PI/6),
+            (offset.y + this._offset.y) - size * Math.sin(angle+Math.PI/6)
+        );
     }
 });
 
 
 $wb.draw.Polygon = $wb.Class('Polygon',{
     __extends:[$wb.draw.PolyLine],
-    _points:[],
     __construct:function(opts) {
         this.__super(opts);
     },
     _paint:function(ctxt,canvas) {
         var first = this._points[0];
         ctxt.beginPath();
-        ctxt.moveTo(first.x,first.x);
+        ctxt.moveTo(
+            first.x + this._offset.x,
+            first.y + this._offset.y);
         for(var i = 1;i < this._points.length;i++) {
-            ctxt.lineTo(this._points[i].x,this._points[i].y);
+            ctxt.lineTo(
+                this._points[i].x + this._offset.x,
+                this._points[i].y + this._offset.y);
         }
-        ctxt.lineTo(first.x,first.y);
+        ctxt.lineTo(
+            first.x + this._offset.x,
+            first.y + this._offset.y
+        );
         ctxt.stroke();
         ctxt.fill();
     }
@@ -624,10 +881,18 @@ $wb.draw.Rectangle = $wb.Class('Rectangle',{
         this.clearCache();
     },
     _paint:function(ctxt) {
-        if (this.opts.fillStyle)
-            ctxt.fillRect(this.opts.x1,this.opts.y1,this.opts.x2,this.opts.y2);
-        if (this.opts.strokeStyle)
-            ctxt.strokeRect(this.opts.x1,this.opts.y1,this.opts.x2,this.opts.y2);
+
+        var x1 = this.opts.x1 + this._offset.x,
+            y1 = this.opts.y1 + this._offset.y,
+            w = (this.opts.x2 + this._offset.x) - (this.opts.x1 + this._offset.x),
+            h = (this.opts.y2 + this._offset.y) - (this.opts.y1 + this._offset.y);
+
+        if (this.opts.fillStyle) {
+            ctxt.fillRect(x1,y1,w,h);
+        }
+        if (this.opts.strokeStyle) {
+            ctxt.strokeRect(x1,y1,w,h);
+        }
     }
 });
 
@@ -677,14 +942,14 @@ $wb.draw.Grid = $wb.Class('Grid',{
         for(var x = 0; x < cellWidth;x++) {
             var offsetX = offset.x+x*this.opts.width;
             
-            ctxt.moveTo(offsetX,offset.y);
-            ctxt.lineTo(offsetX,size.height);
+            ctxt.moveTo(offsetX + this._offset.x,offset.y + this._offset.y);
+            ctxt.lineTo(offsetX + this._offset.x,size.height + this._offset.y);
             
             for(var y = 0; y < cellHeight;y++) {
                 var offsetY = offset.y+y*this.opts.height;
                 
-                ctxt.moveTo(offset.x,offsetY);
-                ctxt.lineTo(size.width,offsetY);
+                ctxt.moveTo(offset.x + this._offset.x,offsetY + this._offset.y);
+                ctxt.lineTo(size.width + this._offset.x,offsetY + this._offset.y);
             }
         }
         ctxt.stroke();
@@ -727,11 +992,22 @@ $wb.draw.Circle = $wb.Class('Circle',{
     },
     _paint:function(ctxt) {
         ctxt.beginPath();
-        ctxt.arc(this.opts.x,this.opts.y,this.opts.radius,this.opts.start,this.opts.end,this.opts.clockwise);
-        if (this.opts.fillStyle)
+        ctxt.arc(
+            this.opts.x + this._offset.x,
+            this.opts.y + this._offset.y,
+            this.opts.radius,
+            this.opts.start,
+            this.opts.end,
+            this.opts.clockwise
+        );
+
+        if (this.opts.fillStyle) {
             ctxt.fill();
-        if (this.opts.strokeStyle)
+        }
+        if (this.opts.strokeStyle) {
             ctxt.stroke();
+        }
+
     }
 });
 
@@ -756,14 +1032,50 @@ $wb.draw.Image = $wb.Class('Image',{
     },
     _paint:function(ctxt) {
         var imgObj = new Image();
-        var self = this;
-        var timeStart = new Date().getTime();
+        var me = this;
         imgObj.onload = function() {
-            ctxt.drawImage(imgObj,self.opts.x,self.opts.y);
-            var timeTaken = new Date().getTime()-timeStart
+            ctxt.drawImage(imgObj,
+                me.opts.x + this._offset.x,
+                me.opts.y + this._offset.y
+            );
         };
         
         imgObj.src = this.opts.data;
+    }
+});
+
+
+
+$wb.draw.Text = $wb.Class('Text',{
+    __extends:[$wb.draw.Element],
+    __defaults:{
+        font:'10px Verdana',
+        textAlign:'left',
+        textBaseline:'top',
+        text:'',
+        x:0,
+        y:0
+    },
+    __construct:function(opts) {
+        this.__super(opts);
+    },
+    setText:function(text) {
+        this.opts.text = text
+        return this;
+    },
+    _paint:function(ctxt) {
+        ctxt.font = this.opts.font;
+        ctxt.textAlign  = this.opts.textAlign ;
+        ctxt.textBaseline  = this.opts.textBaseline ;
+
+        var x = this._offset.x + this.opts.x,
+            y = this._offset.y + this.opts.y;
+
+
+        ctxt.fillText(this.opts.text,
+            x,
+            y
+        );
     }
 });
 
@@ -772,22 +1084,26 @@ $wb.draw.Image = $wb.Class('Image',{
 var CP = window.CanvasRenderingContext2D && CanvasRenderingContext2D.prototype;
 if (CP && CP.lineTo){
     CP.dashedLineTo = function(x,y,x2,y2,dashArray) {
-        if (!dashArray) 
-            dashArray=[5];
-        if (dashLength==0) 
+        if (!dashArray) {
+            dashArray = [5];
+        }
+
+        if (dashLength === 0) {
             dashLength = 0.001; // Hack for Safari
-        
+        }
+
         var dashCount = dashArray.length;
         this.moveTo(x, y);
         var dx = (x2-x), dy = (y2-y);
         var slope = dy/dx;
         var distRemaining = Math.sqrt( dx*dx + dy*dy );
-        
+
         var dashIndex=0, draw=true;
         while (distRemaining>=0.1){
             var dashLength = dashArray[dashIndex++%dashCount];
-            if (dashLength > distRemaining) 
+            if (dashLength > distRemaining) {
                 dashLength = distRemaining;
+            }
             var xStep = Math.sqrt( dashLength*dashLength / (1 + slope*slope) );
             x += xStep;
             y += slope*xStep;

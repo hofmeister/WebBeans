@@ -1,3 +1,4 @@
+//@module core.data @prio 99
 /**
  * @fileOverview
  * All methods and classes related to data handling is in here
@@ -36,13 +37,14 @@ $wb.data.Model = $wb.Class('Model',{
     addFields:function(fields) {
         var ids = [];
         var defaults = this.getDefaults();
-        for(var id in fields) {
+        $wb.each(fields,function(field,id) {
             ids.push(id);
-            this._fields[id] = $.extend({},defaults,fields[id]);
+            this._fields[id] = $.extend({},defaults,field);
             this._fields[id].id = id;
-            if (!this._fields[id].shortName)
+            if (!this._fields[id].shortName) {
                 this._fields[id].shortName = this._fields[id].name;
-        }
+            }
+        }.bind(this));
         this.trigger('added',[ids]);
     },
     addField:function(id,name,valueType,validator,defaultValue,shortName) {
@@ -62,56 +64,65 @@ $wb.data.Model = $wb.Class('Model',{
         return this._fields[id];
     },
     getFields:function() {
-        return this._fields;
+		if (arguments.length > 0) {
+			var out = [];
+			for(var i = 0; i < arguments.length;i++) {
+				var fieldId = arguments[i];
+				if (this._fields[fieldId]) {
+					out.push(this._fields[fieldId]);
+				}
+			}
+			return out;
+		}
+		return this._fields;
     },
     getFieldNames:function() {
-        var out = [];
-        for(var name in this._fields) {
-            out.push(name);
-        }
-        return out;
+        return $wb.keys(this._fields);
     },
     getFieldCount:function() {
         return this.getFieldNames().length;
     },
     create:function(data) {
-        if (!data) data = {};
-        
-        for(var id in this._fields) {
-            var f = this._fields[id];
-            
-            if (!data[id])
-                data[id] = f.defaultValue || null;
+        if (!data) {
+            data = {};
         }
+        
+        $wb.each(this._fields,function(f,id) {
+            if (!data[id]) {
+                data[id] = f.defaultValue || null;
+            }
+        });
         
         return data;
     },
     getKey:function(row) {
         var key = [];
-        for(var id in this._fields) {
-            var f = this._fields[id];
+        $wb.each(this._fields,function(f,id) {
             if (f.primary) {
                 key.push(row[id]);
             }
-        }
+        });
+
         return key.join(",");
     },
     hasKey:function() {
-        
-        for(var id in this._fields) {
-            var f = this._fields[id];
-            if (f.primary) {
-                return true;
+        var id;
+        for(id in this._fields) {
+            if (this._fields.hasOwnProperty(id)) {
+                var f = this._fields[id];
+                if (f.primary) {
+                    return true;
+                }
             }
         }
         return false;
     },
     validate:function(row) {
-        for(var id in row) {
-            if (!this._fields[id])
-                continue;
+        return $wb.each(row,function(value,id) {
+            if (!this._fields[id]) {
+                return;
+            }
             var f = this._fields[id];
-            var value = row[id];
             if (!value)
                 value = f.defaultValue;
             if (f.validator) {
@@ -119,11 +130,10 @@ $wb.data.Model = $wb.Class('Model',{
                     return false;
                 }
             }
-            if ($wb.utils.type(value) != f.valueType) {
+            if ($wb.utils.type(value) !== f.valueType) {
                 return false;
             }
-        }
-        return true;
+        }.bind(this));
     }
 });
 
@@ -582,7 +592,7 @@ $wb.data.JsonService = $wb.Class('JsonService',{
                             return $.ajax({
                                 url:url,
                                 type:method.method,
-                                dataType:'json',
+                                //dataType:'json',
                                 contentType:'application/json',
                                 data:data,
                                 success:function(out) {
@@ -590,8 +600,12 @@ $wb.data.JsonService = $wb.Class('JsonService',{
                                         callback(true,out);
                                 },
                                 error:function(out) {
+                                    var resp = null;
+                                    if (out.responseText)
+                                        resp = JSON.parse(out.responseText);
+                                    
                                     if (callback)
-                                        callback(false);
+                                        callback(false,resp,out);
                                 }
                             });
                         };
@@ -837,22 +851,38 @@ $wb.data.ListStore = $wb.Class('ListStore',{
     update:function(row) {
         var i = this.indexOf(row);
         if (i < 0) 
-            return;
+            return false;
         $.extend(this._data.rows.get(i),row);
         this.trigger('change');
         this.trigger('updated',[[row]]);
+        return true;
     },
     updateAll:function(rows) {
+        var newRows = [];
         for(var i = 0; i < rows.length;i++) {
             var row = rows[i];
             var ix = this.indexOf(row);
-            if (ix < 0) 
-                return;
+            if (ix < 0) {
+                newRows.push(row);
+                continue;
+            }
             $.extend(this._data.rows.get(ix),row);
         }
         
         this.trigger('change');
         this.trigger('updated',[[row]]);
+        return newRows;
+    },
+    upsert:function(row) {
+        if (!this.update(row)) {
+            this.add(row);
+        }
+    },
+    upsertAll:function(rows) {
+        var newRows = this.updateAll(rows);
+        if (newRows.length > 0) {
+            this.addAll(newRows);
+        }
     },
     getByMethod:function(value,comparator) {
         var i = this.getIndexByMethod(value,comparator);
