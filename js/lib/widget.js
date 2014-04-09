@@ -1111,10 +1111,17 @@ $wb.ui.Widget = $wb.Class('Widget',
          * @returns {$wb.ui.Widget} itself
          */
         destroyChildren: function () {
-            while (this._children.length > 0) {
-                var child = this._children.pop();
-                child.destroy();
-            }
+            var destroyLater = this._children;
+            this._children = [];
+            this.target()[0].innerHTML = '';
+
+            setTimeout(function() {
+                while (destroyLater.length > 0) {
+                    var child = destroyLater.pop();
+                    child.destroy(true);
+                }
+            },1);
+
             return this;
         },
         /**
@@ -1161,7 +1168,7 @@ $wb.ui.Widget = $wb.Class('Widget',
             while (this._children.length > 0) {
                 var child = this._children.pop();
                 if (recurse)
-                    child.destroy();
+                    child.destroy(true);
                 else
                     child.detach();
             }
@@ -1276,7 +1283,6 @@ $wb.ui.Widget = $wb.Class('Widget',
 
             if (this._paint() === false)
                 return false;
-
 
             this._renderChildren();
 

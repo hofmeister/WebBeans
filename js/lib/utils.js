@@ -419,6 +419,10 @@
     //jQuery util methods
     (function ($) {
 
+        $.copy = function(obj) {
+            //Much faster than $.extend
+            return JSON.parse(JSON.stringify(obj));
+        };
 
         $.fn.widget = function (widget) {
             var clz = '-wb-state-widget';
@@ -1013,34 +1017,23 @@
             var out = {top: -1, left: -1, right: -1, bottom: -1};
 
             $(this).each(function () {
-                var pos, elm = $(this);
 
-                if (relative)
-                    pos = elm.position();
-                else
-                    pos = elm.offset();
+                var bbox = this.getBoundingClientRect();
 
-                if (!pos) {
-                    return;
+                if (out.left < 0 || bbox.left < out.left) {
+                    out.left = bbox.left;
                 }
 
-                var right = pos.left + (minimal ? elm.boxWidth() : elm.outerWidth());
-                var bottom = pos.top + (minimal ? elm.boxHeight() : elm.outerHeight());
-
-                if (out.left < 0 || pos.left < out.left) {
-                    out.left = pos.left;
+                if (out.top < 0 || bbox.top < out.top) {
+                    out.top = bbox.top;
                 }
 
-                if (out.top < 0 || pos.top < out.top) {
-                    out.top = pos.top;
+                if (out.bottom < 0 || bbox.bottom > out.bottom) {
+                    out.bottom = bbox.bottom;
                 }
 
-                if (out.bottom < 0 || bottom > out.bottom) {
-                    out.bottom = bottom;
-                }
-
-                if (out.right < 0 || right > out.right) {
-                    out.right = right;
+                if (out.right < 0 || bbox.right > out.right) {
+                    out.right = bbox.right;
                 }
             });
             return out;
