@@ -2441,7 +2441,8 @@ $wb.ui.KeyValuePane = $wb.Class('KeyValuePane', {
 $wb.ui.SplitPane = $wb.Class('SplitPane', {
     __defaults: {
         vertical: true,
-        splitPosition: 0.5
+        splitPosition: 0.5,
+        main: 0
     },
     _vertical: true,
     _splitPosition: 0.5,
@@ -2450,6 +2451,17 @@ $wb.ui.SplitPane = $wb.Class('SplitPane', {
         opts = $.extend(this.getDefaults(opts), {
             tmpl: $wb.template.panes.split,
             layout: function () {
+                if (this._vertical) {
+                    var height = parseInt(this.elm().css('height'), 10);
+                    this.getSplitter().height(height);
+                    this.get(0).elm().outerHeight(height);
+                    this.get(1).elm().outerHeight(height);
+                } else {
+                    var width = this.elm().width();
+                    this.getSplitter().width(width);
+                    this.get(0).elm().outerWidth(width);
+                    this.get(1).elm().outerWidth(width);
+                }
                 this.setSplitPosition(this._splitPosition);
             }
         });
@@ -2474,6 +2486,14 @@ $wb.ui.SplitPane = $wb.Class('SplitPane', {
                 //evt.stopPropagation();
                 moving = true;
                 me.elm().css('cursor', me._vertical ? 'col-resize' : 'row-resize');
+
+                var offset = calculateSplitOffset(evt) * 100;
+                if (me._vertical) {
+                    me._getRuler().css('left', offset + '%');
+                } else {
+                    me._getRuler().css('top', offset + '%');
+                }
+
                 me._getRuler().show();
             });
 
@@ -2489,7 +2509,6 @@ $wb.ui.SplitPane = $wb.Class('SplitPane', {
                     fullSize = me.elm().height() - splitterSize.height;
                     globalOffset = evt.pageY - Math.ceil(splitterSize.height / 2);
                     elmOffset = me.elm().offset().top;
-
                 }
                 return (globalOffset - elmOffset) / fullSize;
             }
@@ -2553,30 +2572,89 @@ $wb.ui.SplitPane = $wb.Class('SplitPane', {
         return this.trigger('paint');
     },
     setSplitPosition: function (splitPosition) {
-        var width, height;
+        var minSize1 = 0, minSize2 = 0;
 
-        if (!splitPosition)
+        if (!splitPosition) {
             splitPosition = this._splitPosition;
+        }
+
+        if (this.opts.minSizes) {
+            minSize1 = this.opts.minSizes[0];
+            minSize2 = this.opts.minSizes[1];
+        }
+
+        if (splitPosition === undefined) {
+            splitPosition = -1;
+        }
+
         this._splitPosition = splitPosition;
+
+        var splitIsPercentage = splitPosition < 1 && splitPosition > 0;
+
         var splitterSize = this.getSplitter().fullSize();
 
         if (this._vertical) {
-            width = this.elm().width() - splitterSize.width;
-            height = parseInt(this.elm().css('height'), 10);
-            this.getSplitter().height(height);
-            var w1 = Math.round(width * splitPosition);
-            var w2 = width - w1;
+            var width = this.elm().width() - splitterSize.width;
+            if (splitIsPercentage) {
+                splitPosition *= width;
+            }
 
-            this.get(0).elm().outerWidth(w1).outerHeight(height);
-            this.get(1).elm().outerWidth(w2).outerHeight(height);
+            if (splitPosition === -1) {
+                if (minSize1 > -1 && minSize2 > minSize1) {
+                    splitPosition = minSize1;
+                } else if (minSize2 > -1) {
+                    splitPosition = width - minSize2;
+                }
+            }
+
+            if (splitPosition === -1) {
+                splitPosition = .5;
+            }
+
+            var size1 = splitPosition;
+            var size2 = width - size1;
+
+            if (minSize1 > 0 && minSize1 > size1) {
+                size1 = minSize1
+                size2 = width - size1;
+            } else if (minSize2 && minSize2 > size2) {
+                size2 = minSize2;
+                size1 = width - size2;
+            }
+
+            this.get(0).elm().outerWidth(size1);
+            this.get(1).elm().outerWidth(size2);
         } else {
-            height = this.elm().height() - splitterSize.height;
-            width = this.elm().width();
-            this.getSplitter().width(width);
-            var h1 = Math.round(height * splitPosition);
-            var h2 = height - h1;
-            this.get(0).elm().outerHeight(h1).outerWidth(width);
-            this.get(1).elm().outerHeight(h2).outerWidth(width);
+            var height = this.elm().height() - splitterSize.height;
+            if (splitIsPercentage) {
+                splitPosition *= height;
+            }
+
+            if (splitPosition === -1) {
+                if (minSize1 > -1) {
+                    splitPosition = minSize1;
+                } else if (minSize2 > -1) {
+                    splitPosition = height - minSize2;
+                }
+            }
+
+            if (splitPosition === -1) {
+                splitPosition = .5;
+            }
+
+            var size1 = splitPosition;
+            var size2 = height - size1;
+
+            if (minSize1 > 0 && minSize1 > size1) {
+                size1 = minSize1
+                size2 = height - size1;
+            } else if (minSize2 && minSize2 > size2) {
+                size2 = minSize2;
+                size1 = height - size2;
+            }
+
+            this.get(0).elm().outerHeight(size1);
+            this.get(1).elm().outerHeight(size2);
         }
     }
 });
