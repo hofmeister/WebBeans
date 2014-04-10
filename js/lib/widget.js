@@ -2593,6 +2593,8 @@ $wb.ui.SplitPane = $wb.Class('SplitPane', {
 
         var splitterSize = this.getSplitter().fullSize();
 
+        this.trigger('position-change',[this._splitPosition]);
+
         if (this._vertical) {
             var width = this.elm().width() - splitterSize.width;
             if (splitIsPercentage) {
@@ -2641,7 +2643,6 @@ $wb.ui.SplitPane = $wb.Class('SplitPane', {
             if (splitPosition === -1) {
                 splitPosition = .5;
             }
-
             var size1 = splitPosition;
             var size2 = height - size1;
 
