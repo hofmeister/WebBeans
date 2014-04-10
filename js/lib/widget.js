@@ -3916,8 +3916,13 @@ $wb.ui.Window = $wb.Class('Window',
 
                 };
                 center();
-                $(window).resize(center);
-            };
+            }.bind(this);
+
+            $(window).resize(doPosition);
+
+            this.bind('destroy',function() {
+                $(window).unbind('resize',doPosition);
+            });
 
             if (opts.moveable) {
                 this._makeMovable();
