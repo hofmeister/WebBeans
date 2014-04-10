@@ -749,6 +749,17 @@ $wb.ui.form.NumberField = $wb.Class('NumberField',{
     }
 });
 
+$wb.ui.form.RangeField = $wb.Class('RangeField',{
+    __extends:[$wb.ui.form.InputField],
+    __construct:function(opts) {
+        if (!opts) opts = {};
+        opts = $.extend({
+            type:'range'
+        },opts);
+        this.__super(opts);
+    }
+});
+
 $wb.ui.form.EmailField = $wb.Class('EmailField',{
     __extends:[$wb.ui.form.InputField],
     __construct:function(opts) {
